@@ -38,6 +38,12 @@ public:
     Backpack(bb::cascades::Application *app);
     Q_INVOKABLE void setBackgroundColour(float base, float red, float green, float blue);
     Q_INVOKABLE float getBackgroundColour(QString colour);
+    Q_INVOKABLE void setIgnoreKeptShuffle(bool ignore);
+    Q_INVOKABLE bool getIgnoreKeptShuffle();
+    Q_INVOKABLE void setIgnoreKeptOldest(bool ignore);
+    Q_INVOKABLE bool getIgnoreKeptOldest();
+    Q_INVOKABLE void setIgnoreKeptQuickest(bool ignore);
+    Q_INVOKABLE bool getIgnoreKeptQuickest();
     Q_INVOKABLE void memoBookmark(QString);
     Q_INVOKABLE void memoBookmark(QString, int);
     Q_INVOKABLE void removeBookmark(int);
@@ -47,8 +53,6 @@ public:
     Q_INVOKABLE void quickestBookmark();
     Q_INVOKABLE QDate getOldestDate();
     Q_INVOKABLE int getQuickestSize();
-    Q_INVOKABLE int getSize();
-    Q_INVOKABLE void debugStack();
     Q_INVOKABLE void keepBookmark(bool);
     Q_INVOKABLE void keepBookmark(bool, int);
     virtual ~Backpack();
@@ -80,6 +84,5 @@ private:
     void createDatabase();
     void refreshBookmarks();
 };
-
 
 #endif /* Backpack_HPP_ */
