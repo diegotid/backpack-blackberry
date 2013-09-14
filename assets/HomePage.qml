@@ -191,7 +191,6 @@ NavigationPane {
 		                            id: oldestLabel
 		                            objectName: "oldestLabel"
 //		                            text: "Yesterday"
-//                                    text: app.getOldestDate().toString("yyyy-MM-dd")
                                     text: app.getOldestDate()
                                     textStyle.fontSize: FontSize.Medium
                                     textStyle.color: Color.White

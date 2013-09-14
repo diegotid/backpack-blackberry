@@ -84,7 +84,6 @@ bool Backpack::databaseExists() {
 	return !data->hasError();
 }
 
-
 void Backpack::createDatabase() {
 
 	data->execute("CREATE TABLE Bookmark (id INTEGER, title VARCHAR(255), url VARCHAR(255), favicon VARCHAR(255), memo VARCHAR(255), date DATE, time DATETIME, size INTEGER, keep BOOL)");
@@ -121,6 +120,54 @@ float Backpack::getBackgroundColour(QString colour) {
 	return colours.value(colour).toFloat();
 }
 
+void Backpack::setIgnoreKeptShuffle(bool ignore) {
+
+	QSettings settings;
+	settings.setValue("ingoreKeptShuffle", ignore);
+}
+
+bool Backpack::getIgnoreKeptShuffle() {
+
+	QSettings settings;
+	if (settings.value("ingoreKeptShuffle").isNull())
+		settings.setValue("ingoreKeptShuffle", true);
+	return settings.value("ingoreKeptShuffle").toBool();
+}
+
+void Backpack::setIgnoreKeptOldest(bool ignore) {
+
+	QSettings settings;
+	settings.setValue("ingoreKeptOldest", ignore);
+
+	homePage->findChild<QObject*>("oldestLabel")->setProperty("text", getOldestDate());
+    activeFrame->takeFigures(this);
+}
+
+bool Backpack::getIgnoreKeptOldest() {
+
+	QSettings settings;
+	if (settings.value("ingoreKeptOldest").isNull())
+		settings.setValue("ingoreKeptOldest", true);
+	return settings.value("ingoreKeptOldest").toBool();
+}
+
+void Backpack::setIgnoreKeptQuickest(bool ignore) {
+
+	QSettings settings;
+	settings.setValue("ingoreKeptQuickest", ignore);
+
+	homePage->findChild<QObject*>("quickestLabel")->setProperty("text", getQuickestSize());
+    activeFrame->takeFigures(this);
+}
+
+bool Backpack::getIgnoreKeptQuickest() {
+
+	QSettings settings;
+	if (settings.value("ingoreKeptQuickest").isNull())
+		settings.setValue("ingoreKeptQuickest", true);
+	return settings.value("ingoreKeptQuickest").toBool();
+}
+
 void Backpack::refreshBookmarks() {
 
 	QVariant list = data->execute("SELECT * FROM Bookmark");
@@ -135,18 +182,11 @@ void Backpack::refreshBookmarks() {
     activeFrame->takeFigures(this);
 }
 
-int Backpack::getSize() {
-
-	return bookmarksNumber;
-}
-
 void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
-
 		homePage->setBackButtonsVisible(false);
 		homePage->push(invokedForm);
-//      debugStack();
 	}
 
 	invokedForm->findChild<QObject*>("activity")->setProperty("visible", true);
@@ -203,8 +243,6 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 }
 
 void Backpack::handleBookmarkSize(QNetworkReply *reply) {
-
-//	invokedForm->findChild<QObject*>("status")->setProperty("text", QString("Tamaño: ").append(QString::number(reply->size())));
 
 	QVariantList sizeValues;
 	data->execute("UPDATE Bookmark SET size = ? WHERE id = ?", sizeValues << reply->size() << bookmarkId);
@@ -321,7 +359,14 @@ void Backpack::removeBookmark(int id, bool deleteKeepers) {
 
 void Backpack::shuffleBookmark() {
 
-	QVariantList ids = data->execute("SELECT id, url FROM Bookmark").toList();
+	QSettings settings;
+	QVariantList ids;
+
+	if (settings.value("ingoreKeptShuffle").toBool())
+		ids = data->execute("SELECT id, url FROM Bookmark WHERE keep = ?", QVariantList() << false).toList();
+
+	if (ids.size() == 0)
+		ids = data->execute("SELECT id, url FROM Bookmark").toList();
 
 	srand((unsigned)time(0));
 	int randomNumber = rand() % ids.size();
@@ -340,7 +385,14 @@ void Backpack::shuffleBookmark() {
 
 void Backpack::oldestBookmark() {
 
-	QVariantList ids = data->execute("SELECT id, url FROM Bookmark ORDER BY time LIMIT 1").toList();
+	QSettings settings;
+	QVariantList ids;
+
+	if (settings.value("ingoreKeptOldest").toBool())
+		ids = data->execute("SELECT id, url FROM Bookmark WHERE keep = ? ORDER BY time LIMIT 1", QVariantList() << false).toList();
+
+	if (ids.size() == 0)
+		ids = data->execute("SELECT id, url FROM Bookmark ORDER BY time LIMIT 1").toList();
 
 	removeBookmark(ids.value(0).toMap().value("id").toInt());
 
@@ -356,7 +408,14 @@ void Backpack::oldestBookmark() {
 
 void Backpack::quickestBookmark() {
 
-	QVariantList ids = data->execute("SELECT id, url FROM Bookmark ORDER BY size LIMIT 1").toList();
+	QSettings settings;
+	QVariantList ids;
+
+	if (settings.value("ingoreKeptQuickest").toBool())
+		ids = data->execute("SELECT id, url FROM Bookmark WHERE keep = ? ORDER BY size LIMIT 1", QVariantList() << false).toList();
+
+	if (ids.size() == 0)
+		ids = data->execute("SELECT id, url FROM Bookmark ORDER BY size LIMIT 1").toList();
 
 	removeBookmark(ids.value(0).toMap().value("id").toInt());
 
@@ -374,12 +433,26 @@ void Backpack::quickestBookmark() {
 
 QDate Backpack::getOldestDate() {
 
-	return data->execute("SELECT MIN(date) FROM Bookmark WHERE date IS NOT NULL").toList().value(0).toMap().value("MIN(date)").toDate();
+	QSettings settings;
+	if (settings.value("ingoreKeptOldest").isNull())
+		settings.setValue("ingoreKeptOldest", true);
+
+	if (settings.value("ingoreKeptOldest").toBool())
+		return data->execute("SELECT MIN(date) FROM Bookmark WHERE keep = ? AND date IS NOT NULL", QVariantList() << false).toList().value(0).toMap().value("MIN(date)").toDate();
+	else
+		return data->execute("SELECT MIN(date) FROM Bookmark WHERE date IS NOT NULL").toList().value(0).toMap().value("MIN(date)").toDate();
 }
 
 int Backpack::getQuickestSize() {
 
-	return data->execute("SELECT MIN(size) FROM Bookmark WHERE size IS NOT NULL").toList().value(0).toMap().value("MIN(size)").toInt();
+	QSettings settings;
+	if (settings.value("ingoreKeptQuickest").isNull())
+		settings.setValue("ingoreKeptQuickest", true);
+
+	if (settings.value("ingoreKeptQuickest").toBool())
+		return data->execute("SELECT MIN(size) FROM Bookmark WHERE keep = ? AND size IS NOT NULL", QVariantList() << false).toList().value(0).toMap().value("MIN(size)").toInt();
+	else
+		return data->execute("SELECT MIN(size) FROM Bookmark WHERE size IS NOT NULL").toList().value(0).toMap().value("MIN(size)").toInt();
 }
 
 void Backpack::keepBookmark(bool keep) {
@@ -394,26 +467,4 @@ void Backpack::keepBookmark(bool keep, int id) {
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication)
 		refreshBookmarks();
-}
-
-void Backpack::debugStack() {
-
-	if (iManager->startupMode() == ApplicationStartupMode::InvokeApplication) {
-
-		qDebug() << "****** App invoked ******";
-
-	} else {
-
-		qDebug() << "";
-		qDebug() << "";
-		qDebug() << "****** Stack size: " << homePage->count() << " ******";
-
-		for (int i = 0; i < homePage->count(); i++) {
-
-			qDebug() << homePage->at(i)->objectName();
-		}
-		qDebug() << "";
-		qDebug() << "";
-		qDebug() << "";
-	}
 }

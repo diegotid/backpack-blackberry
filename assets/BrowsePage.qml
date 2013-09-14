@@ -179,9 +179,7 @@ Page {
                         
                         Divider {
                             topMargin: 0
-                            topPadding: 0
                             bottomMargin: 0
-                            bottomPadding: 0
                         }
                     }                        
                 }
@@ -194,7 +192,6 @@ Page {
                 app.removeBookmark(selectedItem.id)
                 if (app.getSize() == 0) {
                     homePage.remove(browsePage);
-//                        app.debugStack();
                 }
             }
             
