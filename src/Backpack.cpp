@@ -123,21 +123,21 @@ float Backpack::getBackgroundColour(QString colour) {
 void Backpack::setIgnoreKeptShuffle(bool ignore) {
 
 	QSettings settings;
-	settings.setValue("ingoreKeptShuffle", ignore);
+	settings.setValue("ignoreKeptShuffle", ignore);
 }
 
 bool Backpack::getIgnoreKeptShuffle() {
 
 	QSettings settings;
-	if (settings.value("ingoreKeptShuffle").isNull())
-		settings.setValue("ingoreKeptShuffle", true);
-	return settings.value("ingoreKeptShuffle").toBool();
+	if (settings.value("ignoreKeptShuffle").isNull())
+		settings.setValue("ignoreKeptShuffle", true);
+	return settings.value("ignoreKeptShuffle").toBool();
 }
 
 void Backpack::setIgnoreKeptOldest(bool ignore) {
 
 	QSettings settings;
-	settings.setValue("ingoreKeptOldest", ignore);
+	settings.setValue("ignoreKeptOldest", ignore);
 
 	homePage->findChild<QObject*>("oldestLabel")->setProperty("text", getOldestDate());
     activeFrame->takeFigures(this);
@@ -146,15 +146,15 @@ void Backpack::setIgnoreKeptOldest(bool ignore) {
 bool Backpack::getIgnoreKeptOldest() {
 
 	QSettings settings;
-	if (settings.value("ingoreKeptOldest").isNull())
-		settings.setValue("ingoreKeptOldest", true);
-	return settings.value("ingoreKeptOldest").toBool();
+	if (settings.value("ignoreKeptOldest").isNull())
+		settings.setValue("ignoreKeptOldest", true);
+	return settings.value("ignoreKeptOldest").toBool();
 }
 
 void Backpack::setIgnoreKeptQuickest(bool ignore) {
 
 	QSettings settings;
-	settings.setValue("ingoreKeptQuickest", ignore);
+	settings.setValue("ignoreKeptQuickest", ignore);
 
 	homePage->findChild<QObject*>("quickestLabel")->setProperty("text", getQuickestSize());
     activeFrame->takeFigures(this);
@@ -163,9 +163,9 @@ void Backpack::setIgnoreKeptQuickest(bool ignore) {
 bool Backpack::getIgnoreKeptQuickest() {
 
 	QSettings settings;
-	if (settings.value("ingoreKeptQuickest").isNull())
-		settings.setValue("ingoreKeptQuickest", true);
-	return settings.value("ingoreKeptQuickest").toBool();
+	if (settings.value("ignoreKeptQuickest").isNull())
+		settings.setValue("ignoreKeptQuickest", true);
+	return settings.value("ignoreKeptQuickest").toBool();
 }
 
 void Backpack::refreshBookmarks() {
@@ -362,7 +362,10 @@ void Backpack::shuffleBookmark() {
 	QSettings settings;
 	QVariantList ids;
 
-	if (settings.value("ingoreKeptShuffle").toBool())
+	if (settings.value("ignoreKeptShuffle").isNull())
+		settings.setValue("ignoreKeptShuffle", true);
+
+	if (settings.value("ignoreKeptShuffle").toBool())
 		ids = data->execute("SELECT id, url FROM Bookmark WHERE keep = ?", QVariantList() << false).toList();
 
 	if (ids.size() == 0)
@@ -388,7 +391,10 @@ void Backpack::oldestBookmark() {
 	QSettings settings;
 	QVariantList ids;
 
-	if (settings.value("ingoreKeptOldest").toBool())
+	if (settings.value("ignoreKeptOldest").isNull())
+		settings.setValue("ignoreKeptOldest", true);
+
+	if (settings.value("ignoreKeptOldest").toBool())
 		ids = data->execute("SELECT id, url FROM Bookmark WHERE keep = ? ORDER BY time LIMIT 1", QVariantList() << false).toList();
 
 	if (ids.size() == 0)
@@ -411,7 +417,10 @@ void Backpack::quickestBookmark() {
 	QSettings settings;
 	QVariantList ids;
 
-	if (settings.value("ingoreKeptQuickest").toBool())
+	if (settings.value("ignoreKeptQuickest").isNull())
+		settings.setValue("ignoreKeptQuickest", true);
+
+	if (settings.value("ignoreKeptQuickest").toBool())
 		ids = data->execute("SELECT id, url FROM Bookmark WHERE keep = ? ORDER BY size LIMIT 1", QVariantList() << false).toList();
 
 	if (ids.size() == 0)
@@ -434,25 +443,35 @@ void Backpack::quickestBookmark() {
 QDate Backpack::getOldestDate() {
 
 	QSettings settings;
-	if (settings.value("ingoreKeptOldest").isNull())
-		settings.setValue("ingoreKeptOldest", true);
+	if (settings.value("ignoreKeptOldest").isNull())
+		settings.setValue("ignoreKeptOldest", true);
 
-	if (settings.value("ingoreKeptOldest").toBool())
-		return data->execute("SELECT MIN(date) FROM Bookmark WHERE keep = ? AND date IS NOT NULL", QVariantList() << false).toList().value(0).toMap().value("MIN(date)").toDate();
-	else
-		return data->execute("SELECT MIN(date) FROM Bookmark WHERE date IS NOT NULL").toList().value(0).toMap().value("MIN(date)").toDate();
+	QVariant oldest;
+
+	if (settings.value("ignoreKeptOldest").toBool())
+		oldest = data->execute("SELECT MIN(date) FROM Bookmark WHERE keep = ? AND date IS NOT NULL", QVariantList() << false).toList().value(0).toMap().value("MIN(date)");
+
+	if (oldest.isNull())
+		oldest = data->execute("SELECT MIN(date) FROM Bookmark WHERE date IS NOT NULL").toList().value(0).toMap().value("MIN(date)");
+
+	return oldest.toDate();
 }
 
 int Backpack::getQuickestSize() {
 
 	QSettings settings;
-	if (settings.value("ingoreKeptQuickest").isNull())
-		settings.setValue("ingoreKeptQuickest", true);
+	if (settings.value("ignoreKeptQuickest").isNull())
+		settings.setValue("ignoreKeptQuickest", true);
 
-	if (settings.value("ingoreKeptQuickest").toBool())
-		return data->execute("SELECT MIN(size) FROM Bookmark WHERE keep = ? AND size IS NOT NULL", QVariantList() << false).toList().value(0).toMap().value("MIN(size)").toInt();
-	else
-		return data->execute("SELECT MIN(size) FROM Bookmark WHERE size IS NOT NULL").toList().value(0).toMap().value("MIN(size)").toInt();
+	QVariant quickest;
+
+	if (settings.value("ignoreKeptQuickest").toBool())
+		quickest = data->execute("SELECT MIN(size) FROM Bookmark WHERE keep = ? AND size IS NOT NULL", QVariantList() << false).toList().value(0).toMap().value("MIN(size)");
+
+	if (quickest.isNull())
+		quickest = data->execute("SELECT MIN(size) FROM Bookmark WHERE size IS NOT NULL").toList().value(0).toMap().value("MIN(size)");
+
+	return quickest.toInt();
 }
 
 void Backpack::keepBookmark(bool keep) {
