@@ -121,6 +121,22 @@ Page {
                         ]
                         
                         Container {
+                            id: highlight
+                            verticalAlignment: VerticalAlignment.Fill
+                            horizontalAlignment: HorizontalAlignment.Fill
+                            background: highlightBorder.imagePaint
+                            visible: false
+                            
+                            attachedObjects: [
+                                ImagePaintDefinition {
+                                    id: highlightBorder
+                                    imageSource: "asset:///images/highlight_listitem.amd"
+                                    repeatPattern: RepeatPattern.Fill
+                                }
+                            ]
+                        }
+                        
+                        Container {
                             topPadding: 10
                             leftPadding: 10
                             
@@ -180,6 +196,13 @@ Page {
                         Divider {
                             topMargin: 0
                             bottomMargin: 0
+                        }
+                        
+                        onTouch: {
+                            if (event.touchType == TouchType.Down)
+                                highlight.visible = true
+                            else if (event.touchType == TouchType.Up || event.touchType == TouchType.Cancel)
+                                highlight.visible = false
                         }
                     }                        
                 }
