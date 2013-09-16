@@ -200,7 +200,7 @@ Page {
                         Label {
                             id: keepLabel
                             objectName: "keepLabel"
-                            text: "Keep after reading"
+                            text: "Keep after read"
                             textStyle.color: Color.LightGray
                             verticalAlignment: VerticalAlignment.Center
                         }

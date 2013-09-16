@@ -93,6 +93,7 @@ Page {
                 topPadding: 10.0
                 leftPadding: 20.0
                 rightPadding: 20.0
+                bottomMargin: 10.0
                 
                 Label {
                     text: "Quickest"
