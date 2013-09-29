@@ -97,8 +97,12 @@ Container {
                 textStyle.color: Color.LightGray
                 textStyle.fontSize: FontSize.XSmall
                 onTextChanged: {
-                    if (text.indexOf("http://") == 0) bookmarkURL.setText(text.substr(7));   
-                    else if (text.indexOf("/") == text.length - 1) bookmarkURL.setText(text.substring(0, text.length - 1));
+                    if (text.length > 0) {
+                        if (text.indexOf("http://") == 0)
+                        	bookmarkURL.setText(text.substr(7));   
+                        else if (text.indexOf("/") == text.length - 1)
+                        	bookmarkURL.setText(text.substring(0, text.length - 1));
+                    }
                 }
             }
         }
