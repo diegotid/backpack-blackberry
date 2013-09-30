@@ -42,6 +42,7 @@ public:
     Q_INVOKABLE void memoBookmark(QString, int);
     Q_INVOKABLE void removeBookmark(int);
     Q_INVOKABLE void removeBookmark(int, bool);
+    Q_INVOKABLE void browseBookmark(QString uri);
     Q_INVOKABLE void shuffleBookmark();
     Q_INVOKABLE void oldestBookmark();
     Q_INVOKABLE void quickestBookmark();
