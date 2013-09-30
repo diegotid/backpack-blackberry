@@ -3,6 +3,7 @@ import bb.cascades 1.0
     
 Container {
     layout: DockLayout {}
+    background: Color.Black
     
 //	Q10
 //    maxWidth: 310
@@ -26,6 +27,9 @@ Container {
     ImageView {
         objectName: "backgroundBase"
         imageSource: "asset:///images/frame.png"
+    }
+    ImageView {
+        imageSource: "asset:///images/frame-shadow.png"
     }
     
     Container { // Header
