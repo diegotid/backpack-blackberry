@@ -319,6 +319,18 @@ void Backpack::removeBookmark(int id, bool deleteKeepers) {
 	}
 }
 
+void Backpack::browseBookmark(QString uri) {
+
+	InvokeManager invokeSender;
+	InvokeRequest request;
+	request.setTarget("sys.browser");
+	request.setAction("bb.action.OPEN");
+	request.setUri(uri);
+	invokeSender.invoke(request);
+
+    Flurry::Analytics::LogEvent("Browse");
+}
+
 void Backpack::shuffleBookmark() {
 
 	QVariantList ids = data->execute("SELECT id, url FROM Bookmark").toList();

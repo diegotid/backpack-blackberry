@@ -189,12 +189,10 @@ Page {
             
             onTriggered: {
                 var selectedItem = dataModel.data(indexPath)
-                invokeQuery.query.uri = selectedItem.url
-                invokeQuery.query.updateQuery()
+                app.browseBookmark(selectedItem.url)
                 app.removeBookmark(selectedItem.id)
                 if (app.getSize() == 0) {
                     homePage.remove(browsePage);
-//                        app.debugStack();
                 }
             }
             
@@ -219,11 +217,6 @@ Page {
             }     
             
             attachedObjects: [
-                Invocation {
-                    id: invokeQuery
-                    query.invokeTargetId: "sys.browser"
-                    onArmed: trigger("bb.action.OPEN")
-                },
                 ComponentDefinition {
                     id: editPageDefinition
                     source: "InvokedForm.qml"
