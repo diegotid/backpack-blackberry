@@ -25,7 +25,7 @@ Page {
             title: "Confirm"
             onTriggered: {
                 app.setBackgroundColour(originalSlider.value, redSlider.value, greenSlider.value, blueSlider.value)
-                homePage.reloadBackgrounds();
+                mainPage.reloadBackgrounds();
                 app.setIgnoreKeptShuffle(ignoreKeptShuffle.checked);
                 app.setIgnoreKeptOldest(ignoreKeptOldest.checked);
                 app.setIgnoreKeptQuickest(ignoreKeptQuickest.checked);

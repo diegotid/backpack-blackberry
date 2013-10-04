@@ -5,9 +5,10 @@
 #include "ActiveFrame.hpp"
 
 #include <bb/cascades/QmlDocument>
-#include <bb/cascades/NavigationPane>
+#include <bb/cascades/TabbedPane>
 #include <bb/cascades/AbstractPane>
 #include <bb/cascades/ListView>
+#include <bb/cascades/Page>
 #include <bb/cascades/WebPage>
 #include <bb/cascades/WebLoadRequest>
 #include <bb/cascades/WebPageCompositor>
@@ -66,7 +67,7 @@ public Q_SLOTS:
 private:
 	QmlDocument *homeQml;
 	QmlDocument *invokedQml;
-    NavigationPane *homePage;
+    TabbedPane *mainPage;
     Page *invokedForm;
 	QFile dbFile;
 	SqlDataAccess *data;

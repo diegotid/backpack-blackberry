@@ -99,14 +99,30 @@ void ActiveFrame::update(bool force) {
 		bookmarks << sql->execute("SELECT * FROM Bookmark").toList();
 	}
 
-	if (bookmarks.size() == 0) return;
+	Label *memoLabel = coverContainer->findChild<Label*>("memo");
+	Label *memoURL = coverContainer->findChild<Label*>("bookmarkURL");
+	Label *memoTitle = coverContainer->findChild<Label*>("bookmarkTitle");
+
+	if (bookmarks.size() == 0) {
+
+		qDebug() << "ActiveFrame::update() bookmarks.size() = 0";
+		qDebug() << "coverContainer->findChild<Label*>(memo): " << coverContainer->findChild<Label*>("memo");
+
+		if (memoLabel) memoLabel->setText("");
+		if (memoURL) memoURL->setText("");
+		if (memoTitle) memoTitle->setText("");
+
+		qDebug() << "ActiveFrame::update() volviendo";
+
+		return;
+	}
 
 	srand((unsigned)time(0));
 	int i = rand() % bookmarks.size();
 
 	QVariantMap item = bookmarks.value(i).toMap();
 
-	coverContainer->findChild<Label*>("memo")->setText(item.value("memo").toString());
-	coverContainer->findChild<Label*>("bookmarkURL")->setText(item.value("url").toString());
-	coverContainer->findChild<Label*>("bookmarkTitle")->setText(item.value("title").toString());
+	memoLabel->setText(item.value("memo").toString());
+	memoURL->setText(item.value("url").toString());
+	memoTitle->setText(item.value("title").toString());
 }
