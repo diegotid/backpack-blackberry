@@ -37,6 +37,7 @@ class Backpack : public QObject
 
 public:
     Backpack(bb::cascades::Application *app);
+    Q_INVOKABLE QString getAppVersion();
     Q_INVOKABLE void setBackgroundColour(float base, float red, float green, float blue);
     Q_INVOKABLE float getBackgroundColour(QString colour);
     Q_INVOKABLE void setIgnoreKeptShuffle(bool ignore);
@@ -56,6 +57,8 @@ public:
     Q_INVOKABLE int getQuickestSize();
     Q_INVOKABLE void keepBookmark(bool);
     Q_INVOKABLE void keepBookmark(bool, int);
+    Q_INVOKABLE void launchSearchToPutin(QString query);
+    Q_INVOKABLE void launchRating();
     virtual ~Backpack();
 
 public Q_SLOTS:

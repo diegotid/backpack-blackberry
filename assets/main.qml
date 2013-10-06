@@ -5,8 +5,9 @@ TabbedPane {
     showTabsOnActionBar: true
     
     function reloadBackgrounds() {
-        explorePage.reloadBackgrounds()
-        addinPage.reloadBackgrounds()
+        homePage.loadBackground()
+        browsePage.loadBackground()
+        putinPage.loadBackground()
     }
     
     attachedObjects: [
@@ -15,6 +16,25 @@ TabbedPane {
             SettingsSheet {
                 onClose: settingsSheet.close();
             }
+        },
+        Sheet {
+            id: helpSheet
+            HelpSheet {
+                onClose: helpSheet.close();
+            }
+        },
+        Sheet {
+            id: aboutSheet
+            AboutSheet {
+                onClose: aboutSheet.close();
+            }
+        },
+        Sheet {
+            id: invokedSheet
+            objectName: "invokedSheet"
+            InvokedForm {
+                onClose: invokedSheet.close();
+            }
         }
     ]
     
@@ -22,6 +42,16 @@ TabbedPane {
         settingsAction: SettingsActionItem {
             onTriggered: settingsSheet.open();
         }
+        helpAction: HelpActionItem {
+            onTriggered: helpSheet.open();
+        }
+        actions: [
+            ActionItem {
+                title: "About"
+                imageSource: "asset:///images/menuicons/ic_info.png"
+                onTriggered: aboutSheet.open();
+            }
+        ]
     }
     
     Tab {
@@ -31,7 +61,9 @@ TabbedPane {
         title: "Read"
         imageSource: "asset:///images/menuicons/ic_doctype_web.png"
 
-        HomePage {}
+        HomePage {
+            id: homePage
+        }
     }
     
     Tab {
@@ -42,12 +74,12 @@ TabbedPane {
         imageSource: "asset:///images/menuicons/ic_search.png"
 
         BrowsePage {
-            id: explorePage
+            id: browsePage
         }
     }
     
     Tab {
-        id: addinTab
+        id: putinTab
         
         title: "Put in"
         imageSource: "asset:///images/menuicons/ic_doctype_add.png"

@@ -3,9 +3,9 @@
 
 #include <Flurry.h>
 
+#include <bb/ApplicationInfo>
 #include <bb/cascades/Application>
 #include <bb/cascades/AbstractPane>
-#include <bb/cascades/NavigationPane>
 #include <bb/cascades/GroupDataModel>
 #include <bb/cascades/WebDownloadRequest>
 #include <bb/cascades/ActivityIndicator>
@@ -14,6 +14,7 @@
 #include <bb/cascades/ListView>
 #include <bb/cascades/TextArea>
 #include <bb/cascades/WebPage>
+#include <bb/cascades/Sheet>
 #include <bb/cascades/Page>
 #include <bb/cascades/TitleBar>
 #include <bb/cascades/WebSettings>
@@ -21,6 +22,7 @@
 
 using namespace bb::cascades;
 using namespace bb::data;
+using namespace bb;
 using namespace std;
 
 Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
@@ -73,6 +75,12 @@ Backpack::~Backpack() {
 
 	data->connection().close();
 	dbFile.close();
+}
+
+QString Backpack::getAppVersion() {
+
+	ApplicationInfo thisApp;
+	return thisApp.version();
 }
 
 bool Backpack::databaseExists() {
@@ -200,7 +208,7 @@ void Backpack::refreshBookmarks() {
 void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication)
-		mainPage->findChild<NavigationPane*>("addinPage")->push(invokedForm);
+		mainPage->findChild<Sheet*>("invokedSheet")->open();
 
 	invokedForm->findChild<QObject*>("activity")->setProperty("visible", true);
 	invokedForm->findChild<QObject*>("status")->setProperty("text", "Fetching page content...");
@@ -502,4 +510,24 @@ void Backpack::keepBookmark(bool keep, int id) {
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication)
 		refreshBookmarks();
+}
+
+void Backpack::launchSearchToPutin(QString query) {
+
+	InvokeManager invokeSender;
+	InvokeRequest request;
+	request.setTarget("sys.search");
+	request.setAction("bb.action.OPEN");
+	request.setUri(QString("search://?term=").append(query));
+	invokeSender.invoke(request);
+}
+
+void Backpack::launchRating() {
+
+	InvokeManager invokeSender;
+	InvokeRequest request;
+	request.setTarget("sys.appworld");
+	request.setAction("bb.action.OPEN");
+	request.setUri("http://appworld.blackberry.com/webstore/content/20399673");
+	invokeSender.invoke(request);
 }
