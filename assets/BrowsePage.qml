@@ -199,8 +199,7 @@ Page {
                        
             onTriggered: {
                 var selectedItem = dataModel.data(indexPath)
-                invokeQuery.query.uri = selectedItem.url
-                invokeQuery.query.updateQuery()
+                app.browseBookmark(selectedItem.url)
                 app.removeBookmark(selectedItem.id)
                 if (app.getSize() == 0) {
                     mainPage.activeTab = mainPage.readTab
@@ -230,17 +229,9 @@ Page {
             }     
             
             attachedObjects: [
-                Sheet {
-                    id: editSheet
-                    InvokedForm {
-                        id: editPage
-                        onClose: editSheet.close();
-                    }
-                },
-                Invocation {
-                    id: invokeQuery
-                    query.invokeTargetId: "sys.browser"
-                    onArmed: trigger("bb.action.OPEN")
+                ComponentDefinition {
+                    id: editPageDefinition
+                    source: "InvokedForm.qml"
                 }
             ]
         }

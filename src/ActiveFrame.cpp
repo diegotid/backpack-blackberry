@@ -99,9 +99,12 @@ void ActiveFrame::update(bool force) {
 		bookmarks << sql->execute("SELECT * FROM Bookmark").toList();
 	}
 
-	Label *memoLabel = coverContainer->findChild<Label*>("memo");
-	Label *memoURL = coverContainer->findChild<Label*>("bookmarkURL");
-	Label *memoTitle = coverContainer->findChild<Label*>("bookmarkTitle");
+	if (bookmarks.size() == 0) {
+		coverContainer->findChild<Label*>("memo")->setText("");
+		coverContainer->findChild<Label*>("bookmarkURL")->setText("");
+		coverContainer->findChild<Label*>("bookmarkTitle")->setText("");
+		return;
+	}
 
 	if (bookmarks.size() == 0) {
 
