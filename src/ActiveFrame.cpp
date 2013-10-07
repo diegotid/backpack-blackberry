@@ -99,7 +99,12 @@ void ActiveFrame::update(bool force) {
 		bookmarks << sql->execute("SELECT * FROM Bookmark").toList();
 	}
 
-	if (bookmarks.size() == 0) return;
+	if (bookmarks.size() == 0) {
+		coverContainer->findChild<Label*>("memo")->setText("");
+		coverContainer->findChild<Label*>("bookmarkURL")->setText("");
+		coverContainer->findChild<Label*>("bookmarkTitle")->setText("");
+		return;
+	}
 
 	srand((unsigned)time(0));
 	int i = rand() % bookmarks.size();

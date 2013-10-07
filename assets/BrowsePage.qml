@@ -1,9 +1,7 @@
 
 import bb.cascades 1.0
-
+  
 Page {
-    id: browsePage
-    objectName: "browsePage"
     
     titleBar: TitleBar {
         title: "My Backpack"
@@ -17,6 +15,18 @@ Page {
         backgroundBlue.opacity = app.getBackgroundColour("blue");
         backgroundBase.opacity = app.getBackgroundColour("base");
     }
+    
+    attachedObjects: [
+        Sheet {
+            id: bookmarkSheet
+            objectName: "bookmarkSheet"
+            InvokedForm {
+                id: invokedForm
+                objectName: "invokedForm"
+                onClose: bookmarkSheet.close();
+            }
+        }
+    ]
     
     Container {
         layout: DockLayout {}
@@ -41,15 +51,6 @@ Page {
         ListView {
             id: bookmarks
             objectName: "bookmarks"
-            
-//		        dataModel: XmlDataModel {
-//                    source: "debug.xml"
-//                }
-            
-            onDataModelChanged: {
-                oldestLabel.text = app.getOldestDate()
-                quickestLabel.text = app.getQuickestSize()
-            }
             
             listItemComponents: [
                 
@@ -107,7 +108,7 @@ Page {
                                 ActionItem {
                                     title: "Edit"
                                     imageSource: "asset:///images/menuicons/ic_edit.png"
-                                    onTriggered: bookmark.ListItem.view.pushEditPage(ListItemData)
+                                    onTriggered: bookmark.ListItem.view.openEditSheet(ListItemData)
                                 }
                                 ActionItem {
                                     title: "Toggle keep after read"
@@ -201,54 +202,39 @@ Page {
                         onTouch: {
                             if (event.touchType == TouchType.Down)
                                 highlight.visible = true
-                            else if (event.touchType == TouchType.Up || event.touchType == TouchType.Cancel)
+                            else if (event.touchType == TouchType.Cancel || event.touchType == TouchType.Up)
                                 highlight.visible = false
                         }
                     }                        
                 }
             ]
-            
+                       
             onTriggered: {
                 var selectedItem = dataModel.data(indexPath)
-                invokeQuery.query.uri = selectedItem.url
-                invokeQuery.query.updateQuery()
+                app.browseBookmark(selectedItem.url)
                 app.removeBookmark(selectedItem.id)
                 if (app.getSize() == 0) {
-                    homePage.remove(browsePage);
+                    mainPage.activeTab = mainPage.readTab
+                    mainPage.exploreTab.enabled = false 
                 }
             }
-            
-            property Page editPage
-            function pushEditPage(row) {
-                if (!editPage) {
-                    editPage = editPageDefinition.createObject();
-                }
-                editPage.item = row;
-                homePage.backButtonsVisible = false
-                homePage.push(editPage);
+
+            function openEditSheet(row) {
+                invokedForm.item = row
+                bookmarkSheet.open()
             }
             
             function deleteBookmark(id) {	                
                 app.removeBookmark(id, true);
-                if (app.getSize() == 0)
-                    homePage.remove(browsePage);
+                if (app.getSize() == 0) {
+                    mainPage.activeTab = readTab
+                    mainPage.exploreTab.enabled = false 
+                }
             }
             
             function toggleKeep(keep, id) {
-                app.keepBookmark(keep, id);
+                app.keepBookmark(keep, id)
             }     
-            
-            attachedObjects: [
-                Invocation {
-                    id: invokeQuery
-                    query.invokeTargetId: "sys.browser"
-                    onArmed: trigger("bb.action.OPEN")
-                },
-                ComponentDefinition {
-                    id: editPageDefinition
-                    source: "InvokedForm.qml"
-                }
-            ]
         }
 	}
 }

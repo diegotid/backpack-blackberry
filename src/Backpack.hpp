@@ -5,9 +5,10 @@
 #include "ActiveFrame.hpp"
 
 #include <bb/cascades/QmlDocument>
-#include <bb/cascades/NavigationPane>
+#include <bb/cascades/TabbedPane>
 #include <bb/cascades/AbstractPane>
 #include <bb/cascades/ListView>
+#include <bb/cascades/Page>
 #include <bb/cascades/WebPage>
 #include <bb/cascades/WebLoadRequest>
 #include <bb/cascades/WebPageCompositor>
@@ -36,6 +37,7 @@ class Backpack : public QObject
 
 public:
     Backpack(bb::cascades::Application *app);
+    Q_INVOKABLE QString getAppVersion();
     Q_INVOKABLE void setBackgroundColour(float base, float red, float green, float blue);
     Q_INVOKABLE float getBackgroundColour(QString colour);
     Q_INVOKABLE void setIgnoreKeptShuffle(bool ignore);
@@ -48,6 +50,7 @@ public:
     Q_INVOKABLE void memoBookmark(QString, int);
     Q_INVOKABLE void removeBookmark(int);
     Q_INVOKABLE void removeBookmark(int, bool);
+    Q_INVOKABLE void browseBookmark(QString uri);
     Q_INVOKABLE void shuffleBookmark();
     Q_INVOKABLE void oldestBookmark();
     Q_INVOKABLE void quickestBookmark();
@@ -55,6 +58,8 @@ public:
     Q_INVOKABLE int getQuickestSize();
     Q_INVOKABLE void keepBookmark(bool);
     Q_INVOKABLE void keepBookmark(bool, int);
+    Q_INVOKABLE void launchSearchToPutin(QString query);
+    Q_INVOKABLE void launchRating();
     virtual ~Backpack();
 
 public Q_SLOTS:
@@ -64,9 +69,7 @@ public Q_SLOTS:
 	void handleBookmarkSize(QNetworkReply*);
 
 private:
-	QmlDocument *homeQml;
-	QmlDocument *invokedQml;
-    NavigationPane *homePage;
+    TabbedPane *mainPage;
     Page *invokedForm;
 	QFile dbFile;
 	SqlDataAccess *data;
