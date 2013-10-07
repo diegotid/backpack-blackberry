@@ -28,13 +28,6 @@ TabbedPane {
             AboutSheet {
                 onClose: aboutSheet.close();
             }
-        },
-        Sheet {
-            id: invokedSheet
-            objectName: "invokedSheet"
-            InvokedForm {
-                onClose: invokedSheet.close();
-            }
         }
     ]
     

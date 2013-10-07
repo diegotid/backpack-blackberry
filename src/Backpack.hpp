@@ -69,8 +69,6 @@ public Q_SLOTS:
 	void handleBookmarkSize(QNetworkReply*);
 
 private:
-	QmlDocument *homeQml;
-	QmlDocument *invokedQml;
     TabbedPane *mainPage;
     Page *invokedForm;
 	QFile dbFile;

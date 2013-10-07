@@ -82,7 +82,6 @@ Page {
                                 imageSource = "asset:///images/buttons/lounge-press.png"
                             } else if (event.touchType == TouchType.Up) {
                                 imageSource = "asset:///images/buttons/lounge.png"
-                                mainPage.activeTab = mainPage.exploreTab
                             } else if (event.touchType == TouchType.Cancel) {
                                 imageSource = "asset:///images/buttons/lounge.png"
                             }

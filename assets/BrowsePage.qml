@@ -16,6 +16,18 @@ Page {
         backgroundBase.opacity = app.getBackgroundColour("base");
     }
     
+    attachedObjects: [
+        Sheet {
+            id: bookmarkSheet
+            objectName: "bookmarkSheet"
+            InvokedForm {
+                id: invokedForm
+                objectName: "invokedForm"
+                onClose: bookmarkSheet.close();
+            }
+        }
+    ]
+    
     Container {
         layout: DockLayout {}
         
@@ -96,7 +108,7 @@ Page {
                                 ActionItem {
                                     title: "Edit"
                                     imageSource: "asset:///images/menuicons/ic_edit.png"
-                                    onTriggered: bookmark.ListItem.view.pushEditPage(ListItemData)
+                                    onTriggered: bookmark.ListItem.view.openEditSheet(ListItemData)
                                 }
                                 ActionItem {
                                     title: "Toggle keep after read"
@@ -207,13 +219,9 @@ Page {
                 }
             }
 
-            property Page editPage
-            function pushEditPage(row) {
-                if (!editPage) {
-                    editPage = editPageDefinition.createObject()
-                }
-                editPage.item = row
-                editSheet.open()
+            function openEditSheet(row) {
+                invokedForm.item = row
+                bookmarkSheet.open()
             }
             
             function deleteBookmark(id) {	                
@@ -227,13 +235,6 @@ Page {
             function toggleKeep(keep, id) {
                 app.keepBookmark(keep, id)
             }     
-            
-            attachedObjects: [
-                ComponentDefinition {
-                    id: editPageDefinition
-                    source: "InvokedForm.qml"
-                }
-            ]
         }
 	}
 }

@@ -34,13 +34,6 @@ Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
 
 	if (!databaseExists()) createDatabase();
 
-    homeQml = QmlDocument::create("asset:///main.qml").parent(this);
-    homeQml->setContextProperty("app", this);
-
-	invokedQml = QmlDocument::create("asset:///InvokedForm.qml").parent(this);
-    invokedQml->setContextProperty("app", this);
-	invokedForm = invokedQml->createRootObject<Page>();
-
 	iManager = new InvokeManager(this);
 	connect(iManager, SIGNAL(invoked(const bb::system::InvokeRequest&)), this, SLOT(handleInvoke(const bb::system::InvokeRequest&)));
 
@@ -57,15 +50,22 @@ Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
 
 	if (iManager->startupMode() == ApplicationStartupMode::InvokeApplication) {
 
+		QmlDocument *invokedQml = QmlDocument::create("asset:///InvokedForm.qml").parent(this);
+	    invokedQml->setContextProperty("app", this);
+		invokedForm = invokedQml->createRootObject<Page>();
+
 		app->setScene(invokedForm);
 
 	} else {
 
+		QmlDocument *homeQml = QmlDocument::create("asset:///main.qml").parent(this);
+	    homeQml->setContextProperty("app", this);
 	    mainPage = homeQml->createRootObject<TabbedPane>();
-	    app->setScene(mainPage);
 
+	    app->setScene(mainPage);
 		activeFrame = (ActiveFrame*)app->cover();
 
+		invokedForm = mainPage->findChild<Page*>("invokedForm");
 		bookmarks = mainPage->at(1)->content()->findChild<ListView*>("bookmarks");
 		refreshBookmarks();
 	}
@@ -173,8 +173,6 @@ bool Backpack::getIgnoreKeptQuickest() {
 
 void Backpack::refreshBookmarks() {
 
-    qDebug() << "refreshBookmarks()";
-
 	QVariant list = data->execute("SELECT * FROM Bookmark");
 	GroupDataModel *model = new GroupDataModel(QStringList() << "date" << "time");
 	model->insertList(list.value<QVariantList>());
@@ -183,32 +181,21 @@ void Backpack::refreshBookmarks() {
     bookmarks->setDataModel(model);
     bookmarksNumber = list.toList().size();
 
-    qDebug() << "refreshBookmarks() bookmarksNumber: " << bookmarksNumber;
-
 	mainPage->findChild<QObject*>("oldestLabel")->setProperty("text", getOldestDate().toString(Qt::ISODate));
 	mainPage->findChild<QObject*>("quickestLabel")->setProperty("text", getQuickestSize());
 
-    qDebug() << "refreshBookmarks() labels set";
-
     activeFrame->update(true);
-
-    qDebug() << "refreshBookmarks() activeFrame updated";
-
     activeFrame->takeFigures(this);
-
-    qDebug() << "refreshBookmarks() activeFrame figures set";
 
 	mainPage->findChild<Tab*>("readTab")->setEnabled(bookmarksNumber > 0);
 	mainPage->findChild<Tab*>("exploreTab")->setEnabled(bookmarksNumber > 0);
 	mainPage->findChild<QObject*>("emptyHint")->setProperty("visible", bookmarksNumber == 0);
-
-	qDebug() << "refreshBookmarks() homePage updated";
 }
 
 void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication)
-		mainPage->findChild<Sheet*>("invokedSheet")->open();
+		mainPage->findChild<Sheet*>("bookmarkSheet")->open();
 
 	invokedForm->findChild<QObject*>("activity")->setProperty("visible", true);
 	invokedForm->findChild<QObject*>("status")->setProperty("text", "Fetching page content...");
@@ -323,10 +310,8 @@ void Backpack::memoBookmark(QString memo, int id) {
 
 	bool empty = memo.compare("") == 0;
 
-	if (!empty) {
-		QVariantList memoValues;
-		data->execute(QString("UPDATE Bookmark SET memo = ? WHERE id = ?"), memoValues << memo << id);
-	}
+	if (!empty)
+		data->execute(QString("UPDATE Bookmark SET memo = ? WHERE id = ?"), QVariantList() << memo << id);
 
 	invokedForm->findChild<TextArea*>("memo")->setEnabled(false);
 	if (empty)
