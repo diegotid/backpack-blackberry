@@ -6,6 +6,7 @@ Page {
     objectName: "invokedForm"
 
     property variant item
+    signal close();
     
     titleBar: TitleBar {
         title: "My Backpack"
@@ -16,15 +17,11 @@ Page {
             title: "Close"
 
             onTriggered: {
-                if (invokedForm.parent.objectName == "homePage") {
-                    invokedForm.parent.backButtonsVisible = true;
-                    invokedForm.parent.remove(invokedForm);
-                    memo.text = item.memo;
-                    title = (memo.text != "") ? "Cancel" : "Close";
-                    acceptButton.enabled = (memo.text != "");
-                } else {
-                    Application.quit();
-                }
+                if (invokedForm.parent.objectName == "bookmarkSheet") {
+	                invokedForm.close()
+	            } else {
+	                Application.quit()
+	            }
             }
         }
         
@@ -35,10 +32,8 @@ Page {
             enabled: false
             
             onTriggered: {
-                item ? app.memoBookmark(memo.text, item.id) : app.memoBookmark(memo.text);
-                if (invokedForm.parent.objectName == "homePage") {
-                    invokedForm.parent.remove(invokedForm);
-                }
+                item ? app.memoBookmark(memo.text, item.id) : app.memoBookmark(memo.text)
+                invokedForm.close()
             }
         }
     }
@@ -200,7 +195,7 @@ Page {
                         Label {
                             id: keepLabel
                             objectName: "keepLabel"
-                            text: "Keep after reading"
+                            text: "Keep after read"
                             textStyle.color: Color.LightGray
                             verticalAlignment: VerticalAlignment.Center
                         }

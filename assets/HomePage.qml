@@ -1,128 +1,62 @@
 
 import bb.cascades 1.0
 
-NavigationPane {
-    id: homePage
-    objectName: "homePage"
-    
-    onPopTransitionEnded: {
-        backButtonsVisible = true
+Page {
+    titleBar: TitleBar {
+        title: "My Backpack"
+        scrollBehavior: TitleBarScrollBehavior.Sticky // Comment for 10.0
     }
-        
+    
     attachedObjects: [
-        Sheet {
-            id: settingsSheet
-            SettingsSheet {
-                onClose: settingsSheet.close();
-            }
-        },
-//        Sheet {
-//            id: aboutSheet
-//            AboutSheet {
-//                onClose: aboutSheet.close();
-//            }
-//        },
-        BrowsePage {
-            id: browsePage
-            objectName: "browsePage"
+        ImagePaintDefinition {
+            id: toast
+            imageSource: "asset:///images/toast.amd"
         }
     ]
     
-    Menu.definition: MenuDefinition {
-        settingsAction: SettingsActionItem {
-            onTriggered: settingsSheet.open();
-        }
-    }
+    onCreationCompleted: loadBackground()
     
-    function reloadBackgrounds() {
-        for (var i = 0; i < count(); i++) {
-            at(i).loadBackground();
-        }
-        browsePage.loadBackground();
+    function loadBackground() {
+        backgroundRed.opacity = app.getBackgroundColour("red");
+        backgroundGreen.opacity = app.getBackgroundColour("green");
+        backgroundBlue.opacity = app.getBackgroundColour("blue");
+        backgroundBase.opacity = app.getBackgroundColour("base");
     }
+
+    Container {
+        layout: DockLayout {}
         
-	Page {
-	    titleBar: TitleBar {
-	        title: "My Backpack"
-	        scrollBehavior: TitleBarScrollBehavior.Sticky // Comment for 10.0
-	    }
-        
-        attachedObjects: [
-            ImagePaintDefinition {
-                id: background
-                imageSource: "asset:///images/shadow.png"
-                repeatPattern: RepeatPattern.X
-            },
-            ImagePaintDefinition {
-                id: toast
-                imageSource: "asset:///images/toast.amd"
-            }
-        ]
-	    
-        onCreationCompleted: loadBackground()
-        
-        function loadBackground() {
-            backgroundRed.opacity = app.getBackgroundColour("red");
-            backgroundGreen.opacity = app.getBackgroundColour("green");
-            backgroundBlue.opacity = app.getBackgroundColour("blue");
-            backgroundBase.opacity = app.getBackgroundColour("base");
+        ImageView {
+            id: backgroundRed
+            imageSource: "asset:///images/background-red.png"
         }
-
+        ImageView {
+            id: backgroundGreen
+            imageSource: "asset:///images/background-green.png"
+        }
+        ImageView {
+            id: backgroundBlue
+            imageSource: "asset:///images/background-blue.png"
+        }
+        ImageView {
+            id: backgroundBase
+            imageSource: "asset:///images/background.png"
+        }
+        
         Container {
-	        layout: DockLayout {}
-	        
-            ImageView {
-                id: backgroundRed
-                imageSource: "asset:///images/background-red.png"
-            }
-            ImageView {
-                id: backgroundGreen
-                imageSource: "asset:///images/background-green.png"
-            }
-            ImageView {
-                id: backgroundBlue
-                imageSource: "asset:///images/background-blue.png"
-            }
-            ImageView {
-                id: backgroundBase
-                imageSource: "asset:///images/background.png"
-            }
-	        
-            Container {
-			    id: hint
-			    objectName: "hint"
-                topPadding: 30
-                bottomPadding: 30
-                leftPadding: 30
-                rightPadding: 30
-                background: background.imagePaint
-                horizontalAlignment: HorizontalAlignment.Fill
-                visible: false
-			    
-			    Label {
-			        multiline: true	            
-			        text: "<html>Nothing in your backpack<br/><br/>To put content in your backpack that you want to read later, just use the share menu option from your browser on any page and select &quot;My Backpack&quot;</html>"
-			    }
-			    
-                ImageView {
-                    imageSource: "asset:///images/empty-hint.png"
-                    horizontalAlignment: HorizontalAlignment.Center
-                    topMargin: 35
-			    }
-			}
-		        
-	        Container {
-	            id: buttons
-	            objectName: "buttons"
-                horizontalAlignment: HorizontalAlignment.Center
-                verticalAlignment: VerticalAlignment.Center
-//                visible: false
-                             
-                Container { // 1st row
-                    layout: StackLayout {
-                        orientation: LayoutOrientation.LeftToRight
-                    }
+            id: buttons
+            objectName: "buttons"
+            horizontalAlignment: HorizontalAlignment.Center
+            verticalAlignment: VerticalAlignment.Center
+                         
+            Container { // 1st row
+                layout: StackLayout {
+                    orientation: LayoutOrientation.LeftToRight
+                }
 
+                Container {
+                    layout: DockLayout {}
+                    
                     ImageView {
                         imageSource: "asset:///images/buttons/shuffle.png"
                         onTouch: {
@@ -136,64 +70,126 @@ NavigationPane {
                             }
                         }
                     }
+                }
+
+                Container {
+                    layout: DockLayout {}
+   
                     ImageView {
-                        imageSource: "asset:///images/buttons/browse.png"
+                        imageSource: "asset:///images/buttons/lounge.png"
                         onTouch: {
                             if (event.touchType == TouchType.Down) {
-                                imageSource = "asset:///images/buttons/browse-press.png"
+                                imageSource = "asset:///images/buttons/lounge-press.png"
                             } else if (event.touchType == TouchType.Up) {
-                                imageSource = "asset:///images/buttons/browse.png"
-                                homePage.backButtonsVisible = true
-                                homePage.push(browsePage);
+                                imageSource = "asset:///images/buttons/lounge.png"
+                                app.loungeBookmark()
                             } else if (event.touchType == TouchType.Cancel) {
-                                imageSource = "asset:///images/buttons/browse.png"
+                                imageSource = "asset:///images/buttons/lounge.png"
+                            }
+                        }
+                    }
+                    
+                    Container {
+                        layout: StackLayout {
+                            orientation: LayoutOrientation.LeftToRight
+                        }
+                        horizontalAlignment: HorizontalAlignment.Right
+                        
+                        Container {
+                            layout: StackLayout {
+                                orientation: LayoutOrientation.LeftToRight
+                            }
+                            background: toast.imagePaint
+                            leftPadding: 28
+                            rightPadding: 25
+                            
+                            Container {
+	                            topPadding: 8
+	                            bottomPadding: 20
+	
+	                            Label {
+	                                id: loungeLabel
+	                                objectName: "loungeLabel"
+	                                text: app.getLoungeSize()
+	                                textStyle.fontSize: FontSize.Medium
+	                                textStyle.color: Color.White
+	                                
+	                                onCreationCompleted: formatTime()
+	                                onTextChanged: formatTime()
+	                                
+	                                function formatTime() {
+	                                    if (text.indexOf("min") < 0) {
+	                                        var k10 = (text - text % 10000) / 10000
+	                                        switch (k10) {
+	                                            case 0:
+	                                                text = "< 1 min"
+	                                                break;
+	                                            default:
+	                                                text = k10 + " min" 
+	                                        }
+	                                    }
+	                                }
+	                            }
+	                        }
+                            
+                            ImageView {
+                                id: loungeLabelZip
+                                objectName: "loungeLabelZip"
+                                visible: false
+                                imageSource: "asset:///images/zipMini.png"
+                                translationY: 17
                             }
                         }
                     }
                 }
-                
-                Container { // 2nd row
-                    layout: StackLayout {
-                        orientation: LayoutOrientation.LeftToRight
-                    }
+            }
+            
+            Container { // 2nd row
+                layout: StackLayout {
+                    orientation: LayoutOrientation.LeftToRight
+                }
 
-                    Container {
-                        layout: DockLayout {}
-                        
-                        ImageView {
-                            imageSource: "asset:///images/buttons/oldest.png"
-                            onTouch: {
-                                if (event.touchType == TouchType.Down) {
-                                    imageSource = "asset:///images/buttons/oldest-press.png"
-                                } else if (event.touchType == TouchType.Up) {
-                                    imageSource = "asset:///images/buttons/oldest.png"
-                                    app.oldestBookmark()
-                                } else if (event.touchType == TouchType.Cancel) {
-                                    imageSource = "asset:///images/buttons/oldest.png"
-                                }
+                Container {
+                    layout: DockLayout {}
+                    
+                    ImageView {
+                        imageSource: "asset:///images/buttons/oldest.png"
+                        onTouch: {
+                            if (event.touchType == TouchType.Down) {
+                                imageSource = "asset:///images/buttons/oldest-press.png"
+                            } else if (event.touchType == TouchType.Up) {
+                                imageSource = "asset:///images/buttons/oldest.png"
+                                app.oldestBookmark()
+                            } else if (event.touchType == TouchType.Cancel) {
+                                imageSource = "asset:///images/buttons/oldest.png"
                             }
                         }
-                        
-                       Container {
+                    }
+                    
+                   Container {
+                        layout: StackLayout {
+                            orientation: LayoutOrientation.LeftToRight
+                        }
+                        horizontalAlignment: HorizontalAlignment.Right
+
+                        Container {
                             layout: StackLayout {
                                 orientation: LayoutOrientation.LeftToRight
                             }
-                            horizontalAlignment: HorizontalAlignment.Right
-
+                            background: toast.imagePaint
+                            leftPadding: 28
+                            rightPadding: 25
+                            
                             Container {
-                                background: toast.imagePaint
                                 topPadding: 8
-                                rightPadding: 25
                                 bottomPadding: 20
-                                leftPadding: 25
-                                
-                                Label {
+                            
+	                            Label {
 		                            id: oldestLabel
 		                            objectName: "oldestLabel"
-//		                            text: "Yesterday"
-                                    text: app.getOldestDate()
-                                    textStyle.fontSize: FontSize.Medium
-                                    textStyle.color: Color.White
+	                                text: app.getOldestDate().toString("yyyy-MM-dd")
+	                                textStyle.fontSize: FontSize.Medium
+	                                textStyle.color: Color.White
 	                                                       
 		                            onCreationCompleted: formatDate()
 		                            onTextChanged: formatDate()
@@ -204,7 +200,7 @@ NavigationPane {
 			                                today = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
 			                                var header = new Date(text.substring(0,4), text.substring(5,7) - 1, text.substring(8,10), 0, 0, 0, 0);
 			                                var hours = (today.getTime() - header.getTime()) / 1000 / 60 / 60;
-                                            var days = (hours - hours % 24) / 24; 
+	                                        var days = (hours - hours % 24) / 24; 
 			                                switch (days) {
 			                                case 0:
 			                                    text = "Today";
@@ -214,65 +210,79 @@ NavigationPane {
 			                                    break;
 			                                default:
 			                                    if (days < 7) {
-                                                    text = days + " day" + (days > 1 ? "s" : "") + " ago";
-                                                    break;   
+	                                                text = days + " day" + (days > 1 ? "s" : "") + " ago";
+	                                                break;   
 			                                    } else if (days < 31) {
 			                                        var weeks = (days - days % 7) / 7;
 			                                        text = weeks + " week" + (weeks > 1 ? "s" : "") + " ago";
 			                                        break;
 			                                    }
 			                                    var months = (days - days % 31) / 31;
-                                                text = months + " month" + (months > 1 ? "s" : "") + " ago";
+	                                            text = months + " month" + (months > 1 ? "s" : "") + " ago";
 			                                }
 			                            }
 		                            }
 		                        }
+	                            
                             }
-	                    }
-                    }
-
-                    Container {
-                        layout: DockLayout {}
-                        
-                        ImageView {
-                            imageSource: "asset:///images/buttons/quickest.png"
-                            onTouch: {
-                                if (event.touchType == TouchType.Down) {
-                                    imageSource = "asset:///images/buttons/quickest-press.png"
-                                } else if (event.touchType == TouchType.Up) {
-                                    imageSource = "asset:///images/buttons/quickest.png"
-                                    app.quickestBookmark()
-                                } else if (event.touchType == TouchType.Cancel) {
-                                    imageSource = "asset:///images/buttons/quickest.png"
-                                }
+                            
+                            ImageView {
+                                id: oldestLabelZip
+                                objectName: "oldestLabelZip"
+                                visible: false
+                                imageSource: "asset:///images/zipMini.png"
+                                translationY: 17
                             }
                         }
+                    }
+                }
+
+                Container {
+                    layout: DockLayout {}
+                    
+                    ImageView {
+                        imageSource: "asset:///images/buttons/quickest.png"
+                        onTouch: {
+                            if (event.touchType == TouchType.Down) {
+                                imageSource = "asset:///images/buttons/quickest-press.png"
+                            } else if (event.touchType == TouchType.Up) {
+                                imageSource = "asset:///images/buttons/quickest.png"
+                                app.quickestBookmark()
+                            } else if (event.touchType == TouchType.Cancel) {
+                                imageSource = "asset:///images/buttons/quickest.png"
+                            }
+                        }
+                    }
+                    
+                    Container {
+                        layout: StackLayout {
+                            orientation: LayoutOrientation.LeftToRight
+                        }
+                        horizontalAlignment: HorizontalAlignment.Right
                         
                         Container {
                             layout: StackLayout {
                                 orientation: LayoutOrientation.LeftToRight
                             }
-                            horizontalAlignment: HorizontalAlignment.Right
+                            background: toast.imagePaint
+                            leftPadding: 28
+                            rightPadding: 25
                             
                             Container {
-                                background: toast.imagePaint
                                 topPadding: 8
-                                rightPadding: 25
                                 bottomPadding: 20
-                                leftPadding: 25
-                                
+                            
 		                        Label {
 		                            id: quickestLabel
 		                            objectName: "quickestLabel"
-//	                                text: "< 1 min"
 		                            text: app.getQuickestSize()
-                                    textStyle.fontSize: FontSize.Medium
-                                    textStyle.color: Color.White
+	                                textStyle.fontSize: FontSize.Medium
+	                                textStyle.color: Color.White
 	                                
 		                            onCreationCompleted: formatTime()
 		                            onTextChanged: formatTime()
-                                    
-                                    function formatTime() {
+	                                
+	                                function formatTime() {
 	                                    if (text.indexOf("min") < 0) {
 	                                        var k10 = (text - text % 10000) / 10000
 	                                        switch (k10) {
@@ -285,11 +295,19 @@ NavigationPane {
 	                                    }
 	                                }
 		                        }
-                          	}
-	                    }
+		                    }
+                            
+	                        ImageView {
+	                            id: quickestLabelZip
+                                objectName: "quickestLabelZip"
+	                            visible: false
+	                            imageSource: "asset:///images/zipMini.png"
+	                            translationY: 17
+	                        }
+                      	}
                     }
                 }
             }
-		}
+        }
 	}
 }

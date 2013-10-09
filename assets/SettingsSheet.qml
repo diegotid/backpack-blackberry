@@ -9,6 +9,7 @@ Page {
     property bool prevKeptShuffle: app.getIgnoreKeptShuffle()
     property bool prevKeptOldest: app.getIgnoreKeptOldest()
     property bool prevKeptQuickest: app.getIgnoreKeptQuickest()
+    property bool prevKeptLounge: app.getIgnoreKeptLounge()
 
     titleBar: TitleBar {
         title: "Settings"
@@ -18,6 +19,7 @@ Page {
                 ignoreKeptShuffle.checked = prevKeptShuffle;
                 ignoreKeptOldest.checked = prevKeptOldest;
                 ignoreKeptQuickest.checked = prevKeptQuickest;
+                ignoreKeptLounge.checked = prevKeptLounge;
                 settings.close();   
             }
         }
@@ -25,13 +27,15 @@ Page {
             title: "Confirm"
             onTriggered: {
                 app.setBackgroundColour(originalSlider.value, redSlider.value, greenSlider.value, blueSlider.value)
-                homePage.reloadBackgrounds();
+                mainPage.reloadBackgrounds();
                 app.setIgnoreKeptShuffle(ignoreKeptShuffle.checked);
                 app.setIgnoreKeptOldest(ignoreKeptOldest.checked);
                 app.setIgnoreKeptQuickest(ignoreKeptQuickest.checked);
+                app.setIgnoreKeptLounge(ignoreKeptLounge.checked);
                 prevKeptShuffle = ignoreKeptShuffle.checked;
                 prevKeptOldest = ignoreKeptOldest.checked;
                 prevKeptQuickest = ignoreKeptQuickest.checked;
+                prevKeptLounge = ignoreKeptLounge.checked;
                 settings.close();
             }
         }
@@ -44,7 +48,7 @@ Page {
             
             Header {
                 title: "Ignore kept bookmarks for..."
-                subtitle: "(if no kept exist)"
+                subtitle: "(if any no kept)"
             }
             
             Container {
@@ -93,6 +97,7 @@ Page {
                 topPadding: 10.0
                 leftPadding: 20.0
                 rightPadding: 20.0
+                bottomMargin: 10.0
                 
                 Label {
                     text: "Quickest"
@@ -104,6 +109,27 @@ Page {
                     horizontalAlignment: HorizontalAlignment.Right
                     verticalAlignment: VerticalAlignment.Center
                     checked: app.getIgnoreKeptQuickest();
+                }
+            }    
+            
+            Container {
+                layout: DockLayout {}
+                horizontalAlignment: HorizontalAlignment.Fill
+                topPadding: 10.0
+                leftPadding: 20.0
+                rightPadding: 20.0
+                bottomMargin: 10.0
+                
+                Label {
+                    text: "Lounge"
+                    verticalAlignment: VerticalAlignment.Center
+                }
+                
+                ToggleButton {
+                    id: ignoreKeptLounge
+                    horizontalAlignment: HorizontalAlignment.Right
+                    verticalAlignment: VerticalAlignment.Center
+                    checked: app.getIgnoreKeptLounge();
                 }
             }    
 
