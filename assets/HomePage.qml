@@ -96,34 +96,48 @@ Page {
                         horizontalAlignment: HorizontalAlignment.Right
                         
                         Container {
+                            layout: StackLayout {
+                                orientation: LayoutOrientation.LeftToRight
+                            }
                             background: toast.imagePaint
-                            topPadding: 8
+                            leftPadding: 28
                             rightPadding: 25
-                            bottomPadding: 20
-                            leftPadding: 25
                             
-                            Label {
-                                id: loungeLabel
-                                objectName: "loungeLabel"
-                                text: app.getLoungeSize()
-                                textStyle.fontSize: FontSize.Medium
-                                textStyle.color: Color.White
-                                
-                                onCreationCompleted: formatTime()
-                                onTextChanged: formatTime()
-                                
-                                function formatTime() {
-                                    if (text.indexOf("min") < 0) {
-                                        var k10 = (text - text % 10000) / 10000
-                                        switch (k10) {
-                                            case 0:
-                                                text = "< 1 min"
-                                                break;
-                                            default:
-                                                text = k10 + " min" 
-                                        }
-                                    }
-                                }
+                            Container {
+	                            topPadding: 8
+	                            bottomPadding: 20
+	
+	                            Label {
+	                                id: loungeLabel
+	                                objectName: "loungeLabel"
+	                                text: app.getLoungeSize()
+	                                textStyle.fontSize: FontSize.Medium
+	                                textStyle.color: Color.White
+	                                
+	                                onCreationCompleted: formatTime()
+	                                onTextChanged: formatTime()
+	                                
+	                                function formatTime() {
+	                                    if (text.indexOf("min") < 0) {
+	                                        var k10 = (text - text % 10000) / 10000
+	                                        switch (k10) {
+	                                            case 0:
+	                                                text = "< 1 min"
+	                                                break;
+	                                            default:
+	                                                text = k10 + " min" 
+	                                        }
+	                                    }
+	                                }
+	                            }
+	                        }
+                            
+                            ImageView {
+                                id: loungeLabelZip
+                                objectName: "loungeLabelZip"
+                                visible: false
+                                imageSource: "asset:///images/zipMini.png"
+                                translationY: 17
                             }
                         }
                     }
@@ -159,51 +173,66 @@ Page {
                         horizontalAlignment: HorizontalAlignment.Right
 
                         Container {
+                            layout: StackLayout {
+                                orientation: LayoutOrientation.LeftToRight
+                            }
                             background: toast.imagePaint
-                            topPadding: 8
+                            leftPadding: 28
                             rightPadding: 25
-                            bottomPadding: 20
-                            leftPadding: 25
                             
-                            Label {
-	                            id: oldestLabel
-	                            objectName: "oldestLabel"
-                                text: app.getOldestDate().toString("yyyy-MM-dd")
-                                textStyle.fontSize: FontSize.Medium
-                                textStyle.color: Color.White
-                                                       
-	                            onCreationCompleted: formatDate()
-	                            onTextChanged: formatDate()
-	                            
-                                function formatDate() {
-	                                if (text.substring(4,5) == "-") {
-		                                var today = new Date();
-		                                today = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-		                                var header = new Date(text.substring(0,4), text.substring(5,7) - 1, text.substring(8,10), 0, 0, 0, 0);
-		                                var hours = (today.getTime() - header.getTime()) / 1000 / 60 / 60;
-                                        var days = (hours - hours % 24) / 24; 
-		                                switch (days) {
-		                                case 0:
-		                                    text = "Today";
-		                                    break;
-		                                case 1:
-		                                    text = "Yesterday";
-		                                    break;
-		                                default:
-		                                    if (days < 7) {
-                                                text = days + " day" + (days > 1 ? "s" : "") + " ago";
-                                                break;   
-		                                    } else if (days < 31) {
-		                                        var weeks = (days - days % 7) / 7;
-		                                        text = weeks + " week" + (weeks > 1 ? "s" : "") + " ago";
-		                                        break;
-		                                    }
-		                                    var months = (days - days % 31) / 31;
-                                            text = months + " month" + (months > 1 ? "s" : "") + " ago";
-		                                }
+                            Container {
+                                topPadding: 8
+                                bottomPadding: 20
+                            
+	                            Label {
+		                            id: oldestLabel
+		                            objectName: "oldestLabel"
+	                                text: app.getOldestDate().toString("yyyy-MM-dd")
+	                                textStyle.fontSize: FontSize.Medium
+	                                textStyle.color: Color.White
+	                                                       
+		                            onCreationCompleted: formatDate()
+		                            onTextChanged: formatDate()
+		                            
+	                                function formatDate() {
+		                                if (text.substring(4,5) == "-") {
+			                                var today = new Date();
+			                                today = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+			                                var header = new Date(text.substring(0,4), text.substring(5,7) - 1, text.substring(8,10), 0, 0, 0, 0);
+			                                var hours = (today.getTime() - header.getTime()) / 1000 / 60 / 60;
+	                                        var days = (hours - hours % 24) / 24; 
+			                                switch (days) {
+			                                case 0:
+			                                    text = "Today";
+			                                    break;
+			                                case 1:
+			                                    text = "Yesterday";
+			                                    break;
+			                                default:
+			                                    if (days < 7) {
+	                                                text = days + " day" + (days > 1 ? "s" : "") + " ago";
+	                                                break;   
+			                                    } else if (days < 31) {
+			                                        var weeks = (days - days % 7) / 7;
+			                                        text = weeks + " week" + (weeks > 1 ? "s" : "") + " ago";
+			                                        break;
+			                                    }
+			                                    var months = (days - days % 31) / 31;
+	                                            text = months + " month" + (months > 1 ? "s" : "") + " ago";
+			                                }
+			                            }
 		                            }
-	                            }
-	                        }
+		                        }
+	                            
+                            }
+                            
+                            ImageView {
+                                id: oldestLabelZip
+                                objectName: "oldestLabelZip"
+                                visible: false
+                                imageSource: "asset:///images/zipMini.png"
+                                translationY: 17
+                            }
                         }
                     }
                 }
@@ -232,34 +261,48 @@ Page {
                         horizontalAlignment: HorizontalAlignment.Right
                         
                         Container {
+                            layout: StackLayout {
+                                orientation: LayoutOrientation.LeftToRight
+                            }
                             background: toast.imagePaint
-                            topPadding: 8
+                            leftPadding: 28
                             rightPadding: 25
-                            bottomPadding: 20
-                            leftPadding: 25
                             
-	                        Label {
-	                            id: quickestLabel
-	                            objectName: "quickestLabel"
-	                            text: app.getQuickestSize()
-                                textStyle.fontSize: FontSize.Medium
-                                textStyle.color: Color.White
-                                
-	                            onCreationCompleted: formatTime()
-	                            onTextChanged: formatTime()
-                                
-                                function formatTime() {
-                                    if (text.indexOf("min") < 0) {
-                                        var k10 = (text - text % 10000) / 10000
-                                        switch (k10) {
-                                        case 0:
-                                            text = "< 1 min"
-                                            break;
-                                        default:
-                                            text = k10 + " min" 
-                                        }
-                                    }
-                                }
+                            Container {
+                                topPadding: 8
+                                bottomPadding: 20
+                            
+		                        Label {
+		                            id: quickestLabel
+		                            objectName: "quickestLabel"
+		                            text: app.getQuickestSize()
+	                                textStyle.fontSize: FontSize.Medium
+	                                textStyle.color: Color.White
+	                                
+		                            onCreationCompleted: formatTime()
+		                            onTextChanged: formatTime()
+	                                
+	                                function formatTime() {
+	                                    if (text.indexOf("min") < 0) {
+	                                        var k10 = (text - text % 10000) / 10000
+	                                        switch (k10) {
+	                                        case 0:
+	                                            text = "< 1 min"
+	                                            break;
+	                                        default:
+	                                            text = k10 + " min" 
+	                                        }
+	                                    }
+	                                }
+		                        }
+		                    }
+                            
+	                        ImageView {
+	                            id: quickestLabelZip
+                                objectName: "quickestLabelZip"
+	                            visible: false
+	                            imageSource: "asset:///images/zipMini.png"
+	                            translationY: 17
 	                        }
                       	}
                     }

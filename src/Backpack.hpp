@@ -60,6 +60,7 @@ public:
     Q_INVOKABLE QDate getOldestDate();
     Q_INVOKABLE int getQuickestSize();
     Q_INVOKABLE int getLoungeSize();
+    Q_INVOKABLE bool isKeptOnly();
     Q_INVOKABLE void keepBookmark(bool);
     Q_INVOKABLE void keepBookmark(bool, int);
     Q_INVOKABLE void launchSearchToPutin(QString query);

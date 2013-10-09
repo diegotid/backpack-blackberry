@@ -143,7 +143,9 @@ void Backpack::setIgnoreKeptOldest(bool ignore) {
 	settings.setValue("ignoreKeptOldest", ignore);
 
 	mainPage->findChild<QObject*>("oldestLabel")->setProperty("text", getOldestDate().toString(Qt::ISODate));
-    activeFrame->takeFigures(this);
+	mainPage->findChild<QObject*>("oldestLabelZip")->setProperty("visible", isKeptOnly());
+
+	activeFrame->takeFigures(this);
 }
 
 bool Backpack::getIgnoreKeptOldest() {
@@ -160,6 +162,8 @@ void Backpack::setIgnoreKeptQuickest(bool ignore) {
 	settings.setValue("ignoreKeptQuickest", ignore);
 
 	mainPage->findChild<QObject*>("quickestLabel")->setProperty("text", getQuickestSize());
+	mainPage->findChild<QObject*>("quickestLabelZip")->setProperty("visible", isKeptOnly());
+
     activeFrame->takeFigures(this);
 }
 
@@ -177,7 +181,9 @@ void Backpack::setIgnoreKeptLounge(bool ignore) {
 	settings.setValue("ignoreKeptLounge", ignore);
 
 	mainPage->findChild<QObject*>("loungeLabel")->setProperty("text", getLoungeSize());
-    activeFrame->takeFigures(this);
+	mainPage->findChild<QObject*>("loungeLabelZip")->setProperty("visible", isKeptOnly());
+
+	activeFrame->takeFigures(this);
 }
 
 bool Backpack::getIgnoreKeptLounge() {
@@ -201,6 +207,9 @@ void Backpack::refreshBookmarks() {
 	mainPage->findChild<QObject*>("oldestLabel")->setProperty("text", getOldestDate().toString(Qt::ISODate));
 	mainPage->findChild<QObject*>("quickestLabel")->setProperty("text", getQuickestSize());
 	mainPage->findChild<QObject*>("loungeLabel")->setProperty("text", getLoungeSize());
+	mainPage->findChild<QObject*>("oldestLabelZip")->setProperty("visible", isKeptOnly());
+	mainPage->findChild<QObject*>("quickestLabelZip")->setProperty("visible", isKeptOnly());
+	mainPage->findChild<QObject*>("loungeLabelZip")->setProperty("visible", isKeptOnly());
 
     activeFrame->update(true);
     activeFrame->takeFigures(this);
@@ -272,6 +281,8 @@ void Backpack::handleBookmarkSize(QNetworkReply *reply) {
 		refreshBookmarks();
 		mainPage->findChild<QObject*>("quickestLabel")->setProperty("text", QString::number(getQuickestSize()));
 		mainPage->findChild<QObject*>("loungeLabel")->setProperty("text", QString::number(getLoungeSize()));
+		mainPage->findChild<QObject*>("quickestLabelZip")->setProperty("visible", isKeptOnly());
+		mainPage->findChild<QObject*>("loungeLabelZip")->setProperty("visible", isKeptOnly());
 	}
 
 	reply->deleteLater();
@@ -451,6 +462,7 @@ void Backpack::quickestBookmark() {
 	removeBookmark(ids.value(0).toMap().value("id").toInt());
 
 	mainPage->findChild<QObject*>("quickestLabel")->setProperty("text", QString::number(getQuickestSize()));
+	mainPage->findChild<QObject*>("quickestLabelZip")->setProperty("visible", isKeptOnly());
 
 	InvokeManager invokeSender;
 	InvokeRequest request;
@@ -479,6 +491,7 @@ void Backpack::loungeBookmark() {
 	removeBookmark(ids.value(0).toMap().value("id").toInt());
 
 	mainPage->findChild<QObject*>("loungeLabel")->setProperty("text", QString::number(getLoungeSize()));
+	mainPage->findChild<QObject*>("loungeLabelZip")->setProperty("visible", isKeptOnly());
 
 	InvokeManager invokeSender;
 	InvokeRequest request;
@@ -548,6 +561,11 @@ int Backpack::getLoungeSize() {
 		return 0;
 	else
 		return lounge.toInt();
+}
+
+bool Backpack::isKeptOnly() {
+
+	return data->execute("SELECT COUNT(*) noKept FROM Bookmark WHERE keep IS NOT ?", QVariantList() << true).toList().value(0).toMap().value("noKept").toInt() == 0;
 }
 
 void Backpack::keepBookmark(bool keep) {
