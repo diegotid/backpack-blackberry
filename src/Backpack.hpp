@@ -46,6 +46,8 @@ public:
     Q_INVOKABLE bool getIgnoreKeptOldest();
     Q_INVOKABLE void setIgnoreKeptQuickest(bool ignore);
     Q_INVOKABLE bool getIgnoreKeptQuickest();
+    Q_INVOKABLE void setIgnoreKeptLounge(bool ignore);
+    Q_INVOKABLE bool getIgnoreKeptLounge();
     Q_INVOKABLE void memoBookmark(QString);
     Q_INVOKABLE void memoBookmark(QString, int);
     Q_INVOKABLE void removeBookmark(int);
@@ -54,8 +56,10 @@ public:
     Q_INVOKABLE void shuffleBookmark();
     Q_INVOKABLE void oldestBookmark();
     Q_INVOKABLE void quickestBookmark();
+    Q_INVOKABLE void loungeBookmark();
     Q_INVOKABLE QDate getOldestDate();
     Q_INVOKABLE int getQuickestSize();
+    Q_INVOKABLE int getLoungeSize();
     Q_INVOKABLE void keepBookmark(bool);
     Q_INVOKABLE void keepBookmark(bool, int);
     Q_INVOKABLE void launchSearchToPutin(QString query);

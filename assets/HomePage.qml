@@ -82,8 +82,48 @@ Page {
                                 imageSource = "asset:///images/buttons/lounge-press.png"
                             } else if (event.touchType == TouchType.Up) {
                                 imageSource = "asset:///images/buttons/lounge.png"
+                                app.loungeBookmark()
                             } else if (event.touchType == TouchType.Cancel) {
                                 imageSource = "asset:///images/buttons/lounge.png"
+                            }
+                        }
+                    }
+                    
+                    Container {
+                        layout: StackLayout {
+                            orientation: LayoutOrientation.LeftToRight
+                        }
+                        horizontalAlignment: HorizontalAlignment.Right
+                        
+                        Container {
+                            background: toast.imagePaint
+                            topPadding: 8
+                            rightPadding: 25
+                            bottomPadding: 20
+                            leftPadding: 25
+                            
+                            Label {
+                                id: loungeLabel
+                                objectName: "loungeLabel"
+                                text: app.getLoungeSize()
+                                textStyle.fontSize: FontSize.Medium
+                                textStyle.color: Color.White
+                                
+                                onCreationCompleted: formatTime()
+                                onTextChanged: formatTime()
+                                
+                                function formatTime() {
+                                    if (text.indexOf("min") < 0) {
+                                        var k10 = (text - text % 10000) / 10000
+                                        switch (k10) {
+                                            case 0:
+                                                text = "< 1 min"
+                                                break;
+                                            default:
+                                                text = k10 + " min" 
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

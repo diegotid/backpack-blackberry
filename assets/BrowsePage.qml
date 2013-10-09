@@ -213,10 +213,6 @@ Page {
                 var selectedItem = dataModel.data(indexPath)
                 app.browseBookmark(selectedItem.url)
                 app.removeBookmark(selectedItem.id)
-                if (app.getSize() == 0) {
-                    mainPage.activeTab = mainPage.readTab
-                    mainPage.exploreTab.enabled = false 
-                }
             }
 
             function openEditSheet(row) {
@@ -226,10 +222,6 @@ Page {
             
             function deleteBookmark(id) {	                
                 app.removeBookmark(id, true);
-                if (app.getSize() == 0) {
-                    mainPage.activeTab = readTab
-                    mainPage.exploreTab.enabled = false 
-                }
             }
             
             function toggleKeep(keep, id) {

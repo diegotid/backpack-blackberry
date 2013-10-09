@@ -171,6 +171,23 @@ bool Backpack::getIgnoreKeptQuickest() {
 	return settings.value("ignoreKeptQuickest").toBool();
 }
 
+void Backpack::setIgnoreKeptLounge(bool ignore) {
+
+	QSettings settings;
+	settings.setValue("ignoreKeptLounge", ignore);
+
+	mainPage->findChild<QObject*>("loungeLabel")->setProperty("text", getLoungeSize());
+    activeFrame->takeFigures(this);
+}
+
+bool Backpack::getIgnoreKeptLounge() {
+
+	QSettings settings;
+	if (settings.value("ignoreKeptLounge").isNull())
+		settings.setValue("ignoreKeptLounge", true);
+	return settings.value("ignoreKeptLounge").toBool();
+}
+
 void Backpack::refreshBookmarks() {
 
 	QVariant list = data->execute("SELECT * FROM Bookmark");
@@ -183,13 +200,14 @@ void Backpack::refreshBookmarks() {
 
 	mainPage->findChild<QObject*>("oldestLabel")->setProperty("text", getOldestDate().toString(Qt::ISODate));
 	mainPage->findChild<QObject*>("quickestLabel")->setProperty("text", getQuickestSize());
+	mainPage->findChild<QObject*>("loungeLabel")->setProperty("text", getLoungeSize());
 
     activeFrame->update(true);
     activeFrame->takeFigures(this);
 
 	mainPage->findChild<Tab*>("readTab")->setEnabled(bookmarksNumber > 0);
 	mainPage->findChild<Tab*>("exploreTab")->setEnabled(bookmarksNumber > 0);
-	mainPage->findChild<QObject*>("emptyHint")->setProperty("visible", bookmarksNumber == 0);
+	mainPage->setActiveTab(mainPage->at(bookmarksNumber > 0 ? 0 : 2));
 }
 
 void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
@@ -250,12 +268,10 @@ void Backpack::handleBookmarkSize(QNetworkReply *reply) {
 	QVariantList sizeValues;
 	data->execute("UPDATE Bookmark SET size = ? WHERE id = ?", sizeValues << reply->size() << bookmarkId);
 
-	if (data->hasError())
-		invokedForm->findChild<QObject*>("status")->setProperty("text", data->error().errorMessage());
-
-	else if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
+	if (!data->hasError() && iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
 		refreshBookmarks();
 		mainPage->findChild<QObject*>("quickestLabel")->setProperty("text", QString::number(getQuickestSize()));
+		mainPage->findChild<QObject*>("loungeLabel")->setProperty("text", QString::number(getLoungeSize()));
 	}
 
 	reply->deleteLater();
@@ -347,17 +363,8 @@ void Backpack::removeBookmark(int id, bool deleteKeepers) {
 	else
 		data->execute("DELETE FROM Bookmark WHERE id = ? AND keep = ?", idValues << id << deleteKeepers);
 
-	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
-
+	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication)
 		refreshBookmarks();
-
-		if (bookmarksNumber == 0) {
-			mainPage->at(0)->setEnabled(false);
-			mainPage->setActiveTab(mainPage->at(2));
-//			mainPage->findChild<QObject*>("buttons")->setProperty("visible", false);
-//			mainPage->findChild<QObject*>("hint")->setProperty("visible", true);
-		}
-	}
 }
 
 void Backpack::browseBookmark(QString uri) {
@@ -455,6 +462,34 @@ void Backpack::quickestBookmark() {
 	Flurry::Analytics::LogEvent("Quickest");
 }
 
+void Backpack::loungeBookmark() {
+
+	QSettings settings;
+	QVariantList ids;
+
+	if (settings.value("ignoreKeptLounge").isNull())
+		settings.setValue("ignoreKeptLounge", true);
+
+	if (settings.value("ignoreKeptLounge").toBool())
+		ids = data->execute("SELECT id, url FROM Bookmark WHERE keep = ? ORDER BY size DESC LIMIT 1", QVariantList() << false).toList();
+
+	if (ids.size() == 0)
+		ids = data->execute("SELECT id, url FROM Bookmark ORDER BY size DESC LIMIT 1").toList();
+
+	removeBookmark(ids.value(0).toMap().value("id").toInt());
+
+	mainPage->findChild<QObject*>("loungeLabel")->setProperty("text", QString::number(getLoungeSize()));
+
+	InvokeManager invokeSender;
+	InvokeRequest request;
+	request.setTarget("sys.browser");
+	request.setAction("bb.action.OPEN");
+	request.setUri(ids.value(0).toMap().value("url").toString());
+	invokeSender.invoke(request);
+
+	Flurry::Analytics::LogEvent("Lounge");
+}
+
 QDate Backpack::getOldestDate() {
 
 	QSettings settings;
@@ -493,6 +528,26 @@ int Backpack::getQuickestSize() {
 		return 0;
 	else
 		return quickest.toInt();
+}
+
+int Backpack::getLoungeSize() {
+
+	QSettings settings;
+	if (settings.value("ignoreKeptLounge").isNull())
+		settings.setValue("ignoreKeptLounge", true);
+
+	QVariant lounge;
+
+	if (settings.value("ignoreKeptLounge").toBool())
+		lounge = data->execute("SELECT MAX(size) FROM Bookmark WHERE keep = ? AND size IS NOT NULL", QVariantList() << false).toList().value(0).toMap().value("MAX(size)");
+
+	if (lounge.isNull())
+		lounge = data->execute("SELECT MAX(size) FROM Bookmark WHERE size IS NOT NULL").toList().value(0).toMap().value("MAX(size)");
+
+	if (lounge.isNull())
+		return 0;
+	else
+		return lounge.toInt();
 }
 
 void Backpack::keepBookmark(bool keep) {

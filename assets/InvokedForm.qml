@@ -18,9 +18,6 @@ Page {
 
             onTriggered: {
                 if (invokedForm.parent.objectName == "bookmarkSheet") {
-	                memo.text = item.memo
-	                title = (memo.text != "") ? "Cancel" : "Close"
-	                acceptButton.enabled = (memo.text != "")
 	                invokedForm.close()
 	            } else {
 	                Application.quit()
