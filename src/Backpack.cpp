@@ -3,6 +3,7 @@
 
 #include <Flurry.h>
 
+#include <bb/ApplicationInfo>
 #include <bb/cascades/Application>
 #include <bb/cascades/AbstractPane>
 #include <bb/cascades/GroupDataModel>
@@ -13,6 +14,7 @@
 #include <bb/cascades/ListView>
 #include <bb/cascades/TextArea>
 #include <bb/cascades/WebPage>
+#include <bb/cascades/Sheet>
 #include <bb/cascades/Page>
 #include <bb/cascades/TitleBar>
 #include <bb/cascades/WebSettings>
@@ -20,6 +22,7 @@
 
 using namespace bb::cascades;
 using namespace bb::data;
+using namespace bb;
 using namespace std;
 
 Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
@@ -30,13 +33,6 @@ Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
 	data = new SqlDataAccess(dbFile.fileName(), "Backpack", this);
 
 	if (!databaseExists()) createDatabase();
-
-    homeQml = QmlDocument::create("asset:///HomePage.qml").parent(this);
-    homeQml->setContextProperty("app", this);
-
-	invokedQml = QmlDocument::create("asset:///InvokedForm.qml").parent(this);
-    invokedQml->setContextProperty("app", this);
-	invokedForm = invokedQml->createRootObject<Page>();
 
 	iManager = new InvokeManager(this);
 	connect(iManager, SIGNAL(invoked(const bb::system::InvokeRequest&)), this, SLOT(handleInvoke(const bb::system::InvokeRequest&)));
@@ -54,21 +50,24 @@ Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
 
 	if (iManager->startupMode() == ApplicationStartupMode::InvokeApplication) {
 
+		QmlDocument *invokedQml = QmlDocument::create("asset:///InvokedForm.qml").parent(this);
+	    invokedQml->setContextProperty("app", this);
+		invokedForm = invokedQml->createRootObject<Page>();
+
 		app->setScene(invokedForm);
 
 	} else {
 
-	    homePage = homeQml->createRootObject<NavigationPane>();
-		bookmarks = homePage->findChild<ListView*>("bookmarks");
+		QmlDocument *homeQml = QmlDocument::create("asset:///main.qml").parent(this);
+	    homeQml->setContextProperty("app", this);
+	    mainPage = homeQml->createRootObject<TabbedPane>();
 
+	    app->setScene(mainPage);
 		activeFrame = (ActiveFrame*)app->cover();
 
+		invokedForm = mainPage->findChild<Page*>("invokedForm");
+		bookmarks = mainPage->at(1)->content()->findChild<ListView*>("bookmarks");
 		refreshBookmarks();
-
-	    app->setScene(homePage);
-
-		homePage->findChild<QObject*>("buttons")->setProperty("visible", bookmarksNumber > 0);
-		homePage->findChild<QObject*>("hint")->setProperty("visible", bookmarksNumber == 0);
 	}
 }
 
@@ -78,18 +77,21 @@ Backpack::~Backpack() {
 	dbFile.close();
 }
 
+QString Backpack::getAppVersion() {
+
+	ApplicationInfo thisApp;
+	return thisApp.version();
+}
+
 bool Backpack::databaseExists() {
 
 	data->execute("SELECT COUNT(*) FROM Bookmark");
 	return !data->hasError();
 }
 
-
 void Backpack::createDatabase() {
 
 	data->execute("CREATE TABLE Bookmark (id INTEGER, title VARCHAR(255), url VARCHAR(255), favicon VARCHAR(255), memo VARCHAR(255), date DATE, time DATETIME, size INTEGER, keep BOOL)");
-	if (data->hasError())
-		homePage->findChild<QObject*>("hint")->setProperty("text", data->error().errorMessage());
 }
 
 void Backpack::setBackgroundColour(float base, float red, float green, float blue) {
@@ -121,6 +123,77 @@ float Backpack::getBackgroundColour(QString colour) {
 	return colours.value(colour).toFloat();
 }
 
+void Backpack::setIgnoreKeptShuffle(bool ignore) {
+
+	QSettings settings;
+	settings.setValue("ignoreKeptShuffle", ignore);
+}
+
+bool Backpack::getIgnoreKeptShuffle() {
+
+	QSettings settings;
+	if (settings.value("ignoreKeptShuffle").isNull())
+		settings.setValue("ignoreKeptShuffle", true);
+	return settings.value("ignoreKeptShuffle").toBool();
+}
+
+void Backpack::setIgnoreKeptOldest(bool ignore) {
+
+	QSettings settings;
+	settings.setValue("ignoreKeptOldest", ignore);
+
+	mainPage->findChild<QObject*>("oldestLabel")->setProperty("text", getOldestDate().toString(Qt::ISODate));
+	mainPage->findChild<QObject*>("oldestLabelZip")->setProperty("visible", isKeptOnly());
+
+	activeFrame->takeFigures(this);
+}
+
+bool Backpack::getIgnoreKeptOldest() {
+
+	QSettings settings;
+	if (settings.value("ignoreKeptOldest").isNull())
+		settings.setValue("ignoreKeptOldest", true);
+	return settings.value("ignoreKeptOldest").toBool();
+}
+
+void Backpack::setIgnoreKeptQuickest(bool ignore) {
+
+	QSettings settings;
+	settings.setValue("ignoreKeptQuickest", ignore);
+
+	mainPage->findChild<QObject*>("quickestLabel")->setProperty("text", getQuickestSize());
+	mainPage->findChild<QObject*>("quickestLabelZip")->setProperty("visible", isKeptOnly());
+
+    activeFrame->takeFigures(this);
+}
+
+bool Backpack::getIgnoreKeptQuickest() {
+
+	QSettings settings;
+	if (settings.value("ignoreKeptQuickest").isNull())
+		settings.setValue("ignoreKeptQuickest", true);
+	return settings.value("ignoreKeptQuickest").toBool();
+}
+
+void Backpack::setIgnoreKeptLounge(bool ignore) {
+
+	QSettings settings;
+	settings.setValue("ignoreKeptLounge", ignore);
+
+	mainPage->findChild<QObject*>("loungeLabel")->setProperty("text", getLoungeSize());
+	mainPage->findChild<QObject*>("loungeLabelZip")->setProperty("visible", isKeptOnly());
+
+	activeFrame->takeFigures(this);
+}
+
+bool Backpack::getIgnoreKeptLounge() {
+
+	QSettings settings;
+	if (settings.value("ignoreKeptLounge").isNull())
+		settings.setValue("ignoreKeptLounge", true);
+	return settings.value("ignoreKeptLounge").toBool();
+}
+
 void Backpack::refreshBookmarks() {
 
 	QVariant list = data->execute("SELECT * FROM Bookmark");
@@ -131,23 +204,25 @@ void Backpack::refreshBookmarks() {
     bookmarks->setDataModel(model);
     bookmarksNumber = list.toList().size();
 
+	mainPage->findChild<QObject*>("oldestLabel")->setProperty("text", getOldestDate().toString(Qt::ISODate));
+	mainPage->findChild<QObject*>("quickestLabel")->setProperty("text", getQuickestSize());
+	mainPage->findChild<QObject*>("loungeLabel")->setProperty("text", getLoungeSize());
+	mainPage->findChild<QObject*>("oldestLabelZip")->setProperty("visible", isKeptOnly());
+	mainPage->findChild<QObject*>("quickestLabelZip")->setProperty("visible", isKeptOnly());
+	mainPage->findChild<QObject*>("loungeLabelZip")->setProperty("visible", isKeptOnly());
+
     activeFrame->update(true);
     activeFrame->takeFigures(this);
-}
 
-int Backpack::getSize() {
-
-	return bookmarksNumber;
+	mainPage->findChild<Tab*>("readTab")->setEnabled(bookmarksNumber > 0);
+	mainPage->findChild<Tab*>("exploreTab")->setEnabled(bookmarksNumber > 0);
+	mainPage->setActiveTab(mainPage->at(bookmarksNumber > 0 ? 0 : 2));
 }
 
 void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 
-	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
-
-		homePage->setBackButtonsVisible(false);
-		homePage->push(invokedForm);
-//      debugStack();
-	}
+	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication)
+		mainPage->findChild<Sheet*>("bookmarkSheet")->open();
 
 	invokedForm->findChild<QObject*>("activity")->setProperty("visible", true);
 	invokedForm->findChild<QObject*>("status")->setProperty("text", "Fetching page content...");
@@ -193,28 +268,21 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 	QVariantList bookmarkValues;
 	data->execute("INSERT INTO Bookmark (id, url, keep, date, time) VALUES (?, ?, ?, CURRENT_DATE, CURRENT_TIMESTAMP)", bookmarkValues << bookmarkId << request.uri().toString() << false);
 
-	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
-
+	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication)
 		refreshBookmarks();
-
-		homePage->findChild<QObject*>("buttons")->setProperty("visible", true);
-		homePage->findChild<QObject*>("hint")->setProperty("visible", false);
-	}
 }
 
 void Backpack::handleBookmarkSize(QNetworkReply *reply) {
 
-//	invokedForm->findChild<QObject*>("status")->setProperty("text", QString("Tamaño: ").append(QString::number(reply->size())));
-
 	QVariantList sizeValues;
 	data->execute("UPDATE Bookmark SET size = ? WHERE id = ?", sizeValues << reply->size() << bookmarkId);
 
-	if (data->hasError())
-		invokedForm->findChild<QObject*>("status")->setProperty("text", data->error().errorMessage());
-
-	else if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
+	if (!data->hasError() && iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
 		refreshBookmarks();
-		homePage->findChild<QObject*>("quickestLabel")->setProperty("text", QString::number(getQuickestSize()));
+		mainPage->findChild<QObject*>("quickestLabel")->setProperty("text", QString::number(getQuickestSize()));
+		mainPage->findChild<QObject*>("loungeLabel")->setProperty("text", QString::number(getLoungeSize()));
+		mainPage->findChild<QObject*>("quickestLabelZip")->setProperty("visible", isKeptOnly());
+		mainPage->findChild<QObject*>("loungeLabelZip")->setProperty("visible", isKeptOnly());
 	}
 
 	reply->deleteLater();
@@ -269,10 +337,8 @@ void Backpack::memoBookmark(QString memo, int id) {
 
 	bool empty = memo.compare("") == 0;
 
-	if (!empty) {
-		QVariantList memoValues;
-		data->execute(QString("UPDATE Bookmark SET memo = ? WHERE id = ?"), memoValues << memo << id);
-	}
+	if (!empty)
+		data->execute(QString("UPDATE Bookmark SET memo = ? WHERE id = ?"), QVariantList() << memo << id);
 
 	invokedForm->findChild<TextArea*>("memo")->setEnabled(false);
 	if (empty)
@@ -308,15 +374,8 @@ void Backpack::removeBookmark(int id, bool deleteKeepers) {
 	else
 		data->execute("DELETE FROM Bookmark WHERE id = ? AND keep = ?", idValues << id << deleteKeepers);
 
-	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
-
+	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication)
 		refreshBookmarks();
-
-		if (bookmarksNumber == 0) {
-			homePage->findChild<QObject*>("buttons")->setProperty("visible", false);
-			homePage->findChild<QObject*>("hint")->setProperty("visible", true);
-		}
-	}
 }
 
 void Backpack::browseBookmark(QString uri) {
@@ -333,7 +392,17 @@ void Backpack::browseBookmark(QString uri) {
 
 void Backpack::shuffleBookmark() {
 
-	QVariantList ids = data->execute("SELECT id, url FROM Bookmark").toList();
+	QSettings settings;
+	QVariantList ids;
+
+	if (settings.value("ignoreKeptShuffle").isNull())
+		settings.setValue("ignoreKeptShuffle", true);
+
+	if (settings.value("ignoreKeptShuffle").toBool())
+		ids = data->execute("SELECT id, url FROM Bookmark WHERE keep = ?", QVariantList() << false).toList();
+
+	if (ids.size() == 0)
+		ids = data->execute("SELECT id, url FROM Bookmark").toList();
 
 	srand((unsigned)time(0));
 	int randomNumber = rand() % ids.size();
@@ -352,7 +421,17 @@ void Backpack::shuffleBookmark() {
 
 void Backpack::oldestBookmark() {
 
-	QVariantList ids = data->execute("SELECT id, url FROM Bookmark ORDER BY time LIMIT 1").toList();
+	QSettings settings;
+	QVariantList ids;
+
+	if (settings.value("ignoreKeptOldest").isNull())
+		settings.setValue("ignoreKeptOldest", true);
+
+	if (settings.value("ignoreKeptOldest").toBool())
+		ids = data->execute("SELECT id, url FROM Bookmark WHERE keep = ? ORDER BY time LIMIT 1", QVariantList() << false).toList();
+
+	if (ids.size() == 0)
+		ids = data->execute("SELECT id, url FROM Bookmark ORDER BY time LIMIT 1").toList();
 
 	removeBookmark(ids.value(0).toMap().value("id").toInt());
 
@@ -368,11 +447,22 @@ void Backpack::oldestBookmark() {
 
 void Backpack::quickestBookmark() {
 
-	QVariantList ids = data->execute("SELECT id, url FROM Bookmark ORDER BY size LIMIT 1").toList();
+	QSettings settings;
+	QVariantList ids;
+
+	if (settings.value("ignoreKeptQuickest").isNull())
+		settings.setValue("ignoreKeptQuickest", true);
+
+	if (settings.value("ignoreKeptQuickest").toBool())
+		ids = data->execute("SELECT id, url FROM Bookmark WHERE keep = ? ORDER BY size LIMIT 1", QVariantList() << false).toList();
+
+	if (ids.size() == 0)
+		ids = data->execute("SELECT id, url FROM Bookmark ORDER BY size LIMIT 1").toList();
 
 	removeBookmark(ids.value(0).toMap().value("id").toInt());
 
-	homePage->findChild<QObject*>("quickestLabel")->setProperty("text", QString::number(getQuickestSize()));
+	mainPage->findChild<QObject*>("quickestLabel")->setProperty("text", QString::number(getQuickestSize()));
+	mainPage->findChild<QObject*>("quickestLabelZip")->setProperty("visible", isKeptOnly());
 
 	InvokeManager invokeSender;
 	InvokeRequest request;
@@ -384,14 +474,98 @@ void Backpack::quickestBookmark() {
 	Flurry::Analytics::LogEvent("Quickest");
 }
 
+void Backpack::loungeBookmark() {
+
+	QSettings settings;
+	QVariantList ids;
+
+	if (settings.value("ignoreKeptLounge").isNull())
+		settings.setValue("ignoreKeptLounge", true);
+
+	if (settings.value("ignoreKeptLounge").toBool())
+		ids = data->execute("SELECT id, url FROM Bookmark WHERE keep = ? ORDER BY size DESC LIMIT 1", QVariantList() << false).toList();
+
+	if (ids.size() == 0)
+		ids = data->execute("SELECT id, url FROM Bookmark ORDER BY size DESC LIMIT 1").toList();
+
+	removeBookmark(ids.value(0).toMap().value("id").toInt());
+
+	mainPage->findChild<QObject*>("loungeLabel")->setProperty("text", QString::number(getLoungeSize()));
+	mainPage->findChild<QObject*>("loungeLabelZip")->setProperty("visible", isKeptOnly());
+
+	InvokeManager invokeSender;
+	InvokeRequest request;
+	request.setTarget("sys.browser");
+	request.setAction("bb.action.OPEN");
+	request.setUri(ids.value(0).toMap().value("url").toString());
+	invokeSender.invoke(request);
+
+	Flurry::Analytics::LogEvent("Lounge");
+}
+
 QDate Backpack::getOldestDate() {
 
-	return data->execute("SELECT MIN(date) FROM Bookmark WHERE date IS NOT NULL").toList().value(0).toMap().value("MIN(date)").toDate();
+	QSettings settings;
+	if (settings.value("ignoreKeptOldest").isNull())
+		settings.setValue("ignoreKeptOldest", true);
+
+	QVariant oldest;
+
+	if (settings.value("ignoreKeptOldest").toBool())
+		oldest = data->execute("SELECT MIN(date) FROM Bookmark WHERE keep = ? AND date IS NOT NULL", QVariantList() << false).toList().value(0).toMap().value("MIN(date)");
+
+	if (oldest.isNull())
+		oldest = data->execute("SELECT MIN(date) FROM Bookmark WHERE date IS NOT NULL").toList().value(0).toMap().value("MIN(date)");
+
+	if (oldest.isNull())
+		return QDate::currentDate();
+	else
+		return oldest.toDate();
 }
 
 int Backpack::getQuickestSize() {
 
-	return data->execute("SELECT MIN(size) FROM Bookmark WHERE size IS NOT NULL").toList().value(0).toMap().value("MIN(size)").toInt();
+	QSettings settings;
+	if (settings.value("ignoreKeptQuickest").isNull())
+		settings.setValue("ignoreKeptQuickest", true);
+
+	QVariant quickest;
+
+	if (settings.value("ignoreKeptQuickest").toBool())
+		quickest = data->execute("SELECT MIN(size) FROM Bookmark WHERE keep = ? AND size IS NOT NULL", QVariantList() << false).toList().value(0).toMap().value("MIN(size)");
+
+	if (quickest.isNull())
+		quickest = data->execute("SELECT MIN(size) FROM Bookmark WHERE size IS NOT NULL").toList().value(0).toMap().value("MIN(size)");
+
+	if (quickest.isNull())
+		return 0;
+	else
+		return quickest.toInt();
+}
+
+int Backpack::getLoungeSize() {
+
+	QSettings settings;
+	if (settings.value("ignoreKeptLounge").isNull())
+		settings.setValue("ignoreKeptLounge", true);
+
+	QVariant lounge;
+
+	if (settings.value("ignoreKeptLounge").toBool())
+		lounge = data->execute("SELECT MAX(size) FROM Bookmark WHERE keep = ? AND size IS NOT NULL", QVariantList() << false).toList().value(0).toMap().value("MAX(size)");
+
+	if (lounge.isNull())
+		lounge = data->execute("SELECT MAX(size) FROM Bookmark WHERE size IS NOT NULL").toList().value(0).toMap().value("MAX(size)");
+
+	if (lounge.isNull())
+		return 0;
+	else
+		return lounge.toInt();
+}
+
+bool Backpack::isKeptOnly() {
+
+	return data->execute("SELECT COUNT(*) noKept FROM Bookmark WHERE keep IS NOT ?", QVariantList() << true).toList().value(0).toMap().value("noKept").toInt() == 0;
 }
 
 void Backpack::keepBookmark(bool keep) {
@@ -408,24 +582,22 @@ void Backpack::keepBookmark(bool keep, int id) {
 		refreshBookmarks();
 }
 
-void Backpack::debugStack() {
+void Backpack::launchSearchToPutin(QString query) {
 
-	if (iManager->startupMode() == ApplicationStartupMode::InvokeApplication) {
+	InvokeManager invokeSender;
+	InvokeRequest request;
+	request.setTarget("sys.search");
+	request.setAction("bb.action.OPEN");
+	request.setUri(QString("search://?term=").append(query));
+	invokeSender.invoke(request);
+}
 
-		qDebug() << "****** App invoked ******";
+void Backpack::launchRating() {
 
-	} else {
-
-		qDebug() << "";
-		qDebug() << "";
-		qDebug() << "****** Stack size: " << homePage->count() << " ******";
-
-		for (int i = 0; i < homePage->count(); i++) {
-
-			qDebug() << homePage->at(i)->objectName();
-		}
-		qDebug() << "";
-		qDebug() << "";
-		qDebug() << "";
-	}
+	InvokeManager invokeSender;
+	InvokeRequest request;
+	request.setTarget("sys.appworld");
+	request.setAction("bb.action.OPEN");
+	request.setUri("http://appworld.blackberry.com/webstore/content/20399673");
+	invokeSender.invoke(request);
 }
