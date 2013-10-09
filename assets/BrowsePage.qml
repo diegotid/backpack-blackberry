@@ -14,6 +14,7 @@ Page {
         backgroundGreen.opacity = app.getBackgroundColour("green");
         backgroundBlue.opacity = app.getBackgroundColour("blue");
         backgroundBase.opacity = app.getBackgroundColour("base");
+        invokedForm.loadBackground()
     }
     
     attachedObjects: [
