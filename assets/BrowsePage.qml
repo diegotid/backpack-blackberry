@@ -1,9 +1,7 @@
 
 import bb.cascades 1.0
-
+  
 Page {
-    id: browsePage
-    objectName: "browsePage"
     
     titleBar: TitleBar {
         title: "My Backpack"
@@ -16,7 +14,20 @@ Page {
         backgroundGreen.opacity = app.getBackgroundColour("green");
         backgroundBlue.opacity = app.getBackgroundColour("blue");
         backgroundBase.opacity = app.getBackgroundColour("base");
+        invokedForm.loadBackground()
     }
+    
+    attachedObjects: [
+        Sheet {
+            id: bookmarkSheet
+            objectName: "bookmarkSheet"
+            InvokedForm {
+                id: invokedForm
+                objectName: "invokedForm"
+                onClose: bookmarkSheet.close();
+            }
+        }
+    ]
     
     Container {
         layout: DockLayout {}
@@ -41,15 +52,6 @@ Page {
         ListView {
             id: bookmarks
             objectName: "bookmarks"
-            
-//		        dataModel: XmlDataModel {
-//                    source: "debug.xml"
-//                }
-            
-            onDataModelChanged: {
-                oldestLabel.text = app.getOldestDate()
-                quickestLabel.text = app.getQuickestSize()
-            }
             
             listItemComponents: [
                 
@@ -107,7 +109,7 @@ Page {
                                 ActionItem {
                                     title: "Edit"
                                     imageSource: "asset:///images/menuicons/ic_edit.png"
-                                    onTriggered: bookmark.ListItem.view.pushEditPage(ListItemData)
+                                    onTriggered: bookmark.ListItem.view.openEditSheet(ListItemData)
                                 }
                                 ActionItem {
                                     title: "Toggle keep after read"
@@ -119,6 +121,22 @@ Page {
                                 }
                             }
                         ]
+                        
+                        Container {
+                            id: highlight
+                            verticalAlignment: VerticalAlignment.Fill
+                            horizontalAlignment: HorizontalAlignment.Fill
+                            background: highlightBorder.imagePaint
+                            visible: false
+                            
+                            attachedObjects: [
+                                ImagePaintDefinition {
+                                    id: highlightBorder
+                                    imageSource: "asset:///images/highlight_listitem.amd"
+                                    repeatPattern: RepeatPattern.Fill
+                                }
+                            ]
+                        }
                         
                         Container {
                             topPadding: 10
@@ -179,49 +197,37 @@ Page {
                         
                         Divider {
                             topMargin: 0
-                            topPadding: 0
                             bottomMargin: 0
-                            bottomPadding: 0
+                        }
+                        
+                        onTouch: {
+                            if (event.touchType == TouchType.Down)
+                                highlight.visible = true
+                            else if (event.touchType == TouchType.Cancel || event.touchType == TouchType.Up)
+                                highlight.visible = false
                         }
                     }                        
                 }
             ]
-            
+                       
             onTriggered: {
                 var selectedItem = dataModel.data(indexPath)
                 app.browseBookmark(selectedItem.url)
                 app.removeBookmark(selectedItem.id)
-                if (app.getSize() == 0) {
-                    homePage.remove(browsePage);
-                }
             }
-            
-            property Page editPage
-            function pushEditPage(row) {
-                if (!editPage) {
-                    editPage = editPageDefinition.createObject();
-                }
-                editPage.item = row;
-                homePage.backButtonsVisible = false
-                homePage.push(editPage);
+
+            function openEditSheet(row) {
+                invokedForm.item = row
+                bookmarkSheet.open()
             }
             
             function deleteBookmark(id) {	                
                 app.removeBookmark(id, true);
-                if (app.getSize() == 0)
-                    homePage.remove(browsePage);
             }
             
             function toggleKeep(keep, id) {
-                app.keepBookmark(keep, id);
+                app.keepBookmark(keep, id)
             }     
-            
-            attachedObjects: [
-                ComponentDefinition {
-                    id: editPageDefinition
-                    source: "InvokedForm.qml"
-                }
-            ]
         }
 	}
 }

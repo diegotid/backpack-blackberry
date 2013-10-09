@@ -1,46 +1,6 @@
 
 import bb.cascades 1.0
 
-NavigationPane {
-    id: homePage
-    objectName: "homePage"
-    
-    onPopTransitionEnded: {
-        backButtonsVisible = true
-    }
-        
-    attachedObjects: [
-        Sheet {
-            id: settingsSheet
-            SettingsSheet {
-                onClose: settingsSheet.close();
-            }
-        },
-//        Sheet {
-//            id: aboutSheet
-//            AboutSheet {
-//                onClose: aboutSheet.close();
-//            }
-//        },
-        BrowsePage {
-            id: browsePage
-            objectName: "browsePage"
-        }
-    ]
-    
-    Menu.definition: MenuDefinition {
-        settingsAction: SettingsActionItem {
-            onTriggered: settingsSheet.open();
-        }
-    }
-    
-    function reloadBackgrounds() {
-        for (var i = 0; i < count(); i++) {
-            at(i).loadBackground();
-        }
-        browsePage.loadBackground();
-    }
-        
 	Page {
 	    titleBar: TitleBar {
 	        title: "My Backpack"
@@ -48,11 +8,6 @@ NavigationPane {
 	    }
         
         attachedObjects: [
-            ImagePaintDefinition {
-                id: background
-                imageSource: "asset:///images/shadow.png"
-                repeatPattern: RepeatPattern.X
-            },
             ImagePaintDefinition {
                 id: toast
                 imageSource: "asset:///images/toast.amd"
@@ -89,40 +44,19 @@ NavigationPane {
             }
 	        
             Container {
-			    id: hint
-			    objectName: "hint"
-                topPadding: 30
-                bottomPadding: 30
-                leftPadding: 30
-                rightPadding: 30
-                background: background.imagePaint
-                horizontalAlignment: HorizontalAlignment.Fill
-                visible: false
-			    
-			    Label {
-			        multiline: true	            
-			        text: "<html>Nothing in your backpack<br/><br/>To put content in your backpack that you want to read later, just use the share menu option from your browser on any page and select &quot;My Backpack&quot;</html>"
-			    }
-			    
-                ImageView {
-                    imageSource: "asset:///images/empty-hint.png"
-                    horizontalAlignment: HorizontalAlignment.Center
-                    topMargin: 35
-			    }
-			}
-		        
-	        Container {
 	            id: buttons
 	            objectName: "buttons"
                 horizontalAlignment: HorizontalAlignment.Center
                 verticalAlignment: VerticalAlignment.Center
-//                visible: false
                              
                 Container { // 1st row
                     layout: StackLayout {
                         orientation: LayoutOrientation.LeftToRight
                     }
 
+                Container {
+                    layout: DockLayout {}
+                    
                     ImageView {
                         imageSource: "asset:///images/buttons/shuffle.png"
                         onTouch: {
@@ -136,22 +70,80 @@ NavigationPane {
                             }
                         }
                     }
+                }
+
+                Container {
+                    layout: DockLayout {}
+   
                     ImageView {
-                        imageSource: "asset:///images/buttons/browse.png"
+                        imageSource: "asset:///images/buttons/lounge.png"
                         onTouch: {
                             if (event.touchType == TouchType.Down) {
-                                imageSource = "asset:///images/buttons/browse-press.png"
+                                imageSource = "asset:///images/buttons/lounge-press.png"
                             } else if (event.touchType == TouchType.Up) {
-                                imageSource = "asset:///images/buttons/browse.png"
-                                homePage.backButtonsVisible = true
-                                homePage.push(browsePage);
+                                imageSource = "asset:///images/buttons/lounge.png"
+                                app.loungeBookmark()
                             } else if (event.touchType == TouchType.Cancel) {
-                                imageSource = "asset:///images/buttons/browse.png"
+                                imageSource = "asset:///images/buttons/lounge.png"
+                            }
+                        }
+                    }
+                    
+                    Container {
+                        layout: StackLayout {
+                            orientation: LayoutOrientation.LeftToRight
+                }
+                        horizontalAlignment: HorizontalAlignment.Right
+                
+                        Container {
+                            layout: StackLayout {
+                                orientation: LayoutOrientation.LeftToRight
+                            }
+                            background: toast.imagePaint
+                            leftPadding: 28
+                            rightPadding: 25
+                            
+                            Container {
+	                            topPadding: 8
+	                            bottomPadding: 20
+	
+	                            Label {
+	                                id: loungeLabel
+	                                objectName: "loungeLabel"
+	                                text: app.getLoungeSize()
+	                                textStyle.fontSize: FontSize.Medium
+	                                textStyle.color: Color.White
+	                                
+	                                onCreationCompleted: formatTime()
+	                                onTextChanged: formatTime()
+	                                
+	                                function formatTime() {
+	                                    if (text.indexOf("min") < 0) {
+	                                        var k10 = (text - text % 10000) / 10000
+	                                        switch (k10) {
+	                                            case 0:
+	                                                text = "< 1 min"
+	                                                break;
+	                                            default:
+	                                                text = k10 + " min" 
+	                                        }
+	                                    }
+	                                }
+	                            }
+	                        }
+                            
+                            ImageView {
+                                id: loungeLabelZip
+                                objectName: "loungeLabelZip"
+                                visible: false
+                                imageSource: "asset:///images/zipMini.png"
+                                translationY: 17
                             }
                         }
                     }
                 }
-                
+            }
+            
                 Container { // 2nd row
                     layout: StackLayout {
                         orientation: LayoutOrientation.LeftToRight
@@ -181,18 +173,21 @@ NavigationPane {
                             horizontalAlignment: HorizontalAlignment.Right
 
                             Container {
+                            layout: StackLayout {
+                                orientation: LayoutOrientation.LeftToRight
+                            }
                                 background: toast.imagePaint
+                            leftPadding: 28
+                            rightPadding: 25
+                            
+                            Container {
                                 topPadding: 8
-                                rightPadding: 25
                                 bottomPadding: 20
-                                leftPadding: 25
                                 
                                 Label {
 		                            id: oldestLabel
 		                            objectName: "oldestLabel"
-//		                            text: "Yesterday"
-//                                    text: app.getOldestDate().toString("yyyy-MM-dd")
-                                    text: app.getOldestDate()
+	                                text: app.getOldestDate().toString("yyyy-MM-dd")
                                     textStyle.fontSize: FontSize.Medium
                                     textStyle.color: Color.White
 	                                                       
@@ -228,9 +223,19 @@ NavigationPane {
 			                            }
 		                            }
 		                        }
+	                            
                             }
+                            
+                            ImageView {
+                                id: oldestLabelZip
+                                objectName: "oldestLabelZip"
+                                visible: false
+                                imageSource: "asset:///images/zipMini.png"
+                                translationY: 17
 	                    }
                     }
+                    }
+                }
 
                     Container {
                         layout: DockLayout {}
@@ -256,16 +261,20 @@ NavigationPane {
                             horizontalAlignment: HorizontalAlignment.Right
                             
                             Container {
+                            layout: StackLayout {
+                                orientation: LayoutOrientation.LeftToRight
+                            }
                                 background: toast.imagePaint
+                            leftPadding: 28
+                            rightPadding: 25
+                            
+                            Container {
                                 topPadding: 8
-                                rightPadding: 25
                                 bottomPadding: 20
-                                leftPadding: 25
                                 
 		                        Label {
 		                            id: quickestLabel
 		                            objectName: "quickestLabel"
-//	                                text: "< 1 min"
 		                            text: app.getQuickestSize()
                                     textStyle.fontSize: FontSize.Medium
                                     textStyle.color: Color.White
@@ -287,10 +296,18 @@ NavigationPane {
 	                                }
 		                        }
                           	}
+                            
+	                        ImageView {
+	                            id: quickestLabelZip
+                                objectName: "quickestLabelZip"
+	                            visible: false
+	                            imageSource: "asset:///images/zipMini.png"
+	                            translationY: 17
 	                    }
                     }
                 }
             }
 		}
 	}
+}
 }
