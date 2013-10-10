@@ -5,7 +5,7 @@ Page {
     
     titleBar: TitleBar {
         title: "My Backpack"
-        scrollBehavior: TitleBarScrollBehavior.Sticky // Comment for 10.0
+//        scrollBehavior: TitleBarScrollBehavior.Sticky // Comment for 10.0
     }
     
     attachedObjects: [
