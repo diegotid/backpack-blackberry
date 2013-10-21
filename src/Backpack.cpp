@@ -27,8 +27,7 @@ using namespace std;
 
 Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
 
-	QDir homeDir = QDir::home();
-	dbFile.setFileName(homeDir.absoluteFilePath("backpack.db"));
+	dbFile.setFileName(QDir::home().absoluteFilePath("backpack.db"));
 	dbFile.open(QIODevice::ReadWrite);
 	data = new SqlDataAccess(dbFile.fileName(), "Backpack", this);
 
@@ -40,13 +39,13 @@ Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
 	network = new QNetworkAccessManager(this);
 	connect(network, SIGNAL(finished(QNetworkReply*)), this, SLOT(handleBookmarkSize(QNetworkReply*)));
 
-	bookmark = new WebPage();
-	WebSettings *settings = bookmark->settings();
-	settings->setImageDownloadingEnabled(false);
-	settings->setBinaryFontDownloadingEnabled(false);
-	settings->setCookiesEnabled(false);
-	settings->setJavaScriptEnabled(false);
-	connect(bookmark, SIGNAL(titleChanged(QString)), this, SLOT(handleBookmarkTitle(QString)));
+//	bookmark = new WebPage();
+//	WebSettings *settings = bookmark->settings();
+//	settings->setImageDownloadingEnabled(false);
+//	settings->setBinaryFontDownloadingEnabled(false);
+//	settings->setCookiesEnabled(false);
+//	settings->setJavaScriptEnabled(false);
+//	connect(bookmark, SIGNAL(titleChanged(QString)), this, SLOT(handleBookmarkTitle(QString)));
 
 	if (iManager->startupMode() == ApplicationStartupMode::InvokeApplication) {
 
@@ -216,7 +215,8 @@ void Backpack::refreshBookmarks() {
 
 	mainPage->findChild<Tab*>("readTab")->setEnabled(bookmarksNumber > 0);
 	mainPage->findChild<Tab*>("exploreTab")->setEnabled(bookmarksNumber > 0);
-	mainPage->setActiveTab(mainPage->at(bookmarksNumber > 0 ? 0 : 2));
+	if (bookmarksNumber == 0)
+		mainPage->setActiveTab(mainPage->at(2));
 }
 
 void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
@@ -235,7 +235,6 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 	QVariantMap id = data->execute("SELECT id, title, memo, keep FROM Bookmark WHERE url = ?", urlValues << request.uri().toString()).toList().value(0).toMap();
 
 	if (!id.value("id").isNull()) {
-
 		invokedForm->findChild<QObject*>("status")->setProperty("text", "Bookmark already exists");
 		invokedForm->findChild<QObject*>("title")->setProperty("text", id.value("title").toString());
 		invokedForm->findChild<QObject*>("memo")->setProperty("text", id.value("memo").toString());
@@ -246,18 +245,20 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 	}
 
 	bookmark = new WebPage();
+	titleComplete = false;
+	faviconComplete = false;
 	WebSettings *settings = bookmark->settings();
-	settings->setImageDownloadingEnabled(false);
+	settings->setImageDownloadingEnabled(true);
 	settings->setBinaryFontDownloadingEnabled(false);
 	settings->setCookiesEnabled(false);
 	settings->setJavaScriptEnabled(false);
 	connect(bookmark, SIGNAL(titleChanged(QString)), this, SLOT(handleBookmarkTitle(QString)));
+	connect(bookmark, SIGNAL(iconChanged(QUrl)), this, SLOT(handleBookmarkIcon(QUrl)));
 
 	bookmark->setUrl(request.uri());
 
 	bookmarkRequest = QNetworkRequest();
 	bookmarkRequest.setUrl(request.uri());
-
 	network->get(bookmarkRequest);
 
 	id = data->execute("SELECT MAX(id) FROM Bookmark").toList().value(0).toMap();
@@ -274,6 +275,11 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 
 void Backpack::handleBookmarkSize(QNetworkReply *reply) {
 
+	if (reply->url() != bookmarkRequest.url()) {
+		downloadFavicon(reply);
+		return;
+	}
+
 	QVariantList sizeValues;
 	data->execute("UPDATE Bookmark SET size = ? WHERE id = ?", sizeValues << reply->size() << bookmarkId);
 
@@ -284,45 +290,62 @@ void Backpack::handleBookmarkSize(QNetworkReply *reply) {
 		mainPage->findChild<QObject*>("quickestLabelZip")->setProperty("visible", isKeptOnly());
 		mainPage->findChild<QObject*>("loungeLabelZip")->setProperty("visible", isKeptOnly());
 	}
-
-	reply->deleteLater();
 }
 
 void Backpack::handleBookmarkIcon(QUrl icon) {
 
-	if (!bookmark->title().isEmpty()) {
+	QString url = icon.toString();
+	if (url.length() == 0)
+		return;
+
+	QString domain = url.left(url.indexOf(icon.topLevelDomain()));
+	domain = domain.right(domain.length() - domain.indexOf(".") - 1);
+	domain.append(icon.topLevelDomain());
+
+	iconRequest = QNetworkRequest();
+	iconRequest.setUrl(QString("http://www.google.com/s2/favicons?domain=").append(domain));
+	network->get(iconRequest);
+}
+
+void Backpack::downloadFavicon(QNetworkReply *reply) {
+
+	QFile *iconFile = new QFile(QString("data/icon-") % QString::number(bookmarkId) % QString(".png"));
+	iconFile->remove();
+	iconFile->open(QIODevice::ReadWrite);
+	iconFile->write(reply->readAll());
+	iconFile->flush();
+	iconFile->close();
+
+	QFileInfo iconInfo(*iconFile);
+	data->execute("UPDATE Bookmark SET favicon = ? WHERE id = ?", QVariantList() << QString("file://").append(iconInfo.absoluteFilePath()) << bookmarkId);
+
+	faviconComplete = true;
+	if (titleComplete) {
 		bookmark->stop();
-		bookmark->deleteLater();
 	}
 
-	QString iconFile = QString("icon-").append(QString::number(bookmarkId));
-//	WebDownloadRequest *downloadIcon = new WebDownloadRequest(icon);
-//	downloadIcon->setAbsoluteFilePath(homeDir.absoluteFilePath(iconFile));
-//	bookmark->download(downloadIcon);
-
-	QVariantList iconValues;
-	data->execute("UPDATE Bookmark SET favicon = ? WHERE id = ?", iconValues << iconFile << bookmarkId);
+	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication)
+		refreshBookmarks();
 }
 
 void Backpack::handleBookmarkTitle(QString title) {
 
-//	if (!bookmark->icon().isEmpty())
-	bookmark->stop();
-	bookmark->deleteLater();
+	if (title.length() == 0)
+		return;
 
-	if (bookmark->loadProgress() > 0) {
-		QVariantList titleValues;
-		data->execute("UPDATE Bookmark SET title = ? WHERE id = ?", titleValues << title << bookmarkId);
-		invokedForm->findChild<QObject*>("title")->setProperty("text", title);
-	} else {
-		invokedForm->findChild<QObject*>("status")->setProperty("text", title);
+	data->execute("UPDATE Bookmark SET title = ? WHERE id = ?", QVariantList() << title << bookmarkId);
+	invokedForm->findChild<QObject*>("title")->setProperty("text", title);
+	titleComplete = true;
+
+	if (faviconComplete) {
+		bookmark->stop();
 	}
-
-	invokedForm->findChild<QObject*>("activity")->setProperty("visible", false);
 
 	QObject *status = invokedForm->findChild<QObject*>("status");
 	if (!status->property("text").toString().contains("exists"))
 		status->setProperty("text", "Added!");
+
+	invokedForm->findChild<QObject*>("activity")->setProperty("visible", false);
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication)
 		refreshBookmarks();
@@ -373,6 +396,10 @@ void Backpack::removeBookmark(int id, bool deleteKeepers) {
 		data->execute("DELETE FROM Bookmark WHERE id = ?", idValues << id);
 	else
 		data->execute("DELETE FROM Bookmark WHERE id = ? AND keep = ?", idValues << id << deleteKeepers);
+
+	QFile icon;
+	icon.setFileName(QDir::home().absoluteFilePath(QString("icon-") % QString::number(id) % QString(".png")));
+	icon.remove();
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication)
 		refreshBookmarks();

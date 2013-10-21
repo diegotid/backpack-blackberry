@@ -48,10 +48,14 @@ Page {
             id: backgroundBase
             imageSource: "asset:///images/background.png"
         }
-        
+               
         ListView {
             id: bookmarks
             objectName: "bookmarks"
+
+//            dataModel: XmlDataModel {
+//                source: "debug.xml"
+//            }
             
             listItemComponents: [
                 
@@ -59,7 +63,6 @@ Page {
                     type: "header"
                     
                     Header {
-//                            title: ListItemData.title // For debub.xml
                         title: ListItemData
                         property string dateTitle
                         
@@ -137,27 +140,7 @@ Page {
                                 }
                             ]
                         }
-                        
-                        Container {
-                            topPadding: 10
-                            leftPadding: 10
-                            
-                            Container {
-                                visible: ListItemData.title ? false : true
-                                
-                                topPadding: 20
-                                bottomPadding: 20
-                                leftPadding: 20
-                                rightPadding: 20
-                                
-                                ActivityIndicator {
-                                    running: true
-                                    scaleX: 1.3
-                                    scaleY: 1.3
-                                }
-                            }
-                        }
-                        
+                                                
                         Container {
                             topPadding: 8
                             bottomPadding: 12
@@ -165,25 +148,59 @@ Page {
                             leftPadding: 18
                             
                             Container {
-                                layout: AbsoluteLayout {}
+                                layout: StackLayout {
+                                    orientation: LayoutOrientation.LeftToRight
+                                }
+                                leftPadding: 6
                                 
+                                Container {
+                                    id: iconContainer
+                                    visible: false
+                                    topPadding: 12
+                                    rightPadding: 12
+	                                ImageView {
+	                                    id: iconImage
+//	                                    imageSource: "asset:///images/favicon.png"
+                                        imageSource: ListItemData.favicon
+                                        onImageSourceChanged: activity.visible = ListItemData.title ? false : true
+	                                    minWidth: 48
+	                                    minHeight: 48
+	                                }                            
+                                }
+                                
+                                Container {
+                                    id: activity
+                                    visible: (ListItemData.title && ListItemData.favicon) ? false : true
+                                    onVisibleChanged: iconContainer.visible = !activity.visible
+                                    topPadding: 15
+                                    leftPadding: 4
+                                    rightPadding: 12
+                                    scaleX: 1.3
+                                    scaleY: 1.3
+                                    
+                                    ActivityIndicator {
+                                        running: true
+                                    }
+                                }
+
                                 Label {
                                     id: bookmarkTitle
                                     text: ListItemData.title
                                     textStyle.fontSize: FontSize.XLarge
-                                    preferredWidth: 700
+                                    preferredWidth: 650
+                                    translationX: -7
+                                    onTextChanged: activity.visible = ListItemData.favicon ? false : true
                                 }
                             }
                             
                             Container {
-                                layout: AbsoluteLayout {}
-                                
-                                Label {
-                                    text: ListItemData.memo ? ListItemData.memo : ListItemData.url
-                                    textStyle.color: ListItemData.memo ? Color.create("#07b1e6") : Color.Gray
-                                    textStyle.fontSize: FontSize.Medium
-                                    multiline: ListItemData.memo
-                                }
+                                translationY: -5
+	                            Label {
+	                                text: ListItemData.memo ? ListItemData.memo : ListItemData.url
+	                                textStyle.color: ListItemData.memo ? Color.create("#07b1e6") : Color.Gray
+	                                textStyle.fontSize: FontSize.Medium
+	                                multiline: ListItemData.memo
+	                            }                        
                             }
                         }
                         

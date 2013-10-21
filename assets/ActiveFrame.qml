@@ -128,4 +128,19 @@ Container {
             }
         }
     }
+    
+    Container {
+        verticalAlignment: VerticalAlignment.Bottom
+        topPadding: 10
+        rightPadding: 10
+        bottomPadding: 10
+        leftPadding: 10
+		ImageView {
+			id: bookmarkIcon
+            objectName: "bookmarkIcon"
+            imageSource: "asset:///images/favicon.png"
+            minHeight: 36
+            minWidth: 36		    
+		}
+    }
 }

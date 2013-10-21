@@ -70,8 +70,9 @@ public:
 public Q_SLOTS:
 	void handleInvoke(const bb::system::InvokeRequest&);
 	void handleBookmarkTitle(QString);
-	void handleBookmarkIcon(QUrl);
 	void handleBookmarkSize(QNetworkReply*);
+	void handleBookmarkIcon(QUrl);
+	void downloadFavicon(QNetworkReply*);
 
 private:
     TabbedPane *mainPage;
@@ -81,8 +82,11 @@ private:
     InvokeManager *iManager;
     QNetworkAccessManager *network;
     QNetworkRequest bookmarkRequest;
-    WebPage *bookmark;
+    QNetworkRequest iconRequest;
     ListView *bookmarks;
+    WebPage *bookmark;
+    bool titleComplete;
+    bool faviconComplete;
 
     ActiveFrame *activeFrame;
 
