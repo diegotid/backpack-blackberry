@@ -117,10 +117,10 @@ Page {
                                 ActionItem {
                                     title: "Toggle keep after read"
                                     imageSource: "asset:///images/menuicons/zip.png"
-                                    onTriggered: bookmark.ListItem.view.toggleKeep(ListItemData.keep == "false", ListItemData.id)   
+                                    onTriggered: bookmark.ListItem.view.toggleKeep(ListItemData.url, ListItemData.keep == "false")   
                                 }
                                 DeleteActionItem {
-                                    onTriggered: bookmark.ListItem.view.deleteBookmark(ListItemData.id)
+                                    onTriggered: bookmark.ListItem.view.deleteBookmark(ListItemData.url)
                                 }
                             }
                         ]
@@ -196,7 +196,7 @@ Page {
                             Container {
                                 translationY: -5
 	                            Label {
-	                                text: ListItemData.memo ? ListItemData.memo : ListItemData.url
+                                    text: ListItemData.memo ? ListItemData.memo : ListItemData.url
 	                                textStyle.color: ListItemData.memo ? Color.create("#07b1e6") : Color.Gray
 	                                textStyle.fontSize: FontSize.Medium
 	                                multiline: ListItemData.memo
@@ -230,7 +230,7 @@ Page {
             onTriggered: {
                 var selectedItem = dataModel.data(indexPath)
                 app.browseBookmark(selectedItem.url)
-                app.removeBookmark(selectedItem.id)
+                app.removeBookmark(selectedItem.url)
             }
 
             function openEditSheet(row) {
@@ -238,12 +238,12 @@ Page {
                 bookmarkSheet.open()
             }
             
-            function deleteBookmark(id) {	                
-                app.removeBookmark(id, true);
+            function deleteBookmark(url) {	                
+                app.removeBookmark(url, true);
             }
             
-            function toggleKeep(keep, id) {
-                app.keepBookmark(keep, id)
+            function toggleKeep(url, keep) {
+                app.keepBookmark(url, keep)
             }     
         }
 	}

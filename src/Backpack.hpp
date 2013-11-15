@@ -2,6 +2,7 @@
 #ifndef Backpack_HPP_
 #define Backpack_HPP_
 
+#include "Bookmark.hpp"
 #include "ActiveFrame.hpp"
 
 #include <bb/cascades/QmlDocument>
@@ -26,18 +27,11 @@ namespace bb {
 	}
 }
 
-/*!
- * @brief Application pane object
- *
- *Use this object to create and init app UI, to create context objects, to register the new meta types etc.
- */
-class Backpack : public QObject
-{
+class Backpack : public QObject {
     Q_OBJECT
 
 public:
     Backpack(bb::cascades::Application *app);
-    Q_INVOKABLE QString getAppVersion();
     Q_INVOKABLE void setBackgroundColour(float base, float red, float green, float blue);
     Q_INVOKABLE float getBackgroundColour(QString colour);
     Q_INVOKABLE void setIgnoreKeptShuffle(bool ignore);
@@ -48,10 +42,6 @@ public:
     Q_INVOKABLE bool getIgnoreKeptQuickest();
     Q_INVOKABLE void setIgnoreKeptLounge(bool ignore);
     Q_INVOKABLE bool getIgnoreKeptLounge();
-    Q_INVOKABLE void memoBookmark(QString);
-    Q_INVOKABLE void memoBookmark(QString, int);
-    Q_INVOKABLE void removeBookmark(int);
-    Q_INVOKABLE void removeBookmark(int, bool);
     Q_INVOKABLE void browseBookmark(QString uri);
     Q_INVOKABLE void shuffleBookmark();
     Q_INVOKABLE void oldestBookmark();
@@ -61,18 +51,23 @@ public:
     Q_INVOKABLE int getQuickestSize();
     Q_INVOKABLE int getLoungeSize();
     Q_INVOKABLE bool isKeptOnly();
-    Q_INVOKABLE void keepBookmark(bool);
-    Q_INVOKABLE void keepBookmark(bool, int);
+    Q_INVOKABLE void memoBookmark(QString memo);
+    Q_INVOKABLE void memoBookmark(QString url, QString memo);
+    Q_INVOKABLE void keepBookmark(bool keep);
+    Q_INVOKABLE void keepBookmark(QString url, bool keep);
+    Q_INVOKABLE void removeBookmark(QString url);
+    Q_INVOKABLE void removeBookmark(QString url, bool deleteKept);
     Q_INVOKABLE void launchSearchToPutin(QString query);
     Q_INVOKABLE void launchRating();
+    Q_INVOKABLE QString getAppVersion();
     virtual ~Backpack();
 
 public Q_SLOTS:
 	void handleInvoke(const bb::system::InvokeRequest&);
-	void handleBookmarkTitle(QString);
-	void handleBookmarkSize(QNetworkReply*);
-	void handleBookmarkIcon(QUrl);
-	void downloadFavicon(QNetworkReply*);
+	void handleDownloadFailed(QUrl url);
+	void updateSize();
+	void updateFavicon();
+	void updateTitle(QString);
 
 private:
     TabbedPane *mainPage;
@@ -80,13 +75,9 @@ private:
 	QFile dbFile;
 	SqlDataAccess *data;
     InvokeManager *iManager;
-    QNetworkAccessManager *network;
-    QNetworkRequest bookmarkRequest;
-    QNetworkRequest iconRequest;
     ListView *bookmarks;
-    WebPage *bookmark;
-    bool titleComplete;
-    bool faviconComplete;
+    QMap<QUrl, Bookmark*> bookmark;
+    QUrl currentUrl;
 
     ActiveFrame *activeFrame;
 
@@ -95,6 +86,7 @@ private:
     bool databaseExists();
     void createDatabase();
     void refreshBookmarks();
+    void refreshBookmarks(bool reload);
 };
 
 #endif /* Backpack_HPP_ */
