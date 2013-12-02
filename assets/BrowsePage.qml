@@ -214,11 +214,13 @@ Page {
 	                                textStyle.color: ListItemData.memo ? Color.create("#07b1e6") : Color.Gray
 	                                textStyle.fontSize: FontSize.Medium
 	                                multiline: ListItemData.memo
-	                            }
+	                                preferredWidth: 560
+	                            }                            
                                 Label {
                                     id: timeLabel
                                     text: ListItemData.size
                                     textStyle.color: Color.create("#07b1e6")
+                                    textStyle.fontSize: FontSize.Medium
                                     horizontalAlignment: HorizontalAlignment.Right
                                     onCreationCompleted: formatTime()
                                     onTextChanged: formatTime()
@@ -234,7 +236,7 @@ Page {
                                             }
                                         }
                                     }
-                                }                        
+                                }
                             }
                         }
                         
