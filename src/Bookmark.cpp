@@ -50,7 +50,7 @@ void Bookmark::fetchContent() {
 	bookmarkRequest.setUrl(this->url);
 	network->get(bookmarkRequest);
 
-	page->setUrl(url);
+	page->setUrl(this->url);
 	titleComplete = false;
 	faviconComplete = false;
 }
@@ -91,6 +91,7 @@ bool Bookmark::isKept() {
 void Bookmark::setKept(bool keep) {
 
 	data->execute(QString("UPDATE Bookmark SET keep = ? WHERE id = ?"), QVariantList() << keep << this->id);
+	this->kept = keep;
 }
 
 bool Bookmark::alreadyExisted() {
@@ -115,11 +116,11 @@ void Bookmark::handleTitle(QString title) {
 
 void Bookmark::handleIcon(QUrl icon) {
 
-	QString url = icon.toString();
-	if (url.length() == 0)
+	QString iconUrl = icon.toString();
+	if (iconUrl.length() == 0)
 		return;
 
-	QString domain = url.left(url.indexOf(icon.topLevelDomain()));
+	QString domain = iconUrl.left(iconUrl.indexOf(icon.topLevelDomain()));
 	domain = domain.right(domain.length() - domain.indexOf(".") - 1);
 	domain.append(icon.topLevelDomain());
 
@@ -143,7 +144,10 @@ void Bookmark::handleSize(QNetworkReply *reply) {
 
 void Bookmark::downloadFavicon(QNetworkReply *reply) {
 
-	QFile *iconFile = new QFile(QString("data/icon-") % QString::number(this->id) % QString(".png"));
+	QString domain = this->url.toString();
+	domain = domain.left(domain.lastIndexOf("/"));
+	domain = domain.right(domain.length() - domain.lastIndexOf("/") - 1);
+	QFile *iconFile = new QFile(QDir::home().absoluteFilePath(QString("icon.") % domain % QString(".png")));
 	iconFile->remove();
 	iconFile->open(QIODevice::ReadWrite);
 	iconFile->write(reply->readAll());
@@ -154,9 +158,8 @@ void Bookmark::downloadFavicon(QNetworkReply *reply) {
 	data->execute("UPDATE Bookmark SET favicon = ? WHERE id = ?", QVariantList() << QString("file://").append(iconInfo.absoluteFilePath()) << this->id);
 
 	faviconComplete = true;
-	if (titleComplete) {
+	if (titleComplete)
 		this->page->stop();
-	}
 
 	emit iconChanged();
 }
@@ -165,6 +168,8 @@ void Bookmark::saveMemo(QString memo) {
 
 	if (memo.length() > 0)
 		data->execute(QString("UPDATE Bookmark SET memo = ? WHERE id = ?"), QVariantList() << memo << this->id);
+
+	this->memo = memo;
 }
 
 void Bookmark::remove() {
@@ -172,7 +177,10 @@ void Bookmark::remove() {
 	data->execute("DELETE FROM Bookmark WHERE id = ?", QVariantList() << this->id);
 
 	QFile icon;
-	icon.setFileName(QDir::home().absoluteFilePath(QString("icon-") % QString::number(id) % QString(".png")));
+	QString domain = this->url.toString();
+	domain = domain.left(domain.lastIndexOf("/"));
+	domain = domain.right(domain.length() - domain.lastIndexOf("/") - 1);
+	icon.setFileName(QDir::home().absoluteFilePath(QString("icon.") % QString::number(this->id) % QString(".png")));
 	icon.remove();
 }
 
