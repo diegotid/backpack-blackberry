@@ -66,8 +66,16 @@ Page {
                         title: ListItemData
                         property string dateTitle
                         
-                        onTitleChanged: if (title != dateTitle) formatDate()
-                        onDateTitleChanged: if (title != dateTitle) title = dateTitle
+                        onTitleChanged: {
+                            if (title != dateTitle) {
+                                formatDate()
+                            }
+                        }
+                        onDateTitleChanged: {
+                            if (title != dateTitle) {
+                                title = dateTitle
+                            }
+                        }
                         
                         function formatDate() {
                             if (title.substring(4,5) == "-") {
@@ -162,22 +170,25 @@ Page {
 	                                    id: iconImage
 //	                                    imageSource: "asset:///images/favicon.png"
                                         imageSource: ListItemData.favicon
-                                        onImageSourceChanged: activity.visible = ListItemData.title ? false : true
-	                                    minWidth: 48
-	                                    minHeight: 48
+                                        minWidth: 48
+                                        minHeight: 48
+                                        onImageSourceChanged: {
+                                            activity.visible = ListItemData.title ? false : true
+                                        }
 	                                }                            
                                 }
                                 
                                 Container {
                                     id: activity
                                     visible: (ListItemData.title && ListItemData.favicon) ? false : true
-                                    onVisibleChanged: iconContainer.visible = !activity.visible
                                     topPadding: 15
                                     leftPadding: 4
                                     rightPadding: 12
                                     scaleX: 1.3
                                     scaleY: 1.3
-                                    
+                                    onVisibleChanged: {
+                                        iconContainer.visible = !activity.visible
+                                    }
                                     ActivityIndicator {
                                         running: true
                                     }
@@ -189,18 +200,42 @@ Page {
                                     textStyle.fontSize: FontSize.XLarge
                                     preferredWidth: 650
                                     translationX: -7
-                                    onTextChanged: activity.visible = ListItemData.favicon ? false : true
+                                    onTextChanged: {
+                                        activity.visible = ListItemData.favicon ? false : true
+                                    }
                                 }
                             }
                             
                             Container {
-                                translationY: -5
-	                            Label {
+                                layout: DockLayout {}
+                                horizontalAlignment: HorizontalAlignment.Fill
+                                translationY: -3
+                                Label {
                                     text: ListItemData.memo ? ListItemData.memo : ListItemData.url
 	                                textStyle.color: ListItemData.memo ? Color.create("#07b1e6") : Color.Gray
 	                                textStyle.fontSize: FontSize.Medium
 	                                multiline: ListItemData.memo
-	                            }                        
+	                            }
+                                Label {
+                                    id: timeLabel
+                                    text: ListItemData.size
+                                    textStyle.color: Color.create("#07b1e6")
+                                    horizontalAlignment: HorizontalAlignment.Right
+                                    onCreationCompleted: formatTime()
+                                    onTextChanged: formatTime()
+                                    function formatTime() {
+                                        if (text.indexOf("min") < 0) {
+                                            var k10 = (text - text % 10000) / 10000
+                                            switch (k10) {
+                                                case 0:
+                                                    text = "< 1 min"
+                                                    break;
+                                                default:
+                                                    text = k10 + " min" 
+                                            }
+                                        }
+                                    }
+                                }                        
                             }
                         }
                         

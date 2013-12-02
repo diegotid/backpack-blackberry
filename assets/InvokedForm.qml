@@ -208,8 +208,16 @@ Page {
 		                    checked: item && item.keep == "true"
 		                    property bool invokeChecked: false
 		                    
-		                    onCheckedChanged: item ? app.keepBookmark(item.url, checked) : app.keepBookmark(checked)
-                            onInvokeCheckedChanged: keepCheck.checked = invokeChecked
+		                    onCheckedChanged: {
+		                        if (item) {
+		                            app.keepBookmark(item.url, checked)
+		                        } else {
+		                            app.keepBookmark(checked)
+		                        }
+		                    }
+                            onInvokeCheckedChanged: {
+                                keepCheck.checked = invokeChecked
+                            }
 		                }
 		            }
                 }
