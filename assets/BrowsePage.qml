@@ -168,7 +168,6 @@ Page {
                                     rightPadding: 12
 	                                ImageView {
 	                                    id: iconImage
-//	                                    imageSource: "asset:///images/favicon.png"
                                         imageSource: ListItemData.favicon
                                         minWidth: 48
                                         minHeight: 48
@@ -245,6 +244,8 @@ Page {
                             horizontalAlignment: HorizontalAlignment.Right
                             translationX: -10
                             translationY: 24
+                            onCreationCompleted: timeLabel.visible = !visible
+                            onVisibleChanged: timeLabel.visible = !visible
                         }
                         
                         Divider {
