@@ -18,6 +18,14 @@ TabbedPane {
             }
         },
         Sheet {
+            id: backupSheet
+            objectName: "backupSheet"
+            BackupSheet {
+                objectName: "backupSheet"
+                onClose: backupSheet.close();
+            }
+        },
+        Sheet {
             id: helpSheet
             HelpSheet {
                 onClose: helpSheet.close();
@@ -43,6 +51,14 @@ TabbedPane {
                 title: "About"
                 imageSource: "asset:///images/menuicons/ic_info.png"
                 onTriggered: aboutSheet.open();
+            },
+            ActionItem {
+                title: "Backup/Restore"
+                imageSource: "asset:///images/menuicons/ic_save.png"
+                onTriggered: {
+                	backupSheet.open();
+                	app.showBackups();
+                }
             }
         ]
     }

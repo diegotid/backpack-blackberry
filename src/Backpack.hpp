@@ -10,12 +10,15 @@
 #include <bb/cascades/AbstractPane>
 #include <bb/cascades/ListView>
 #include <bb/cascades/Page>
+#include <bb/cascades/Sheet>
 #include <bb/cascades/WebPage>
 #include <bb/cascades/WebLoadRequest>
 #include <bb/cascades/WebPageCompositor>
 #include <bb/data/SqlDataAccess>
+#include <bb/system/SystemToast>
 #include <bb/system/InvokeManager>
 #include <bb/system/InvokeRequest>
+#include <bb/system/SystemUiResult>
 
 using namespace bb::cascades;
 using namespace bb::system;
@@ -60,6 +63,12 @@ public:
     Q_INVOKABLE void launchSearchToPutin(QString query);
     Q_INVOKABLE void launchRating();
     Q_INVOKABLE QString getAppVersion();
+    Q_INVOKABLE void saveBackup();
+    Q_INVOKABLE void showBackups();
+    Q_INVOKABLE void deleteBackup(QString);
+    Q_INVOKABLE void shareBackup(QString);
+    Q_INVOKABLE void restoreBackup(QString);
+    Q_INVOKABLE void importBackupFile(QString);
     virtual ~Backpack();
 
 public Q_SLOTS:
@@ -78,6 +87,8 @@ private:
     ListView *bookmarks;
     QMap<QUrl, Bookmark*> bookmark;
     QUrl currentUrl;
+    QTimer *timeout;
+    SystemToast *backupToast;
 
     ActiveFrame *activeFrame;
 
@@ -87,6 +98,11 @@ private:
     void createDatabase();
     void refreshBookmarks();
     void refreshBookmarks(bool reload);
+
+private Q_SLOTS:
+	Q_INVOKABLE void restoreFinishedFeedback(bb::system::SystemUiResult::Type);
+	Q_INVOKABLE void deleteBackupFeedback(bb::system::SystemUiResult::Type);
+	Q_INVOKABLE void deleteBackupConfirmation();
 };
 
 #endif /* Backpack_HPP_ */

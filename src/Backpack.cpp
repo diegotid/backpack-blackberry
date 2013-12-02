@@ -14,11 +14,15 @@
 #include <bb/cascades/TextArea>
 #include <bb/cascades/Sheet>
 #include <bb/cascades/Page>
+#include <bb/cascades/Label>
 #include <bb/cascades/TitleBar>
 #include <bb/cascades/ToggleButton>
-#include <bb/system/SystemToast>
+#include <bb/system/SystemProgressToast>
+#include <bb/data/XmlDataAccess>
+#include <bb/PpsObject>
 
 using namespace bb::cascades;
+using namespace bb::system;
 using namespace bb::data;
 using namespace bb;
 using namespace std;
@@ -210,11 +214,13 @@ void Backpack::refreshBookmarks(bool reload) {
 				|| bmMap["favicon"].toString().length() == 0
 				|| bmMap["size"].toInt() == 0)) {
 			QUrl url = QUrl(bmMap["url"].toString());
-			if (!bookmark.contains(url)) bookmark[url] = new Bookmark(url, data, this);
+			if (!bookmark.contains(url)) {
+				bookmark[url] = new Bookmark(url, data, this);
+				connect(bookmark[url], SIGNAL(sizeChanged()), this, SLOT(updateSize()));
+				connect(bookmark[url], SIGNAL(iconChanged()), this, SLOT(updateFavicon()));
+				connect(bookmark[url], SIGNAL(titleChanged(QString)), this, SLOT(updateTitle(QString)));
+			}
 			bookmark[url]->fetchContent();
-			connect(bookmark[url], SIGNAL(sizeChanged()), this, SLOT(updateSize()));
-			connect(bookmark[url], SIGNAL(iconChanged()), this, SLOT(updateFavicon()));
-			connect(bookmark[url], SIGNAL(titleChanged(QString)), this, SLOT(updateTitle(QString)));
 		} else {
 			if (bmMap["title"].toString().length() == 0) bmMap["title"] = QString("...");
 			if (bmMap["favicon"].toString().length() == 0) bmMap["favicon"] = QString("asset:///images/favicon.png");
@@ -245,6 +251,210 @@ void Backpack::refreshBookmarks(bool reload) {
 	mainPage->findChild<Tab*>("exploreTab")->setEnabled(bookmarksNumber > 0);
 	if (bookmarksNumber == 0)
 		mainPage->setActiveTab(mainPage->at(2));
+}
+
+void Backpack::saveBackup() {
+
+	QDir appDir;
+	if (appDir.currentPath().indexOf("shared/documents/Backpack") < 0
+			&& !appDir.setCurrent("shared/documents/Backpack")) {
+		appDir.setCurrent("shared/documents");
+		appDir.mkdir("Backpack");
+		appDir.setCurrent("Backpack");
+	}
+	QFile file(QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz") % ".xml");
+
+	QVariantMap bookmarksList;
+	bookmarksList["bookmark"] = data->execute("SELECT url, memo, time, keep FROM Bookmark").toList();
+	QVariantMap bookmarksRoot;
+	bookmarksRoot["bookmarks"] = bookmarksList;
+
+	if (file.open(QIODevice::ReadWrite)) {
+		XmlDataAccess backup;
+		backup.save(QVariant(bookmarksRoot), &file);
+		file.close();
+		showBackups();
+	} else {
+		SystemToast *noFiles = new SystemToast(this);
+		noFiles->setBody("Unable to write file to system. Please check app permissions");
+		noFiles->show();
+	}
+}
+
+void Backpack::showBackups() {
+
+	Page *backupSheet = mainPage->findChild<Page*>("backupSheet");
+	ListView *backupsList = backupSheet->findChild<ListView*>("backupsList");
+
+	QDir appDir;
+	if (appDir.currentPath().indexOf("shared/documents/Backpack") < 0
+			&& !appDir.setCurrent("shared/documents/Backpack")) {
+		return;
+	}
+
+	QVariantList list;
+	QStringList filesList = appDir.entryList();
+	for (int i = 0; i < filesList.size(); i++) {
+		QString fileName = filesList.value(i);
+		if (fileName.indexOf(".xml") < 0 || fileName.indexOf(".tmp") > 0)
+			continue;
+		QString date = QDate(fileName.left(4).toInt(), fileName.mid(4, 2).toInt(), fileName.mid(6, 2).toInt()).toString();
+		date = date.left(1).toUpper() % date.right(date.length() - 1);
+		QVariantMap entry;
+		entry["file"] = fileName;
+		entry["date"] = date;
+		list << entry;
+	}
+	backupSheet->findChild<Container*>("lastBackupStatus")->setVisible(list.size() == 0);
+
+	GroupDataModel *model = new GroupDataModel(QStringList() << "file");
+	model->insertList(list);
+	model->setGrouping(ItemGrouping::None);
+	model->setSortedAscending(false);
+	backupsList->setDataModel(model);
+}
+
+void Backpack::shareBackup(QString backupFilename) {
+
+	QDir appDir;
+	appDir.setCurrent("shared/documents/Backpack");
+
+	InvokeManager invokeSender;
+	InvokeRequest sending;
+	sending.setAction("bb.action.COMPOSE");
+	sending.setMimeType("message/rfc822");
+	QFileInfo backupFile(backupFilename);
+	QString date = QDate(backupFilename.left(4).toInt(), backupFilename.mid(4, 2).toInt(), backupFilename.mid(6, 2).toInt()).toString();
+	date = date.left(1).toUpper() % date.right(date.length() - 1);
+	QVariantMap data;
+	data["to"] = (QVariantList() << "diegoriveranunez@gmail.com");
+	data["subject"] = "Backpack backup file";
+	data["attachment"] = (QVariantList() << QString(QUrl(backupFile.absoluteFilePath()).toEncoded()));
+	data["body"] = QString("Find attached Backpack backup file dated ").append(date);
+	QVariantMap emailData;
+	emailData["data"] = data;
+	bool ok;
+	sending.setData(bb::PpsObject::encode(emailData, &ok));
+	invokeSender.invoke(sending);
+}
+
+void Backpack::restoreBackup(QString backupFilename) {
+
+	SystemProgressToast *progress = new SystemProgressToast(this);
+	progress->show();
+
+	QDir appDir;
+	appDir.setCurrent("shared/documents/Backpack");
+
+	XmlDataAccess backup;
+	QVariantList bookmarksList;
+	QVariant backupContent = backup.load(backupFilename, "/bookmarks/bookmark");
+	if (backupContent.canConvert(QVariant::List))
+		bookmarksList << backupContent.toList();
+	else
+		bookmarksList << backupContent.toMap();
+
+	for (int i = 0; i < bookmarksList.size(); i++) {
+		QVariantMap backupData = bookmarksList.at(i).toMap();
+		QVariantList existing = data->execute("SELECT id FROM Bookmark WHERE url = ?", QVariantList() << backupData["url"]).toList();
+		if (existing.size() == 0) {
+			QVariantMap currentId = data->execute("SELECT MAX(id) FROM Bookmark").toList().value(0).toMap();
+			int id = currentId.value("MAX(id)").isNull() ? 1 : currentId.value("MAX(id)").toInt() + 1;
+			data->execute("INSERT INTO Bookmark (id, url, date, time, keep, memo) VALUES (?, ?, ?, ?, ?, ?)", QVariantList() << id << backupData["url"].toString() << backupData["time"].toDate() << backupData["time"].toDateTime() << backupData["keep"].toBool() << backupData["memo"].toString());
+		} else {
+			data->execute("UPDATE Bookmark SET date = ?, time = ?, keep = ?, memo = ? WHERE url = ?", QVariantList() << backupData["time"].toDate() << backupData["time"].toDateTime() << backupData["keep"].toBool() << backupData["memo"].toString() << backupData["url"].toString());
+		}
+	}
+	refreshBookmarks(true);
+
+	backupToast = new SystemToast();
+	QString date = QDate(backupFilename.left(4).toInt(), backupFilename.mid(4, 2).toInt(), backupFilename.mid(6, 2).toInt()).toString();
+	date = date.left(1).toUpper() % date.right(date.length() - 1);
+	backupToast->setBody(QString::number(bookmarksList.size()).append(" bookmarks restored"));
+	SystemUiButton *viewButton = backupToast->button();
+	viewButton->setLabel("View");
+	timeout = new QTimer();
+	timeout->setSingleShot(true);
+	timeout->start(7500);
+	connect(timeout, SIGNAL(timeout()), backupToast, SLOT(cancel()));
+	connect(backupToast, SIGNAL(finished(bb::system::SystemUiResult::Type)), this, SLOT(restoreFinishedFeedback(bb::system::SystemUiResult::Type)));
+	backupToast->show();
+}
+
+void Backpack::importBackupFile(QString backupFilePath) {
+
+	QDir appDir;
+	if (appDir.currentPath().indexOf("shared/documents/Backpack") < 0
+			&& !appDir.setCurrent("shared/documents/Backpack")) {
+		appDir.setCurrent("shared/documents");
+		appDir.mkdir("Backpack");
+		appDir.setCurrent("Backpack");
+	}
+	QFileInfo backupFile(backupFilePath);
+	QFile::copy(backupFilePath, backupFile.fileName());
+	showBackups();
+}
+
+void Backpack::deleteBackup(QString backupFilename) {
+
+	QDir appDir;
+	appDir.setCurrent("shared/documents/Backpack");
+	appDir.rename(backupFilename, backupFilename % ".tmp");
+	showBackups();
+
+	backupToast = new SystemToast();
+	SystemUiButton *undoButton = backupToast->button();
+	QString date = QDate(backupFilename.left(4).toInt(), backupFilename.mid(4, 2).toInt(), backupFilename.mid(6, 2).toInt()).toString();
+	date = date.left(1).toUpper() % date.right(date.length() - 1);
+	backupToast->setBody(date % "\nBackup file has been deleted");
+	undoButton->setLabel("Undo");
+
+	timeout = new QTimer();
+	timeout->setSingleShot(true);
+	timeout->start(3000);
+	connect(timeout, SIGNAL(timeout()), this, SLOT(deleteBackupConfirmation()));
+	connect(backupToast, SIGNAL(finished(bb::system::SystemUiResult::Type)), this, SLOT(deleteBackupFeedback(bb::system::SystemUiResult::Type)));
+	backupToast->show();
+}
+
+void Backpack::restoreFinishedFeedback(bb::system::SystemUiResult::Type value) {
+
+	if (value != SystemUiResult::ButtonSelection)
+		return;
+
+	mainPage->setActiveTab(mainPage->at(1));
+	mainPage->findChild<Sheet*>("backupSheet")->close();
+}
+
+void Backpack::deleteBackupFeedback(bb::system::SystemUiResult::Type value) {
+
+	if (value != SystemUiResult::ButtonSelection)
+		return;
+
+	QDir appDir;
+	appDir.setCurrent("shared/documents/Backpack");
+	QStringList filesList = appDir.entryList();
+
+	for (int i = 0; i < filesList.size(); i++) {
+		QString fileName = filesList.value(i);
+		if (fileName.indexOf(".tmp") > 0)
+			appDir.rename(fileName, fileName.left(fileName.indexOf(".tmp")));
+	}
+	showBackups();
+}
+
+void Backpack::deleteBackupConfirmation() {
+
+	QDir appDir;
+	appDir.setCurrent("shared/documents/Backpack");
+	QStringList filesList = appDir.entryList();
+
+	for (int i = 0; i < filesList.size(); i++) {
+		QString fileName = filesList.value(i);
+		if (fileName.indexOf(".tmp") > 0)
+			appDir.remove(fileName);
+	}
+	backupToast->cancel();
 }
 
 void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
