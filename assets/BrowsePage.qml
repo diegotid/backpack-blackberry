@@ -53,6 +53,10 @@ Page {
             id: bookmarks
             objectName: "bookmarks"
 
+//            dataModel: XmlDataModel {
+//                source: "debug.xml"
+//            }
+            
             listItemComponents: [
                 
                 ListItemComponent {
