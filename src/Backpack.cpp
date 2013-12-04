@@ -208,8 +208,8 @@ void Backpack::refreshBookmarks(bool reload) {
 	QVariantList list = data->execute("SELECT * FROM Bookmark").toList();
 
 	QVariantList staticList;
-	for (QVariantList::const_iterator bm = list.begin(); bm != list.end(); bm++) {
-		QVariantMap bmMap = bm->toMap();
+	for (int i = 0; i < list.size(); i++) {
+		QVariantMap bmMap = list.at(i).toMap();
 		if (reload && (bmMap["title"].toString().length() == 0
 				|| bmMap["favicon"].toString().length() == 0
 				|| bmMap["size"].toInt() == 0)) {
@@ -224,6 +224,7 @@ void Backpack::refreshBookmarks(bool reload) {
 		} else {
 			if (bmMap["title"].toString().length() == 0) bmMap["title"] = QString("...");
 			if (bmMap["favicon"].toString().length() == 0) bmMap["favicon"] = QString("asset:///images/favicon.png");
+			if (bmMap["size"].toInt() == 0) bmMap["size"] = QString("");
 		}
 		staticList << bmMap;
 	}

@@ -53,46 +53,24 @@ Page {
             id: bookmarks
             objectName: "bookmarks"
 
-//            dataModel: XmlDataModel {
-//                source: "debug.xml"
-//            }
-            
             listItemComponents: [
                 
                 ListItemComponent {
                     type: "header"
                     
                     Header {
-                        title: ListItemData
-                        property string dateTitle
-                        
-                        onTitleChanged: {
-                            if (title != dateTitle) {
-                                formatDate()
-                            }
-                        }
-                        onDateTitleChanged: {
-                            if (title != dateTitle) {
-                                title = dateTitle
-                            }
-                        }
-                        
-                        function formatDate() {
-                            if (title.substring(4,5) == "-") {
+                        title: formatDate(ListItemData)
+                        function formatDate(dbDate) {
+                            var strDate = dbDate.toString();
+                            if (strDate.substring(4,5) == "-") {
                                 var today = new Date();
                                 today = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-                                var header = new Date(title.substring(0,4), title.substring(5,7) - 1, title.substring(8,10), 0, 0, 0, 0);
+                                var header = new Date(strDate.substring(0,4), strDate.substring(5,7) - 1, strDate.substring(8,10), 0, 0, 0, 0);
                                 var hours = (today.getTime() - header.getTime()) / 1000 / 60 / 60;
                                 switch ((hours - hours % 24) / 24) {
-                                    case 0:
-                                        dateTitle = "Today";
-                                        break;
-                                    case 1:
-                                        dateTitle = "Yesterday";
-                                        break;
-                                    default:
-                                        dateTitle = header.toDateString();
-                                        break;
+                                    case 0: return "Today";
+                                    case 1: return "Yesterday";
+                                    default: return header.toDateString();
                                 }
                             }
                         }
@@ -164,13 +142,13 @@ Page {
                                 Container {
                                     id: iconContainer
                                     visible: false
-                                    topPadding: 12
-                                    rightPadding: 12
+                                    topPadding: 15
+                                    rightPadding: 10
 	                                ImageView {
 	                                    id: iconImage
                                         imageSource: ListItemData.favicon
-                                        minWidth: 48
-                                        minHeight: 48
+                                        minWidth: 42
+                                        minHeight: 42
                                         onImageSourceChanged: {
                                             activity.visible = ListItemData.title ? false : true
                                         }
@@ -218,21 +196,16 @@ Page {
 	                            }                            
                                 Label {
                                     id: timeLabel
-                                    text: ListItemData.size
                                     textStyle.color: Color.create("#07b1e6")
                                     textStyle.fontSize: FontSize.Medium
                                     horizontalAlignment: HorizontalAlignment.Right
-                                    onCreationCompleted: formatTime()
-                                    onTextChanged: formatTime()
-                                    function formatTime() {
-                                        if (text.indexOf("min") < 0) {
-                                            var k10 = (text - text % 10000) / 10000
+                                    text: formatTime(ListItemData.size)
+                                    function formatTime(size) {
+                                        if (size.toString().indexOf("min") < 0) {
+                                            var k10 = (size - size % 10000) / 10000
                                             switch (k10) {
-                                                case 0:
-                                                    text = "< 1 min"
-                                                    break;
-                                                default:
-                                                    text = k10 + " min" 
+                                                case 0: return "< 1 min"
+                                                default: return k10 + " min" 
                                             }
                                         }
                                     }
