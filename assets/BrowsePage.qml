@@ -1,5 +1,6 @@
 
 import bb.cascades 1.0
+import bb.system 1.0
   
 Page {
     
@@ -110,7 +111,27 @@ Page {
                                     onTriggered: bookmark.ListItem.view.toggleKeep(ListItemData.url, ListItemData.keep == "false")   
                                 }
                                 DeleteActionItem {
-                                    onTriggered: bookmark.ListItem.view.deleteBookmark(ListItemData.url)
+                                    onTriggered: {
+                                        bookmark.ListItem.view.dataModel.remove(ListItemData)
+                                        deletedBookmark.deletedItem = ListItemData
+                                        deletedBookmark.show()
+                                    }                                   
+                                    attachedObjects: [
+                                        SystemToast {
+                                            id: deletedBookmark
+                                            body: "Bookmark deleted: " + deletedItem.title
+                                            button.label: "Undo"
+                                            button.enabled: true 
+                                            property variant deletedItem
+                                            onFinished: {
+                                                if (result == SystemUiResult.ButtonSelection) {
+                                                    bookmark.ListItem.view.dataModel.insert(deletedItem)
+                                                } else {
+                                                    bookmark.ListItem.view.deleteBookmark(deletedItem)
+                                                }
+                                            }
+                                        }
+                                    ]
                                 }
                             }
                         ]
@@ -206,6 +227,8 @@ Page {
                                     text: formatTime(ListItemData.size)
                                     function formatTime(size) {
                                         if (size.toString().indexOf("min") < 0) {
+                                            if (size == 0)
+                                            	return "";
                                             var k10 = (size - size % 10000) / 10000
                                             switch (k10) {
                                                 case 0: return "< 1 min"
@@ -253,8 +276,8 @@ Page {
                 bookmarkSheet.open()
             }
             
-            function deleteBookmark(url) {	                
-                app.removeBookmark(url, true);
+            function deleteBookmark(ListItemData) {
+                app.removeBookmark(ListItemData.url, true);
             }
             
             function toggleKeep(url, keep) {
