@@ -236,7 +236,6 @@ void Backpack::refreshBookmarks(bool reload) {
 	model->setGrouping(ItemGrouping::ByFullValue);
 	model->setSortedAscending(false);
     bookmarks->setDataModel(model);
-    bookmarksNumber = list.size();
 
 	mainPage->findChild<QObject*>("oldestLabel")->setProperty("text", getOldestDate().toString(Qt::ISODate));
 	mainPage->findChild<QObject*>("quickestLabel")->setProperty("text", getQuickestSize());
@@ -248,9 +247,9 @@ void Backpack::refreshBookmarks(bool reload) {
     activeFrame->update(true);
     activeFrame->takeFigures(this);
 
-	mainPage->findChild<Tab*>("readTab")->setEnabled(bookmarksNumber > 0);
-	mainPage->findChild<Tab*>("exploreTab")->setEnabled(bookmarksNumber > 0);
-	if (bookmarksNumber == 0)
+	mainPage->findChild<Tab*>("readTab")->setEnabled(list.size() > 0);
+	mainPage->findChild<Tab*>("exploreTab")->setEnabled(list.size() > 0);
+	if (list.size() == 0)
 		mainPage->setActiveTab(mainPage->at(2));
 }
 
@@ -795,7 +794,7 @@ void Backpack::removeBookmark(QString url) {
 	removeBookmark(url, false);
 }
 
-void Backpack::removeBookmark(QString url, bool deleteKept) {
+void Backpack::removeBookmark(QString url, bool deliberate) {
 
 	QUrl bmUrl = QUrl(url);
 	if (!bookmark.contains(bmUrl)) {
@@ -805,12 +804,17 @@ void Backpack::removeBookmark(QString url, bool deleteKept) {
 		connect(bookmark[bmUrl], SIGNAL(titleChanged(QString)), this, SLOT(updateTitle(QString)));
 	}
 
-	if (!bookmark[bmUrl]->isKept() || deleteKept) {
+	if (!bookmark[bmUrl]->isKept() || deliberate) {
 		bookmark[bmUrl]->remove();
 		bookmark.remove(bmUrl);
 
-		if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication)
+		if (!deliberate && iManager->startupMode() == ApplicationStartupMode::LaunchApplication)
 			refreshBookmarks();
+		else if (deliberate && bookmark.size() == 0) {
+			mainPage->setActiveTab(mainPage->at(2));
+			mainPage->findChild<Tab*>("readTab")->setEnabled(false);
+			mainPage->findChild<Tab*>("exploreTab")->setEnabled(false);
+		}
 	}
 }
 

@@ -92,8 +92,6 @@ private:
 
     ActiveFrame *activeFrame;
 
-    int bookmarkId;
-    int bookmarksNumber;
     bool databaseExists();
     void createDatabase();
     void refreshBookmarks();
