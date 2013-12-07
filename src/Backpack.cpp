@@ -557,8 +557,17 @@ void Backpack::shuffleBookmark() {
 	int randomNumber = rand() % ids.size();
 	QUrl url = ids.value(randomNumber).toMap().value("url").toUrl();
 
-	if (bookmark[url] && !bookmark[url]->isKept())
+	if (!bookmark.contains(url)) {
+		bookmark[url] = new Bookmark(url, data, this);
+		connect(bookmark[url], SIGNAL(sizeChanged()), this, SLOT(updateSize()));
+		connect(bookmark[url], SIGNAL(iconChanged()), this, SLOT(updateFavicon()));
+		connect(bookmark[url], SIGNAL(titleChanged(QString)), this, SLOT(updateTitle(QString)));
+	}
+
+	if (!bookmark[url]->isKept()) {
 		bookmark[url]->remove();
+		refreshBookmarks();
+	}
 
 	InvokeManager invokeSender;
 	InvokeRequest request;
@@ -586,8 +595,17 @@ void Backpack::oldestBookmark() {
 
 	QUrl url = ids.value(0).toMap().value("url").toUrl();
 
-	if (bookmark[url] && !bookmark[url]->isKept())
+	if (!bookmark.contains(url)) {
+		bookmark[url] = new Bookmark(url, data, this);
+		connect(bookmark[url], SIGNAL(sizeChanged()), this, SLOT(updateSize()));
+		connect(bookmark[url], SIGNAL(iconChanged()), this, SLOT(updateFavicon()));
+		connect(bookmark[url], SIGNAL(titleChanged(QString)), this, SLOT(updateTitle(QString)));
+	}
+
+	if (!bookmark[url]->isKept()) {
 		bookmark[url]->remove();
+		refreshBookmarks();
+	}
 
 	InvokeManager invokeSender;
 	InvokeRequest request;
@@ -620,8 +638,17 @@ void Backpack::quickestBookmark() {
 
 	QUrl url = ids.value(0).toMap().value("url").toUrl();
 
-	if (bookmark[url] && !bookmark[url]->isKept())
+	if (!bookmark.contains(url)) {
+		bookmark[url] = new Bookmark(url, data, this);
+		connect(bookmark[url], SIGNAL(sizeChanged()), this, SLOT(updateSize()));
+		connect(bookmark[url], SIGNAL(iconChanged()), this, SLOT(updateFavicon()));
+		connect(bookmark[url], SIGNAL(titleChanged(QString)), this, SLOT(updateTitle(QString)));
+	}
+
+	if (!bookmark[url]->isKept()) {
 		bookmark[url]->remove();
+		refreshBookmarks();
+	}
 
 	mainPage->findChild<QObject*>("quickestLabel")->setProperty("text", QString::number(getQuickestSize()));
 	mainPage->findChild<QObject*>("quickestLabelZip")->setProperty("visible", isKeptOnly());
@@ -652,8 +679,17 @@ void Backpack::loungeBookmark() {
 
 	QUrl url = ids.value(0).toMap().value("url").toUrl();
 
-	if (bookmark[url] && !bookmark[url]->isKept())
+	if (!bookmark.contains(url)) {
+		bookmark[url] = new Bookmark(url, data, this);
+		connect(bookmark[url], SIGNAL(sizeChanged()), this, SLOT(updateSize()));
+		connect(bookmark[url], SIGNAL(iconChanged()), this, SLOT(updateFavicon()));
+		connect(bookmark[url], SIGNAL(titleChanged(QString)), this, SLOT(updateTitle(QString)));
+	}
+
+	if (!bookmark[url]->isKept()) {
 		bookmark[url]->remove();
+		refreshBookmarks();
+	}
 
 	mainPage->findChild<QObject*>("loungeLabel")->setProperty("text", QString::number(getLoungeSize()));
 	mainPage->findChild<QObject*>("loungeLabelZip")->setProperty("visible", isKeptOnly());
