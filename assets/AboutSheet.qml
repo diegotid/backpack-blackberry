@@ -40,8 +40,10 @@ Page {
             Label {
                 multiline: true
                 text: "New in this version:"
-	                + "\n- Lounge mode, for those relaxed moments with time enough for extended readings"
-	                + "\n- Put in funcion, so you can start a search for new content to add"
+	                + "\n- See the icons of the web sites you put in the backpack"
+	                + "\n- Backup your bookmarks and share them so they can be restored or loaded on a different device"
+	                + "\n- Performance improvements"
+	                + "\n- Little interface improvements"
             }
             
             Container {
@@ -49,7 +51,7 @@ Page {
                 horizontalAlignment: HorizontalAlignment.Fill
                 
                 Button {
-                    text: "Rate the app"
+                    text: "Rate it!"
                     horizontalAlignment: HorizontalAlignment.Center
                     onClicked: app.launchRating()
                 }
