@@ -850,6 +850,8 @@ void Backpack::removeBookmark(QString url, bool deliberate) {
 			mainPage->setActiveTab(mainPage->at(2));
 			mainPage->findChild<Tab*>("readTab")->setEnabled(false);
 			mainPage->findChild<Tab*>("exploreTab")->setEnabled(false);
+		    activeFrame->update(true);
+		    activeFrame->takeFigures(this);
 		}
 	}
 }
