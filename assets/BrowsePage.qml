@@ -1,5 +1,6 @@
 
 import bb.cascades 1.0
+import bb.system 1.0
   
 Page {
     
@@ -48,10 +49,14 @@ Page {
             id: backgroundBase
             imageSource: "asset:///images/background.png"
         }
-        
+               
         ListView {
             id: bookmarks
             objectName: "bookmarks"
+
+//            dataModel: XmlDataModel {
+//                source: "debug.xml"
+//            }
             
             listItemComponents: [
                 
@@ -59,29 +64,18 @@ Page {
                     type: "header"
                     
                     Header {
-//                            title: ListItemData.title // For debub.xml
-                        title: ListItemData
-                        property string dateTitle
-                        
-                        onTitleChanged: if (title != dateTitle) formatDate()
-                        onDateTitleChanged: if (title != dateTitle) title = dateTitle
-                        
-                        function formatDate() {
-                            if (title.substring(4,5) == "-") {
+                        title: formatDate(ListItemData)
+                        function formatDate(dbDate) {
+                            var strDate = dbDate.toString();
+                            if (strDate.substring(4,5) == "-") {
                                 var today = new Date();
                                 today = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-                                var header = new Date(title.substring(0,4), title.substring(5,7) - 1, title.substring(8,10), 0, 0, 0, 0);
+                                var header = new Date(strDate.substring(0,4), strDate.substring(5,7) - 1, strDate.substring(8,10), 0, 0, 0, 0);
                                 var hours = (today.getTime() - header.getTime()) / 1000 / 60 / 60;
                                 switch ((hours - hours % 24) / 24) {
-                                    case 0:
-                                        dateTitle = "Today";
-                                        break;
-                                    case 1:
-                                        dateTitle = "Yesterday";
-                                        break;
-                                    default:
-                                        dateTitle = header.toDateString();
-                                        break;
+                                    case 0: return "Today";
+                                    case 1: return "Yesterday";
+                                    default: return header.toDateString();
                                 }
                             }
                         }
@@ -114,10 +108,30 @@ Page {
                                 ActionItem {
                                     title: "Toggle keep after read"
                                     imageSource: "asset:///images/menuicons/zip.png"
-                                    onTriggered: bookmark.ListItem.view.toggleKeep(ListItemData.keep == "false", ListItemData.id)   
+                                    onTriggered: bookmark.ListItem.view.toggleKeep(ListItemData.url, ListItemData.keep == "false")   
                                 }
                                 DeleteActionItem {
-                                    onTriggered: bookmark.ListItem.view.deleteBookmark(ListItemData.id)
+                                    onTriggered: {
+                                        bookmark.ListItem.view.dataModel.remove(ListItemData)
+                                        deletedBookmark.deletedItem = ListItemData
+                                        deletedBookmark.show()
+                                    }                                   
+                                    attachedObjects: [
+                                        SystemToast {
+                                            id: deletedBookmark
+                                            body: "Bookmark deleted: " + deletedItem.title
+                                            button.label: "Undo"
+                                            button.enabled: true 
+                                            property variant deletedItem
+                                            onFinished: {
+                                                if (result == SystemUiResult.ButtonSelection) {
+                                                    bookmark.ListItem.view.dataModel.insert(deletedItem)
+                                                } else {
+                                                    bookmark.ListItem.view.deleteBookmark(deletedItem)
+                                                }
+                                            }
+                                        }
+                                    ]
                                 }
                             }
                         ]
@@ -137,27 +151,7 @@ Page {
                                 }
                             ]
                         }
-                        
-                        Container {
-                            topPadding: 10
-                            leftPadding: 10
-                            
-                            Container {
-                                visible: ListItemData.title ? false : true
-                                
-                                topPadding: 20
-                                bottomPadding: 20
-                                leftPadding: 20
-                                rightPadding: 20
-                                
-                                ActivityIndicator {
-                                    running: true
-                                    scaleX: 1.3
-                                    scaleY: 1.3
-                                }
-                            }
-                        }
-                        
+                                                
                         Container {
                             topPadding: 8
                             bottomPadding: 12
@@ -165,24 +159,83 @@ Page {
                             leftPadding: 18
                             
                             Container {
-                                layout: AbsoluteLayout {}
+                                layout: StackLayout {
+                                    orientation: LayoutOrientation.LeftToRight
+                                }
+                                leftPadding: 6
                                 
+                                Container {
+                                    id: iconContainer
+                                    visible: false
+                                    topPadding: 15
+                                    rightPadding: 10
+	                                ImageView {
+	                                    id: iconImage
+                                        imageSource: ListItemData.favicon
+                                        minWidth: 42
+                                        minHeight: 42
+                                        onImageSourceChanged: {
+                                            activity.visible = ListItemData.title ? false : true
+                                        }
+	                                }                            
+                                }
+                                
+                                Container {
+                                    id: activity
+                                    visible: (ListItemData.title && ListItemData.favicon) ? false : true
+                                    topPadding: 15
+                                    leftPadding: 4
+                                    rightPadding: 12
+                                    scaleX: 1.3
+                                    scaleY: 1.3
+                                    onVisibleChanged: {
+                                        iconContainer.visible = !activity.visible
+                                    }
+                                    ActivityIndicator {
+                                        running: true
+                                    }
+                                }
+
                                 Label {
                                     id: bookmarkTitle
                                     text: ListItemData.title
                                     textStyle.fontSize: FontSize.XLarge
-                                    preferredWidth: 700
+                                    preferredWidth: 650
+                                    translationX: -7
+                                    onTextChanged: {
+                                        activity.visible = ListItemData.favicon ? false : true
+                                    }
                                 }
                             }
                             
                             Container {
-                                layout: AbsoluteLayout {}
-                                
+                                layout: DockLayout {}
+                                horizontalAlignment: HorizontalAlignment.Fill
+                                translationY: -3
                                 Label {
                                     text: ListItemData.memo ? ListItemData.memo : ListItemData.url
-                                    textStyle.color: ListItemData.memo ? Color.create("#07b1e6") : Color.Gray
+	                                textStyle.color: ListItemData.memo ? Color.create("#07b1e6") : Color.Gray
+	                                textStyle.fontSize: FontSize.Medium
+	                                multiline: ListItemData.memo
+	                                preferredWidth: 560
+	                            }                            
+                                Label {
+                                    id: timeLabel
+                                    textStyle.color: Color.create("#07b1e6")
                                     textStyle.fontSize: FontSize.Medium
-                                    multiline: ListItemData.memo
+                                    horizontalAlignment: HorizontalAlignment.Right
+                                    text: formatTime(ListItemData.size)
+                                    function formatTime(size) {
+                                        if (size.toString().indexOf("min") < 0) {
+                                            if (size == 0)
+                                            	return "";
+                                            var k10 = (size - size % 10000) / 10000
+                                            switch (k10) {
+                                                case 0: return "< 1 min"
+                                                default: return k10 + " min" 
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -193,6 +246,8 @@ Page {
                             horizontalAlignment: HorizontalAlignment.Right
                             translationX: -10
                             translationY: 24
+                            onCreationCompleted: timeLabel.visible = !visible
+                            onVisibleChanged: timeLabel.visible = !visible
                         }
                         
                         Divider {
@@ -213,7 +268,7 @@ Page {
             onTriggered: {
                 var selectedItem = dataModel.data(indexPath)
                 app.browseBookmark(selectedItem.url)
-                app.removeBookmark(selectedItem.id)
+                app.removeBookmark(selectedItem.url)
             }
 
             function openEditSheet(row) {
@@ -221,12 +276,12 @@ Page {
                 bookmarkSheet.open()
             }
             
-            function deleteBookmark(id) {	                
-                app.removeBookmark(id, true);
+            function deleteBookmark(ListItemData) {
+                app.removeBookmark(ListItemData.url, true);
             }
             
-            function toggleKeep(keep, id) {
-                app.keepBookmark(keep, id)
+            function toggleKeep(url, keep) {
+                app.keepBookmark(url, keep)
             }     
         }
 	}

@@ -33,20 +33,20 @@ Container {
     }
     
     Container { // Header
-        layout: DockLayout {}
-        background: Color.Black
+        layout: StackLayout {
+            orientation: LayoutOrientation.LeftToRight
+        }
         horizontalAlignment: HorizontalAlignment.Fill
-        bottomMargin: 15
+        background: Color.Black
         
         Container {
-            horizontalAlignment: HorizontalAlignment.Right
             topPadding: 10
-            rightPadding: 10
+            leftPadding: 10
             ImageView {
                 imageSource: "asset:///images/small_icon.png"
             }        
         }
-        
+
         Container {
             topPadding: 10
             bottomPadding: 10
@@ -70,62 +70,83 @@ Container {
     }
 
     Container {
+        layout: DockLayout {}
+        horizontalAlignment: HorizontalAlignment.Fill
         topPadding: 78
-	    
+        bottomPadding: 12
+
         Container {
-            id: titleCase
-            topPadding: 0
-            bottomPadding: 5
+            topPadding: 10
             rightPadding: 10
+            bottomPadding: 10
             leftPadding: 10
-            Label {
-                id: bookmarkTitle
-                objectName: "bookmarkTitle"
-                multiline: true
-//                text: "Maecenas sit amet tellus eros, porttitor rhoncus ipsum. Sed rutrum lacus non dolor tincidunt posuere eget ut tortor. Proin ut nisi metus askdfañsl"
-                textStyle.color: Color.White
-                textStyle.fontWeight: FontWeight.Bold
-            }
-        }        
-        
-        Container {
-            id: urlCase
-            topPadding: 0
-            bottomPadding: 5
-            rightPadding: 10
-            leftPadding: 10
-            Label {
-                id: bookmarkURL
-                objectName: "bookmarkURL"
-//                text: "Maecenas sit amet tellus eros, porttitor rhoncus ipsum. Sed rutrum lacus non dolor tincidunt posuere eget ut tortor. Proin ut nisi metus askdfañsl"
-                textStyle.color: Color.LightGray
-                textStyle.fontSize: FontSize.XSmall
-                onTextChanged: {
-                    if (text.length > 0) {
-                        if (text.indexOf("http://") == 0)
-                        	bookmarkURL.setText(text.substr(7));   
-                        else if (text.indexOf("/") == text.length - 1)
-                        	bookmarkURL.setText(text.substring(0, text.length - 1));
-                    }
-                }
+            horizontalAlignment: HorizontalAlignment.Right
+            ImageView {
+                id: bookmarkIcon
+                objectName: "bookmarkIcon"
+                imageSource: "asset:///images/favicon.png"
+                minHeight: 36
+                minWidth: 36		    
             }
         }
-        
+
         Container {
-            id: memoCase
-            topPadding: 0
-            bottomPadding: 30
-            rightPadding: 10
-            leftPadding: 10
-            Label {
-                id: memo
-                objectName: "memo"
-                multiline: true
-//                text: "Maecenas sit amet tellus eros, porttitor rhoncus ipsum. Sed rutrum lacus non dolor tincidunt posuere eget ut tortor. Proin ut nisi metus askdfañsl"
-                textStyle.color: Color.White
-                textStyle.fontSize: FontSize.Small
-                preferredHeight: 300
-            }
-        }
+		    
+	        Container {
+	            id: titleCase
+	            topPadding: 0
+	            bottomPadding: 5
+	            rightPadding: 10
+	            leftPadding: 10
+	            Label {
+	                id: bookmarkTitle
+	                objectName: "bookmarkTitle"
+	                multiline: true
+//	                text: "Maecenas sit amet tellus eros, porttitor rhoncus ipsum. Sed rutrum lacus non dolor tincidunt posuere eget ut tortor. Proin ut nisi metus askdfañsl"
+	                textStyle.color: Color.White
+	                textStyle.fontWeight: FontWeight.Bold
+	            }
+	        }        
+	        
+	        Container {
+	            id: urlCase
+	            topPadding: 0
+	            bottomPadding: 5
+	            rightPadding: 10
+	            leftPadding: 10
+	            Label {
+	                id: bookmarkURL
+	                objectName: "bookmarkURL"
+//	                text: "Maecenas sit amet tellus eros, porttitor rhoncus ipsum. Sed rutrum lacus non dolor tincidunt posuere eget ut tortor. Proin ut nisi metus askdfañsl"
+	                textStyle.color: Color.LightGray
+	                textStyle.fontSize: FontSize.XSmall
+	                onTextChanged: {
+	                    if (text.length > 0) {
+	                        if (text.indexOf("http://") == 0)
+	                        	bookmarkURL.setText(text.substr(7));   
+	                        else if (text.indexOf("/") == text.length - 1)
+	                        	bookmarkURL.setText(text.substring(0, text.length - 1));
+	                    }
+	                }
+	            }
+	        }
+	        
+	        Container {
+	            id: memoCase
+	            topPadding: 0
+	            bottomPadding: 30
+	            rightPadding: 10
+	            leftPadding: 10
+	            Label {
+	                id: memo
+	                objectName: "memo"
+	                multiline: true
+//	                text: "Maecenas sit amet tellus eros, porttitor rhoncus ipsum. Sed rutrum lacus non dolor tincidunt posuere eget ut tortor. Proin ut nisi metus askdfañsl"
+	                textStyle.color: Color.White
+	                textStyle.fontSize: FontSize.Small
+	                preferredHeight: 300
+	            }
+	        }
+	    }
     }
 }

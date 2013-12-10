@@ -103,6 +103,7 @@ void ActiveFrame::update(bool force) {
 		coverContainer->findChild<Label*>("memo")->setText("");
 		coverContainer->findChild<Label*>("bookmarkURL")->setText("");
 		coverContainer->findChild<Label*>("bookmarkTitle")->setText("");
+		coverContainer->findChild<QObject*>("bookmarkIcon")->setProperty("imageSource", "");
 		return;
 	}
 
@@ -114,4 +115,5 @@ void ActiveFrame::update(bool force) {
 	coverContainer->findChild<Label*>("memo")->setText(item.value("memo").toString());
 	coverContainer->findChild<Label*>("bookmarkURL")->setText(item.value("url").toString());
 	coverContainer->findChild<Label*>("bookmarkTitle")->setText(item.value("title").toString());
+	coverContainer->findChild<ImageView*>("bookmarkIcon")->setImageSource(item.value("favicon").toString());
 }
