@@ -32,7 +32,7 @@ Page {
             enabled: false
             
             onTriggered: {
-                item ? app.memoBookmark(memo.text, item.id) : app.memoBookmark(memo.text)
+                item ? app.memoBookmark(item.url, memo.text) : app.memoBookmark(memo.text)
                 invokedForm.close()
             }
         }
@@ -208,8 +208,16 @@ Page {
 		                    checked: item && item.keep == "true"
 		                    property bool invokeChecked: false
 		                    
-		                    onCheckedChanged: item ? app.keepBookmark(checked, item.id) : app.keepBookmark(checked)
-                            onInvokeCheckedChanged: keepCheck.checked = invokeChecked
+		                    onCheckedChanged: {
+		                        if (item) {
+		                            app.keepBookmark(item.url, checked)
+		                        } else {
+		                            app.keepBookmark(checked)
+		                        }
+		                    }
+                            onInvokeCheckedChanged: {
+                                keepCheck.checked = invokeChecked
+                            }
 		                }
 		            }
                 }
