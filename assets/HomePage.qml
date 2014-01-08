@@ -2,17 +2,20 @@
 import bb.cascades 1.0
 
 Page {
+    
     titleBar: TitleBar {
-        title: "My Backpack"
+        kind: TitleBarKind.FreeForm
+        kindProperties: FreeFormTitleBarKindProperties {
+            FreeTitleBar {
+                id: freeTitleBar
+            }
+        }
         scrollBehavior: TitleBarScrollBehavior.Sticky // Comment for 10.0
     }
     
-    attachedObjects: [
-        ImagePaintDefinition {
-            id: toast
-            imageSource: "asset:///images/toast.amd"
-        }
-    ]
+    function updateUsername(username) {
+        freeTitleBar.username = username
+    }
     
     onCreationCompleted: loadBackground()
     
@@ -22,7 +25,14 @@ Page {
         backgroundBlue.opacity = app.getBackgroundColour("blue");
         backgroundBase.opacity = app.getBackgroundColour("base");
     }
-
+    
+    attachedObjects: [
+        ImagePaintDefinition {
+            id: toast
+            imageSource: "asset:///images/toast.amd"
+        }
+    ]
+    
     Container {
         layout: DockLayout {}
         

@@ -5,11 +5,21 @@ import bb.system 1.0
 Page {
     
     titleBar: TitleBar {
-        title: "My Backpack"
+        kind: TitleBarKind.FreeForm
+        kindProperties: FreeFormTitleBarKindProperties {
+            FreeTitleBar {
+                id: freeTitleBar
+            }
+        }
+        scrollBehavior: TitleBarScrollBehavior.Sticky // Comment for 10.0
+    }
+    
+    function updateUsername(username) {
+        freeTitleBar.username = username
     }
     
     onCreationCompleted: loadBackground()
-    
+        
     function loadBackground() {
         backgroundRed.opacity = app.getBackgroundColour("red");
         backgroundGreen.opacity = app.getBackgroundColour("green");

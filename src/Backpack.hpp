@@ -69,6 +69,9 @@ public:
     Q_INVOKABLE void shareBackup(QString);
     Q_INVOKABLE void restoreBackup(QString);
     Q_INVOKABLE void importBackupFile(QString);
+    Q_INVOKABLE void pocketConnect();
+    Q_INVOKABLE void pocketDisconnect();
+    Q_INVOKABLE void pocketCompleteAuth();
     virtual ~Backpack();
 
 public Q_SLOTS:
@@ -90,6 +93,10 @@ private:
     QTimer *timeout;
     SystemToast *backupToast;
 
+    QNetworkAccessManager *network;
+    QNetworkReply *reply;
+    QByteArray requestToken;
+
     ActiveFrame *activeFrame;
 
     bool databaseExists();
@@ -97,10 +104,13 @@ private:
     void refreshBookmarks();
     void refreshBookmarks(bool reload);
 
+    void pocketRetrieve();
+
 private Q_SLOTS:
-	Q_INVOKABLE void restoreFinishedFeedback(bb::system::SystemUiResult::Type);
-	Q_INVOKABLE void deleteBackupFeedback(bb::system::SystemUiResult::Type);
-	Q_INVOKABLE void deleteBackupConfirmation();
+	void restoreFinishedFeedback(bb::system::SystemUiResult::Type);
+	void deleteBackupFeedback(bb::system::SystemUiResult::Type);
+	void deleteBackupConfirmation();
+	void pocketHandlePostFinished();
 };
 
 #endif /* Backpack_HPP_ */

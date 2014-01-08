@@ -19,6 +19,7 @@
 #include <bb/cascades/ToggleButton>
 #include <bb/system/SystemProgressToast>
 #include <bb/data/XmlDataAccess>
+#include <bb/data/JsonDataAccess>
 #include <bb/PpsObject>
 
 using namespace bb::cascades;
@@ -26,6 +27,10 @@ using namespace bb::system;
 using namespace bb::data;
 using namespace bb;
 using namespace std;
+
+#define HOST "getpocket.com"
+#define APIKEY "22109-9f0af838570499419e7b5886"
+#define ACKURL "http://bbornot2b.com/backpack/auth"
 
 Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
 
@@ -55,6 +60,13 @@ Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
 	    app->setScene(mainPage);
 		activeFrame = (ActiveFrame*)app->cover();
 
+		QSettings settings;
+		QVariant username = settings.value("pocketUser");
+		if (!username.isNull()) {
+			mainPage->setProperty("username", username.toString());
+			mainPage->findChild<Page*>("pocketPage")->setProperty("username", username.toString());
+		}
+
 		invokedForm = mainPage->findChild<Page*>("invokedForm");
 		bookmarks = mainPage->at(1)->content()->findChild<ListView*>("bookmarks");
 		refreshBookmarks(true);
@@ -75,7 +87,17 @@ bool Backpack::databaseExists() {
 
 void Backpack::createDatabase() {
 
-	data->execute("CREATE TABLE Bookmark (id INTEGER, title VARCHAR(255), url VARCHAR(255), favicon VARCHAR(255), memo VARCHAR(255), date DATE, time DATETIME, size INTEGER, keep BOOL)");
+	data->execute("CREATE TABLE Bookmark (id INTEGER, "
+										"title VARCHAR(255), "
+										"url VARCHAR(255), "
+										"favicon VARCHAR(255), "
+										"memo VARCHAR(255), "
+										"date DATE, "
+										"time DATETIME, "
+										"size INTEGER, "
+										"keep BOOL)");
+
+	data->execute("ALTER TABLE Bookmark ADD pocket_id INTEGER");
 }
 
 void Backpack::setBackgroundColour(float base, float red, float green, float blue) {
@@ -874,6 +896,141 @@ void Backpack::launchRating() {
 	request.setAction("bb.action.OPEN");
 	request.setUri("http://appworld.blackberry.com/webstore/content/20399673");
 	invokeSender.invoke(request);
+}
+
+void Backpack::pocketConnect() {
+
+	network = new QNetworkAccessManager(this);
+
+	QUrl query;
+	query.addQueryItem("consumer_key", APIKEY);
+	query.addQueryItem("redirect_uri", ACKURL);
+
+	QNetworkRequest request(QUrl(QString("https://") % HOST % "/v3/oauth/request"));
+	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded; charset=UTF-8");
+	reply = network->post(request, query.encodedQuery());
+	connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
+
+//	Permitir conexión por proxy o alertar de que no está implementado
+}
+
+void Backpack::pocketCompleteAuth() {
+
+	QUrl query;
+	query.addQueryItem("consumer_key", APIKEY);
+	query.addQueryItem("code", requestToken);
+
+	QNetworkRequest request(QUrl(QString("https://") % HOST % "/v3/oauth/authorize"));
+	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded; charset=UTF-8");
+	reply = network->post(request, query.encodedQuery());
+	connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
+
+//	Permitir conexión por proxy o alertar de que no está implementado
+}
+
+void Backpack::pocketRetrieve() {
+
+	QSettings settings;
+	QVariantMap query;
+	query.insert("consumer_key", APIKEY);
+	query.insert("access_token", settings.value("accessToken").toString());
+
+	QByteArray queryArray;
+	JsonDataAccess json;
+	json.saveToBuffer(query, &queryArray);
+
+	QNetworkRequest request(QUrl(QString("https://") % HOST % "/v3/get"));
+	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=UTF-8");
+	reply = network->post(request, queryArray);
+	connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
+
+//	Permitir conexión por proxy o alertar de que no está implementado
+}
+
+void Backpack::pocketHandlePostFinished() {
+
+	if (reply->rawHeader("Status").indexOf("200 OK") != 0) {
+		mainPage->findChild<Page*>("pocketPage")->setProperty("error", QString(reply->rawHeader("X-Error")));
+		return;
+	}
+
+	if (reply->request().url().toString().indexOf("request") > 0) {
+
+		requestToken = reply->readAll();
+		requestToken = requestToken.right(requestToken.length() - requestToken.indexOf("code=") - 5);
+
+		QString uri("https://");
+		uri.append(HOST);
+		uri.append("/auth/authorize?");
+		uri.append(QString("request_token=") % requestToken);
+		uri.append(QString("&redirect_uri=") % ACKURL);
+
+		InvokeManager invokeSender;
+		InvokeRequest request;
+		request.setTarget("sys.browser");
+		request.setAction("bb.action.OPEN");
+		request.setUri(uri);
+		invokeSender.invoke(request);
+
+	} else if (reply->request().url().toString().indexOf("authorize") > 0) {
+
+		QByteArray response = reply->readAll();
+		QString username = response.right(response.length() - response.lastIndexOf('=') - 1);
+		mainPage->setProperty("username", username);
+		mainPage->findChild<Page*>("pocketPage")->setProperty("username", username);
+
+		response = response.left(response.indexOf('&'));
+		QString accessToken = response.right(response.length() - response.lastIndexOf('=') - 1);
+
+		QSettings settings;
+		settings.setValue("pocketUser", username);
+		settings.setValue("pocketToken", accessToken);
+
+		pocketRetrieve();
+
+	} else if (reply->request().url().toString().indexOf("get") > 0) {
+
+		JsonDataAccess json;
+		QVariantMap response = json.loadFromBuffer(reply->readAll()).toMap();
+
+		QVariantList retrieved = response.value("list").toMap().values();
+		QString lastSynced = response.value("since").toString();
+
+		QSettings settings;
+		settings.setValue("pocketSynced", lastSynced);
+
+		int imported = 0;
+
+		for (int i = 0; i < retrieved.size(); i++) {
+			QUrl url = QUrl(retrieved.value(i).toMap().value("resolved_url").toString());
+			QUrl givenUrl = QUrl(retrieved.value(i).toMap().value("given_url").toString());
+			if (!bookmark.contains(url) && !bookmark.contains(givenUrl)) {
+				bookmark[url] = new Bookmark(url, data, this);
+				connect(bookmark[url], SIGNAL(sizeChanged()), this, SLOT(updateSize()));
+				connect(bookmark[url], SIGNAL(iconChanged()), this, SLOT(updateFavicon()));
+				connect(bookmark[url], SIGNAL(titleChanged(QString)), this, SLOT(updateTitle(QString)));
+				bookmark[url]->fetchContent();
+				imported++;
+			} else {
+				// Show on UI that bookmark already existed locally
+			}
+		}
+		if (imported > 0) {
+			refreshBookmarks();
+		}
+
+		qDebug() << "... PARANDO ...";
+		mainPage->findChild<Container*>("syncingIndicator")->setVisible(false);
+		qDebug() << "... PARADO !!!";
+	}
+}
+
+void Backpack::pocketDisconnect() {
+
+	QSettings settings;
+	settings.remove("pocketUser");
+	settings.remove("pocketTocken");
+	mainPage->setProperty("username", "");
 }
 
 Backpack::~Backpack() {

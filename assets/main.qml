@@ -10,6 +10,13 @@ TabbedPane {
         putinPage.loadBackground()
     }
     
+    property string username
+    onUsernameChanged: {
+        homePage.updateUsername(username)
+        browsePage.updateUsername(username)
+        putinPage.updateUsername(username)
+    }
+    
     attachedObjects: [
         Sheet {
             id: settingsSheet

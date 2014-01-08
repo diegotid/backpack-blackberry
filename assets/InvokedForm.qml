@@ -9,7 +9,7 @@ Page {
     signal close();
     
     titleBar: TitleBar {
-        title: "My Backpack"
+        title: "Backpack"
         
         dismissAction: ActionItem {
             id: dismissButton
