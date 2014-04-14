@@ -120,7 +120,7 @@ uint Backpack::cleanUrlHash(QUrl url) {
 		clean = clean.right(clean.length() - clean.indexOf("://") - 3);
 	if (clean.indexOf("www") == 0)
 		clean = clean.right(clean.length() - 4);
-	if (clean.at(clean.length() - 1) == '/')
+	if (clean.length() > 0 && clean.at(clean.length() - 1) == '/')
 		clean = clean.left(clean.length() - 1);
 
 	return qHash(clean);
@@ -354,14 +354,14 @@ void Backpack::refreshBookmarks(bool reload, QString query) {
 	int type = mainPage->findChild<DropDown*>("filterType")->selectedValue().toInt();
 
 	QVariantList list;
-	if (query.isNull())
+	if (query.isNull()) {
 		if (type == Backpack::ALL)
 			list = data->execute("SELECT * FROM Bookmark").toList();
 		else if (type == Backpack::FAVORITES)
 			list = data->execute("SELECT * FROM Bookmark WHERE keep = ?", QVariantList() << true).toList();
 		else
 			list = data->execute("SELECT * FROM Bookmark WHERE type = ?", QVariantList() << type).toList();
-	else {
+	} else {
 		QString queryString("%");
 		queryString.append(query);
 		queryString.append("%");
