@@ -35,7 +35,7 @@
     <!-- A string value of the format <0-999>.<0-999>.<0-999> that represents application version which can be used to check for application upgrade. 
          Values can also be 1-part or 2-part. It is not necessary to have a 3-part value.
          An updated version of application must have a versionNumber value higher than the previous version. Required. -->
-    <versionNumber>1.5</versionNumber>
+    <versionNumber>2.0</versionNumber>
     <buildIdFile>buildnum</buildIdFile>
 
     <!-- Fourth digit segment of the package version. First three segments are taken from the 
@@ -46,11 +46,10 @@
 
     <!-- Description, displayed in the BlackBerry 10 application installer.
          May have multiple values for each language. See samples or xsd schema file. Optional. -->
-    <description>The Backpack application</description>
 
     <!-- Invoke filters -->
     <invoke-target id="com.bbornot2b.Backpack">
-    	<invoke-target-name>My Backpack</invoke-target-name>  		
+    	<invoke-target-name>Backpack</invoke-target-name>  		
 		<invoke-target-type>application</invoke-target-type>
 		<filter>
   			<action>bb.action.SHARE</action>
@@ -98,9 +97,17 @@
     </initialWindow>
     
     <cascadesTheme>dark</cascadesTheme>
+    <description>BB10 Pocket client+</description>
+    <splashScreens>
+       <image>splash.png</image>
+       <image>splash-Q.png</image>
+       <image>splash-Z.png</image>
+    </splashScreens>
     
     <!--  The icon for the application, which should be 114x114. -->
     <icon>
+        <image>icon-Z.png</image>
+        <image>icon-Q.png</image>
         <image>icon.png</image>
     </icon>
 
@@ -111,6 +118,11 @@
     <asset path="translations" dest="qm">
         <include name="*.qm"/>
     </asset>
+    <asset path="splash.png">splash.png</asset>
+    <asset path="splash-Q.png">splash-Q.png</asset>
+    <asset path="splash-Z.png">splash-Z.png</asset>
+    <asset path="icon-Z.png">icon-Z.png</asset>
+    <asset path="icon-Q.png">icon-Q.png</asset>
     
     <!-- Request permission to execute native code.  Required for native applications. -->
     <permission system="true">run_native</permission>

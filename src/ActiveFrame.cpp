@@ -22,8 +22,6 @@ ActiveFrame::ActiveFrame(QObject *parent) : SceneCover(parent) {
 	coverContainer = qmlCover->createRootObject<Container>();
 	setContent(coverContainer);
 
-	takeBackground(parent);
-
 	QDir homeDir = QDir::home();
 	dbFile.setFileName(homeDir.absoluteFilePath("backpack.db"));
 	dbFile.open(QIODevice::ReadOnly);
@@ -42,14 +40,6 @@ ActiveFrame::~ActiveFrame() {
 
 	sql->connection().close();
 	dbFile.close();
-}
-
-void ActiveFrame::takeBackground(QObject *parent) {
-
-	coverContainer->findChild<ImageView*>("backgroundBase")->setOpacity(((Backpack*)parent)->getBackgroundColour("base"));
-	coverContainer->findChild<ImageView*>("backgroundRed")->setOpacity(((Backpack*)parent)->getBackgroundColour("red"));
-	coverContainer->findChild<ImageView*>("backgroundGreen")->setOpacity(((Backpack*)parent)->getBackgroundColour("green"));
-	coverContainer->findChild<ImageView*>("backgroundBlue")->setOpacity(((Backpack*)parent)->getBackgroundColour("blue"));
 }
 
 void ActiveFrame::takeFigures(QObject *parent) {
@@ -103,6 +93,7 @@ void ActiveFrame::update(bool force) {
 		coverContainer->findChild<Label*>("memo")->setText("");
 		coverContainer->findChild<Label*>("bookmarkURL")->setText("");
 		coverContainer->findChild<Label*>("bookmarkTitle")->setText("");
+		coverContainer->findChild<QObject*>("bookmarkPic")->setProperty("imageSource", "");
 		coverContainer->findChild<QObject*>("bookmarkIcon")->setProperty("imageSource", "");
 		return;
 	}
@@ -115,5 +106,6 @@ void ActiveFrame::update(bool force) {
 	coverContainer->findChild<Label*>("memo")->setText(item.value("memo").toString());
 	coverContainer->findChild<Label*>("bookmarkURL")->setText(item.value("url").toString());
 	coverContainer->findChild<Label*>("bookmarkTitle")->setText(item.value("title").toString());
+	coverContainer->findChild<ImageView*>("bookmarkPic")->setImageSource(item.value("image").toString());
 	coverContainer->findChild<ImageView*>("bookmarkIcon")->setImageSource(item.value("favicon").toString());
 }

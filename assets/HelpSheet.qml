@@ -15,6 +15,7 @@ Page {
     }
     
     Container {
+        topPadding: 15
         
 	    SegmentedControl {
 	        
@@ -28,7 +29,7 @@ Page {
 	        }
 	        Option {
 	            id: backupOption
-	            text: "Backup/Restore"
+	            text: "Manage stuff"
 	        }
 	        onSelectedOptionChanged: {
                 putSegment.visible = (selectedOption == putOption)
@@ -39,6 +40,7 @@ Page {
 	    
 	    Container {
             id: putSegment
+//            visible: false
 	
             ScrollView {
                 scrollViewProperties.scrollMode: ScrollMode.Vertical
@@ -69,6 +71,7 @@ Page {
 		                        multiline: true
 		                        textStyle.fontSize: FontSize.Small
 		                        text: "From wherever you find something you want to keep to read later, share it with:"
+		                        bottomMargin: 10
 		                    }
 		                    ImageView {
 		                        imageSource: "asset:///images/share-sample.png"
@@ -81,32 +84,44 @@ Page {
                         visible: true
                     }
                     
-		            Container {
-		                layout: StackLayout {
-		                    orientation: LayoutOrientation.LeftToRight
-		                }
-		                ImageView {
-		                    minWidth: 270
-		                    maxWidth: 270
-		                    imageSource: "asset:///images/putin-hint.png"
-		                    scalingMethod: ScalingMethod.AspectFill
-		                }
-		                Container {
-		                    topPadding: 10
-		                    rightPadding: 10
-		                    leftPadding: 10
-		                    Label {
-		                        multiline: true
-		                        textStyle.fontSize: FontSize.Small
-		                        text: "You can also search for new stuff from the 'Put in' tab"
-		                    }
-		                    ImageView {
-		                        imageSource: "asset:///images/menuicons/ic_doctype_add.png"
-		                        translationX: -10
-		                        translationY: -10
-		                    }
-		                }
-		            }
+                    Container {
+                        layout: StackLayout {
+                            orientation: LayoutOrientation.LeftToRight
+                        }
+                        topPadding: 10
+                        leftPadding: 10
+                        rightPadding: 30
+                        Label {
+                            multiline: true
+                            textStyle.fontSize: FontSize.Small
+                            text: "You can also search for new stuff from the 'Put in' tab"
+                        }
+                        ImageView {
+                            imageSource: "asset:///images/menuicons/ic_doctype_add.png"
+                            scalingMethod: ScalingMethod.AspectFit
+                            minWidth: 81
+                        }
+                    }
+                    
+                    Container {
+                        layout: StackLayout {
+                            orientation: LayoutOrientation.LeftToRight
+                        }
+                        topPadding: 10
+                        leftPadding: 10
+                        rightPadding: 26
+                        Label {
+                            multiline: true
+                            textStyle.fontSize: FontSize.Small
+                            text: "Or sync Backpack with your Pocket account to retrieve your stuff"
+                        }
+                        ImageView {
+                            imageSource: "asset:///images/menuicons/pocket.png"
+                            scalingMethod: ScalingMethod.AspectFit
+                            maxWidth: 80
+                            minWidth: 80
+                        }
+                    }
 		        }    
 	        }
 	    }
@@ -214,10 +229,11 @@ Page {
 		            }    
 
                     Header {
-                        title: "Explore the stuff in your Bakcpack"
+                        title: "Explore the stuff in your Backpack"
+                        topMargin: 15
                         bottomMargin: 10
                     }
-                
+                    
                     Container {
                         layout: StackLayout {
                             orientation: LayoutOrientation.LeftToRight
@@ -226,7 +242,7 @@ Page {
                         bottomPadding: 5
                         leftPadding: 18
                         rightPadding: 18
-
+                        
                         Label {
                             multiline: true
                             textStyle.fontSize: FontSize.Small
@@ -238,6 +254,30 @@ Page {
                             scalingMethod: ScalingMethod.AspectFill
                             minHeight: 90
                             minWidth: 90
+                        }
+                    }
+                    
+                    Container {
+                        layout: StackLayout {
+                            orientation: LayoutOrientation.LeftToRight
+                        }
+                        topPadding: 5
+                        bottomPadding: 5
+                        leftPadding: 18
+                        rightPadding: 25
+                        
+                        Label {
+                            multiline: true
+                            textStyle.fontSize: FontSize.Small
+                            text: "And access it from other devices if connected to your Pocket account"
+                            verticalAlignment: VerticalAlignment.Center
+                        }
+                        
+                        ImageView {
+                            imageSource: "asset:///images/menuicons/pocket.png"
+                            scalingMethod: ScalingMethod.AspectFit
+                            maxWidth: 80
+                            minWidth: 80
                         }
                     }
 		        }
@@ -273,12 +313,41 @@ Page {
                         Label {
                             multiline: true
                             textStyle.fontSize: FontSize.Small
-                            text: "<html>From the application menu, select Backup/Restore to access the following features:"
-	                            + "\n&nbsp;- <b>New backup</b>: Generate a backup file containing your current Backpack's stuff"
-                                + "\n&nbsp;- <b>Restore</b>: Get back the stuff you had when the selected backup file was created"
-                                + "\n&nbsp;- <b>Share</b>: Attach a backup file to a new message to share it, so it can be imported on another device"
-                                + "\n&nbsp;- <b>Import from file</b>: Take a backup file from other source so it can be restored on your current Backpack"
-                            	+ "</html>"
+                            text: "<html>From the application menu, select Manage to access the following features:"
+                            + "\n&nbsp;- <b>New backup</b>: Generate a backup file containing your current Backpack's stuff"
+                            + "\n&nbsp;- <b>Restore</b>: Get back the stuff you had when the selected backup file was created"
+                            + "\n&nbsp;- <b>Share</b>: Attach a backup file to a new message to share it, so it can be imported on another device"
+                            + "\n&nbsp;- <b>Import from file</b>: Take a backup file from other source so it can be restored on your current Backpack"
+                            + "</html>"
+                        }
+                    }
+                    
+                    Header {
+                        title: "Sync with Pocket"
+                        topMargin: 15
+                        bottomMargin: 10
+                    }
+                    
+                    Container {
+                        layout: StackLayout {
+                            orientation: LayoutOrientation.LeftToRight
+                        }
+                        topPadding: 5
+                        bottomPadding: 5
+                        leftPadding: 18
+                        rightPadding: 18
+                        
+                        Label {
+                            multiline: true
+                            textStyle.fontSize: FontSize.Small
+                            text: "When connected to Pocket, content in your Backpack is in the cloud, so you won't lose it"
+                        }
+                        
+                        ImageView {
+                            imageSource: "asset:///images/menuicons/pocket.png"
+                            scalingMethod: ScalingMethod.AspectFit
+                            maxWidth: 80
+                            minWidth: 80
                         }
                     }
                 }

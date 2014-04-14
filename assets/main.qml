@@ -4,10 +4,11 @@ TabbedPane {
     id: mainPage
     showTabsOnActionBar: true
     
-    function reloadBackgrounds() {
-        homePage.loadBackground()
-        browsePage.loadBackground()
-        putinPage.loadBackground()
+    property string username
+    onUsernameChanged: {
+        homePage.updateUsername(username)
+        browsePage.updateUsername(username)
+        putinPage.updateUsername(username)
     }
     
     attachedObjects: [
@@ -53,12 +54,17 @@ TabbedPane {
                 onTriggered: aboutSheet.open();
             },
             ActionItem {
-                title: "Backup/Restore"
+                title: "Backup"
                 imageSource: "asset:///images/menuicons/ic_save.png"
                 onTriggered: {
                 	backupSheet.open();
                 	app.showBackups();
                 }
+            },
+            ActionItem {
+                title: "Pocket"
+                imageSource: "asset:///images/menuicons/pocket.png"
+                onTriggered: putinPage.pocketState()
             }
         ]
     }

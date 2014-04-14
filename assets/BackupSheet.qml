@@ -144,14 +144,24 @@ Page {
                                 }
                                 
                                 Container {
-                                    maxWidth: 355
                                     horizontalAlignment: HorizontalAlignment.Right
                                     layout: StackLayout {
                                         orientation: LayoutOrientation.LeftToRight
                                     }
+                                    ActivityIndicator {
+                                        objectName: "restoreActivity"
+                                        running: !restoreButton.enabled
+                                        verticalAlignment: VerticalAlignment.Center
+                                    }
                                     Button {
+                                        id: restoreButton
+                                        objectName: "restoreButton"
                                         text: "Restore"
-                                        onClicked: backupItem.ListItem.view.restoreBackup(ListItemData.file)
+                                        maxWidth: 200
+                                        onClicked: {
+                                            enabled = false
+                                            backupItem.ListItem.view.restoreBackup(ListItemData.file)
+                                        }
                                     }
                                     Button {
                                         imageSource: "asset:///images/menuicons/ic_share.png"
