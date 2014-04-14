@@ -22,6 +22,7 @@ Page {
             rightPadding: 30
             bottomPadding: 40
             leftPadding: 30
+            horizontalAlignment: HorizontalAlignment.Fill
             
             Label {
                 multiline: true
@@ -40,10 +41,14 @@ Page {
             Label {
                 multiline: true
                 text: "New in this version:"
-	                + "\n- See the icons of the web sites you put in the backpack"
-	                + "\n- Backup your bookmarks and share them so they can be restored or loaded on a different device"
-	                + "\n- Performance improvements"
-	                + "\n- Little interface improvements"
+//	                + "\n- See the icons of the web sites you put in the backpack"
+//	                + "\n- Backup your bookmarks and share them so they can be restored or loaded on a different device"
+//	                + "\n- Performance improvements"
+//	                + "\n- Little interface improvements"
+                    + "\n- Pocket synchronization"
+                    + "\n- New design of user interface"
+                    + "\n- Featuring website images"
+                    + "\n- Search inside your Backpack"
             }
             
             Container {

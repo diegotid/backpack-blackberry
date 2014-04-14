@@ -4,7 +4,7 @@ import bb.cascades 1.0
 Page {
     id: invokedForm
     objectName: "invokedForm"
-
+    
     property variant item
     signal close();
     
@@ -15,13 +15,15 @@ Page {
             id: dismissButton
             objectName: "dismissButton"
             title: "Close"
-
+            
             onTriggered: {
+                invokedImage.resetImage()
+                invokedFavicon.resetImage()
                 if (invokedForm.parent.objectName == "bookmarkSheet") {
-	                invokedForm.close()
-	            } else {
-	                Application.quit()
-	            }
+                    invokedForm.close()
+                } else {
+                    Application.quit()
+                }
             }
         }
         
@@ -42,186 +44,194 @@ Page {
         backButton: dismissButton
     }
     
-    attachedObjects: [
-        ImagePaintDefinition {
-            id: background
-            imageSource: "asset:///images/shadow.png"
-            repeatPattern: RepeatPattern.X
-        }
-    ]
-    onCreationCompleted: loadBackground()
-    
-    function loadBackground() {
-        backgroundRed.opacity = app.getBackgroundColour("red");
-        backgroundGreen.opacity = app.getBackgroundColour("green");
-        backgroundBlue.opacity = app.getBackgroundColour("blue");
-        backgroundBase.opacity = app.getBackgroundColour("base");
-    }
-    
     Container {
-        layout: AbsoluteLayout {}
+        layout: DockLayout {}
         
-        ImageView {
-            id: backgroundRed
-            imageSource: "asset:///images/background-red.png"
+        attachedObjects: LayoutUpdateHandler {
+            id: pageHandler
         }
-        ImageView {
-            id: backgroundGreen
-            imageSource: "asset:///images/background-green.png"
-        }
-        ImageView {
-            id: backgroundBlue
-            imageSource: "asset:///images/background-blue.png"
-        }
-        ImageView {
-            id: backgroundBase
-            imageSource: "asset:///images/background.png"
+        
+        Container {
+            layout: AbsoluteLayout {}
+            verticalAlignment: VerticalAlignment.Bottom
+            
+            ImageView {
+                id: invokedImage
+                objectName: "invokedImage"
+                imageSource: item ? item.image : ""
+                scalingMethod: ScalingMethod.AspectFill
+                verticalAlignment: VerticalAlignment.Fill
+                horizontalAlignment: HorizontalAlignment.Fill
+                minWidth: pageHandler.layoutFrame.width
+                preferredHeight: pageHandler.layoutFrame.height
+                opacity: 0.5
+                
+                attachedObjects: LayoutUpdateHandler {
+                    id: imageHandler
+                }
+            }
+            
+            ImageView {
+                imageSource: "asset:///images/home-shadow.png"
+                scalingMethod: ScalingMethod.AspectFill
+                verticalAlignment: VerticalAlignment.Fill
+                horizontalAlignment: HorizontalAlignment.Fill
+                minWidth: imageHandler.layoutFrame.width
+                minHeight: imageHandler.layoutFrame.height
+                rotationZ: 180.0
+            }
         }
 
-	    Container {
-            background: background.imagePaint
-
-            Container { // Status
-			    topPadding: 25
-			    leftPadding: 40
-			    
-			    Label {
-			        id: status
-			        objectName: "status"
-                    textStyle.color: Color.create("#07b1e6")
-                    textStyle.fontSize: FontSize.Large
-//                    text: "Comment this for release"
-                }			
-			}
-			
-			Container { // Form
-                layout: DockLayout {}
-       
-		        ImageView {
-		            imageSource: "asset:///images/form_background.png"
-		        }
-        
-				Container { // Activity & title
-				    layout: StackLayout {
-	                    orientation: LayoutOrientation.LeftToRight
-	                }
-                    topPadding: 80
-                    rightPadding: 90
-                    leftPadding: 100
-                    maxHeight: 225
-	                
-	                Container {
-	                    objectName: "activity"
-	                    topPadding: 25
-	                    bottomPadding: 20
-	                    leftPadding: 20
-	                    rightPadding: 40
-	                    
-	                    ActivityIndicator {
-	                        running: true
-	                        scaleX: 2
-	                        scaleY: 2
-	                    }             
-	                    visible: !item
-//	                    visible: false // Comment this for release  
-	                }
-	                
-	                Container {
-                        layout: DockLayout {}
-	                    
-		                Label {
-		                    id: title
-		                    objectName: "title"
-		                    textStyle.fontSize: FontSize.XLarge
-		                    textStyle.color: Color.White
-		                    verticalAlignment: VerticalAlignment.Center
-		                    multiline: true
-                            text: item.title
-//		                    text: "Comment this for release but must be at least three lines adslfkjasñdlkfjasñld  fñlaskdjf a"
-		                }                                           
+        Container { // Status
+            topPadding: 25
+            leftPadding: 25
+            rightPadding: 25
+            bottomPadding: 25
+            
+            Label {
+                id: status
+                objectName: "status"
+                textStyle.color: Color.create("#07b1e6")
+                textStyle.fontSize: FontSize.Large
+                translationX: 8
+//                text: "Comment this for release"
+            }			
+            
+            Container { // Activity & title
+                layout: StackLayout {
+                    orientation: LayoutOrientation.LeftToRight
+                }
+                maxHeight: 145
+                leftPadding: 5
+                rightPadding: 5
+                bottomMargin: 0
+                
+                Container {
+                    objectName: "activity"
+                    topPadding: 15
+                    rightPadding: 15
+                    leftPadding: 4
+                    visible: !item
+//                    visible: false
+                    
+                    ActivityIndicator {
+                        running: true
+                    }             
+                }
+                
+                Label {
+                    id: title
+                    objectName: "title"
+                    textStyle.fontSize: FontSize.XLarge
+                    textStyle.color: Color.White
+                    verticalAlignment: VerticalAlignment.Center
+                    multiline: true
+                    text: item ? item.title : ""
+//                    text: "Comment this for release but must be at least three lines adslfkjasñdlkfjasñld  fñlaskdjf a"
+                }
+            }
+            
+            Container { // Memo & keep switch
+                leftPadding: 5
+                rightPadding: 5
+                
+                Container {
+                    layout: StackLayout {
+                        orientation: LayoutOrientation.LeftToRight
                     }
-				}
-				
-				Container { // Memo & keep switch
-                    verticalAlignment: VerticalAlignment.Bottom
-                    rightPadding: 90
-                    bottomPadding: 80
-                    leftPadding: 90
-				
-					Container { // Memo
-		                layout: DockLayout {}
-	                    
-                        ImageView {
-                            imageSource: "asset:///images/memo_background.png"
-			            }
-		                
-		                TextArea {
-			                id: memo
-			                objectName: "memo"
-                            backgroundVisible: false
-                            verticalAlignment: VerticalAlignment.Fill
+                    topPadding: 5
+                    bottomPadding: 10
 
-                            text: item.memo
-			                hintText: "Type your memo here (optional)"
-//                          hintText: "Comment this for release but must be at least three lines Comment this for release but must be at least three lines"
-//							hintText: "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
-
-			                onTextChanging: {
-                                if (focused) { // Don't do this when opened from the edit action
-				                    acceptButton.enabled = (memo.text != "");
-				                    dismissButton.title = (memo.text != "") ? "Cancel" : "Close";
-				                }
-	                            memo.textStyle.color = (memo.text != "") ? Color.create("#009fd3") : Color.White;
-			                }
+                    ImageView {
+                        id: invokedFavicon
+                        objectName: "invokedFavicon"
+                    	imageSource: item ? item.favicon : "asset:///images/favicon.png"
+                    	minHeight: 26
+                    	minWidth: 26
+                    	translationY: 5
+                        visible: invokedURL.text.toString().length > 0
+                    }
+                    
+                    Label {
+                        id: invokedURL
+                        objectName: "invokedURL"
+                        text: item.url
+                        textStyle.color: Color.LightGray
+                        textStyle.fontSize: FontSize.XSmall
+                    }
+                }
+                
+                TextArea {
+                    id: memo
+                    objectName: "memo"
+                    preferredHeight: 185
+                    maxHeight: 185
+                    
+                    text: item ? item.memo : ""
+                    hintText: "Type your memo here (optional)"
+//                    text: "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
+                    
+                    onTextChanging: {
+                        if (focused) { // Don't do this when opened from the edit action
+                            acceptButton.enabled = (memo.text != "");
+                            dismissButton.title = (memo.text != "") ? "Cancel" : "Close";
                         }
-		            }
-		                
-		            Container {
-		                layout: DockLayout {}
-		                topPadding: 20
-		                rightPadding: 5
-		                bottomPadding: 15
-		                leftPadding: 60
-		                horizontalAlignment: HorizontalAlignment.Fill
-		                
+                    }
+                }
+                
+                Container {
+                    layout: DockLayout {}
+                    topPadding: 10
+                    bottomPadding: 35
+                    horizontalAlignment: HorizontalAlignment.Fill
+                    
+                    Container {
+                        layout: StackLayout {
+                            orientation: LayoutOrientation.LeftToRight
+                        }
+                        
                         ImageView {
+                            id: keepStar
                             imageSource: "asset:///images/menuicons/zip.png"
-                            translationX: -80
-                            translationY: 10
+                            translationX: -15
                             scaleX: 0.9
                             scaleY: 0.9
+                            scalingMethod: ScalingMethod.AspectFit
                         }
                         
                         Label {
-                            id: keepLabel
-                            objectName: "keepLabel"
-                            text: "Keep after read"
+                            text: "Favorite"
+                            verticalAlignment: VerticalAlignment.Center
+                            translationX: -25
+                        }
+                        
+                        Label {
+                            text: "(keep after read)"
+                            visible: !app.getKeepAfterRead()
                             textStyle.color: Color.LightGray
                             verticalAlignment: VerticalAlignment.Center
+                            translationX: -25
+                            translationY: 3
+                            textStyle.fontSize: FontSize.XSmall
                         }
-		                
-		                ToggleButton {
-		                    id: keepCheck
-		                    objectName: "keepCheck"
-		                    horizontalAlignment: HorizontalAlignment.Right                  
-		                    verticalAlignment: VerticalAlignment.Center
-		                    checked: item && item.keep == "true"
-		                    property bool invokeChecked: false
-		                    
-		                    onCheckedChanged: {
-		                        if (item) {
-		                            app.keepBookmark(item.url, checked)
-		                        } else {
-		                            app.keepBookmark(checked)
-		                        }
-		                    }
-                            onInvokeCheckedChanged: {
-                                keepCheck.checked = invokeChecked
-                            }
-		                }
-		            }
+                    }
+                    
+                    ToggleButton {
+                        id: keepCheck
+                        objectName: "keepCheck"
+                        horizontalAlignment: HorizontalAlignment.Right                  
+                        verticalAlignment: VerticalAlignment.Center
+                        checked: item && item.keep == "true"
+                        property bool invokeChecked: false
+                        
+                        onCheckedChanged: {
+                            item ? app.keepBookmark(item.url, checked) : app.keepBookmark(checked)
+                            keepStar.imageSource = "asset:///images/menuicons/zip" + (checked ? "On" : "") + ".png"
+                        }
+                        onInvokeCheckedChanged: keepCheck.checked = invokeChecked
+                    }
                 }
-            }	        	                   
-	    }
+            }
+        }	        	                   
     }
-}    
+}

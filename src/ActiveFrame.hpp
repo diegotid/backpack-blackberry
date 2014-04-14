@@ -28,7 +28,6 @@ public slots:
 	void update();
 	void update(bool force);
 	void takeFigures(QObject *parent);
-	void takeBackground(QObject *parent);
 
 private:
 	Container *coverContainer;

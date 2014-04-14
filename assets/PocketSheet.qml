@@ -8,7 +8,12 @@ Page {
     
     signal close();
     
-    property string state    
+    property string state
+//    property string state: "on"
+//    property string state: "off"
+//    property string state: "why"
+//    property string state: "sync"
+
     onStateChanged: {
         if (state == "sync") {
             app.pocketConnect()
@@ -51,7 +56,7 @@ Page {
         SystemToast {
             id: pocketError
             property string errorMessage
-            body: "Pocket server said: " + errorMessage
+            body: "Pocket: " + errorMessage
             button.label: "Close"
             button.enabled: true 
             onFinished: pocket.close()
@@ -156,23 +161,28 @@ Page {
                     bottomMargin: 30
                     
                     Container {
-                        leftPadding: 10
+                        leftPadding: 5
                         rightPadding: 10
-                        
                         horizontalAlignment: HorizontalAlignment.Fill
-                        Label {
-                            text: "You are connected to Pocket as:"
-                        }
                         
                         Container {
-                            bottomPadding: 50
-                            horizontalAlignment: HorizontalAlignment.Fill
+                            layout: StackLayout {
+                                orientation: LayoutOrientation.LeftToRight
+                            }
+                            bottomPadding: 10
+                            visible: username.length > 0
+
+                            Label {
+                                text: "Connected as:"
+                                verticalAlignment: VerticalAlignment.Bottom
+                                translationY: -3
+                            }
                             
                             Label {
                                 text: username
                                 textStyle.fontSize: FontSize.Large
                                 textStyle.fontWeight: FontWeight.Bold
-                                horizontalAlignment: HorizontalAlignment.Center
+                                verticalAlignment: VerticalAlignment.Bottom
                             }
                         }
                         
@@ -185,7 +195,7 @@ Page {
 
                             horizontalAlignment: HorizontalAlignment.Fill
                             Label {
-                                text: "Syncing content..."
+                                text: username.length > 0 ? "Syncing content..." : "Connecting to Pocket..."
                             }
                             
                             ActivityIndicator {
@@ -194,20 +204,86 @@ Page {
                                 verticalAlignment: VerticalAlignment.Bottom
                             }
                         }
-                    }            
+                    }
                     
                     Container {
-                        topPadding: 30
+                        visible: username.length > 0 && syncingIndicator.visible == false
                         horizontalAlignment: HorizontalAlignment.Fill
+
+                        Container {
+                            layout: DockLayout {}
+                            leftPadding: 5
+                            bottomPadding: 10
+                            horizontalAlignment: HorizontalAlignment.Fill
+
+                            Label {
+                                text: "Sync on app startup"
+                                verticalAlignment: VerticalAlignment.Center
+                            }
+                            
+                            ToggleButton {
+                                horizontalAlignment: HorizontalAlignment.Right
+                                checked: app.pocketGetSynconstartup()
+                                onCheckedChanged: app.pocketSetSynconstartup(checked)
+                            }
+                        }
+                        
+                        DropDown {
+                            title: "Automatically sync"
+                            options: [
+                                Option {
+                                    text: "Never"
+                                    value: 0
+                                    selected: app.pocketInterval() == value
+                                },
+                                Option {
+                                    text: "Every 1h"
+                                    value: 1
+                                    selected: app.pocketInterval() == value
+                                },
+                                Option {
+                                    text: "Every 6h"
+                                    value: 6
+                                    selected: app.pocketInterval() == value
+                                },
+                                Option {
+                                    text: "Every 12h"
+                                    value: 12
+                                    selected: app.pocketInterval() == value
+                                }
+                            ]
+                            onSelectedOptionChanged: app.pocketSetInterval(selectedOption.value)
+                        }
+                        
+                        Button {
+                            text: "Sync now"
+                            horizontalAlignment: HorizontalAlignment.Fill
+                            onClicked: {
+                                syncingIndicator.visible = true
+                                app.pocketRetrieve()
+                            }
+                        }
                         
                         Button {
                             id: disconnectButton
                             text: "Disconnect or switch account"
                             horizontalAlignment: HorizontalAlignment.Fill
-                            onClicked: {
-                                state = "off"
-                                app.pocketDisconnect()
-                            }
+                            attachedObjects: [
+                                SystemDialog {
+                                    id: disconnectDialog
+                                    title: "Disconnect from Pocket"
+                                    body: "Are you sure you want to disconnect?"
+                                    onFinished: {
+                                        if (result == SystemUiResult.ConfirmButtonSelection) {
+                                            state = "off"
+                                            app.pocketDisconnect()
+                                        } else {
+                                            disconnectDialog.close()
+                                        }
+                                    }
+                                }
+                            ]
+                            onClicked: disconnectDialog.show()
                         }
                     }            
                 }
@@ -246,9 +322,21 @@ Page {
                         Button {
                             text: "Clean " + username + "'s content"
                             horizontalAlignment: HorizontalAlignment.Fill
-                            onClicked: {
-                                app.pocketCleanContent()
-                            }
+                            attachedObjects: [
+                                SystemDialog {
+                                    id: cleanDialog
+                                    title: "Clean Pocket content"
+                                    body: "Are you sure you want to delete " + username + "'s content? (Pocket will still keep it)"
+                                    onFinished: {
+                                        if (result == SystemUiResult.ConfirmButtonSelection) {
+                                            app.pocketCleanContent()
+                                        } else {
+                                            cleanDialog.close()
+                                        }
+                                    }
+                                }
+                            ]
+                            onClicked: cleanDialog.show()
                         }
                         
                         Button {

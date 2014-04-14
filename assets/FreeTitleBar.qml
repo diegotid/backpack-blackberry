@@ -7,14 +7,17 @@ Container {
     
     property string username
     onUsernameChanged: {
-        pocketUsername = username
+        pocketUsername.text = username
         pocketSession.visible = username.length > 0
     }
     
-    Label {
-        text: "Backpack"
+    ImageView {
+        imageSource: "asset:///images/title.png"
         verticalAlignment: VerticalAlignment.Center
-        textStyle.fontSize: FontSize.Large
+        scaleX: 0.9
+        scaleY: 0.9
+        translationX: -5
+        translationY: 2
     }
     
     Container {
@@ -24,23 +27,50 @@ Container {
         layout: StackLayout {
             orientation: LayoutOrientation.LeftToRight
         }
-        topPadding: 18
+        topPadding: 3
         verticalAlignment: VerticalAlignment.Center
         horizontalAlignment: HorizontalAlignment.Right
         
         onTouch: putinPage.pocketState()
         
-        ImageView {
-            imageSource: "asset:///images/menuicons/pocket.png"
-            maxWidth: 40
-            scalingMethod: ScalingMethod.AspectFit
-            translationY: -2
+        Container {
+            id: pocketConnSignal
+            objectName: "pocketConnSignal"
+            topPadding: 3
+            ImageView {
+                imageSource: "asset:///images/pocket-logo.png"
+            }
+            visible: !pocketErrorSignal.visible && !syncingActivity.running
         }
         
-        Label {
-            id: pocketUsername
-            text: username
+        Container {
+            id: pocketErrorSignal
+            objectName: "pocketErrorSignal"
+            topPadding: 3
+            ImageView {
+                imageSource: "asset:///images/pocket-error.png"
+            }
+            visible: !pocketConnSignal.visible && !syncingActivity.running
+        }
+        
+        Container {
+            topPadding: 1
+	        ActivityIndicator {
+	            id: syncingActivity
+	            objectName: "syncingActivity"
+	            running: !pocketConnSignal.visible && !pocketErrorSignal.visible
+	        }
+        }
+        
+        Container {
+            topPadding: 2
             leftMargin: 12
+            Label {
+                id: pocketUsername
+                text: username
+                textStyle.color: Color.White
+                maxWidth: 320
+            }
         }
     }
 }
