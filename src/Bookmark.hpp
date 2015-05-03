@@ -23,6 +23,9 @@ class Bookmark : public QObject {
 
 public:
     Bookmark(QUrl url, SqlDataAccess *data, QObject *parent=0);
+    Bookmark(QUrl url, qlonglong pocketId, QString title, bool favorited, SqlDataAccess *data, QObject *parent=0);
+    virtual ~Bookmark();
+
     void pocketSync(qlonglong id, QDateTime added);
     void pocketSync(qlonglong id);
     void fetchContent();
@@ -30,38 +33,36 @@ public:
     QUrl getUrl();
     QString getTitle();
     QString getMemo();
-    qlonglong getPocketId();
+    QString getImagePath();
     bool alreadyExisted();
     bool isKept();
-    void setKept(bool);
-    void saveMemo(QString);
     void remove();
-    virtual ~Bookmark();
+
+    QString static cleanUrl(QUrl url);
+    uint static cleanUrlHash(QUrl url);
+    void static setKept(SqlDataAccess *data, QUrl, bool);
+    void static saveMemo(SqlDataAccess *data, QUrl, QString);
+    qlonglong static getPocketId(SqlDataAccess *data, QUrl url);
 
 public slots:
-	void handleIcon(QUrl);
 	void handleTitle(QString);
 	void handleContent(QNetworkReply*);
 	void downloadImage(QNetworkReply*);
 	void downloadFavicon(QNetworkReply*);
 
 signals:
-	void sizeChanged();
-	void titleChanged(QString);
-	void imageChanged(QUrl);
-	void faviconChanged(QUrl);
+	void downloadComplete(uint);
 
 private:
-	int id;
-	qlonglong pocketId;
 	QUrl url;
+	uint hashUrl;
+	qlonglong pocketId;
 	QString title;
 	QString memo;
 	QString image;
 	QString favicon;
 	bool kept;
 	bool existing;
-	QFile dbFile;
 	SqlDataAccess *data;
 	WebPage *page;
 	QTimer timeout;
@@ -69,6 +70,11 @@ private:
     QNetworkRequest bookmarkRequest;
     QNetworkRequest imageRequest;
     QNetworkRequest iconRequest;
+    bool fetchingContent;
+    bool fetchingImage;
+    bool fetchingIcon;
+
+    void initiate();
 
 private slots:
 	void handleDownloadStatusChange(bb::cascades::WebLoadRequest*);

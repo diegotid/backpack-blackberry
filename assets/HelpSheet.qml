@@ -206,28 +206,6 @@ Page {
 		                }
 		            }    
 		            
-		            Container {
-		                layout: StackLayout {
-		                    orientation: LayoutOrientation.LeftToRight
-		                }
-		                maxHeight: 170       
-		                ImageView {
-		                    imageSource: "asset:///images/buttons/oldest.png"
-		                    scalingMethod: ScalingMethod.AspectFit
-		                    minWidth: 170
-		                    maxWidth: 170
-		                }
-		                Container {
-		                    topPadding: 12
-		                    rightPadding: 10
-		                    Label {
-		                        multiline: true
-		                        textStyle.fontSize: FontSize.Small
-		                        text: "<html><b>Oldest:</b><br/>Read what's been in your Backpack the longest time</html>"
-		                    }
-		                }
-		            }    
-
                     Header {
                         title: "Explore the stuff in your Backpack"
                         topMargin: 15

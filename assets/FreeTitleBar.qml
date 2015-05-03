@@ -2,8 +2,8 @@ import bb.cascades 1.0
 
 Container {
     layout: DockLayout {}
-    leftPadding: 20
-    rightPadding: 20
+    leftPadding: 6
+    rightPadding: 8
     
     property string username
     onUsernameChanged: {

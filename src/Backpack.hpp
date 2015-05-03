@@ -14,6 +14,7 @@
 #include <bb/cascades/WebPage>
 #include <bb/cascades/WebLoadRequest>
 #include <bb/cascades/WebPageCompositor>
+#include <bb/cascades/GroupDataModel>
 #include <bb/data/SqlDataAccess>
 #include <bb/system/InvokeManager>
 #include <bb/system/InvokeRequest>
@@ -41,22 +42,17 @@ public:
     Q_INVOKABLE int getPocketDeleteMode();
     Q_INVOKABLE void setIgnoreKeptShuffle(bool ignore);
     Q_INVOKABLE bool getIgnoreKeptShuffle();
-    Q_INVOKABLE void setIgnoreKeptOldest(bool ignore);
-    Q_INVOKABLE bool getIgnoreKeptOldest();
     Q_INVOKABLE void setIgnoreKeptQuickest(bool ignore);
     Q_INVOKABLE bool getIgnoreKeptQuickest();
     Q_INVOKABLE void setIgnoreKeptLounge(bool ignore);
     Q_INVOKABLE bool getIgnoreKeptLounge();
     Q_INVOKABLE void browseBookmark(QString uri);
-    Q_INVOKABLE void browseBookmark(QString uri, QString action);
     Q_INVOKABLE void shuffleBookmark();
-    Q_INVOKABLE void takeFigures();
-    Q_INVOKABLE void takeOldestBookmark();
-    Q_INVOKABLE void takeQuickestBookmark();
-    Q_INVOKABLE void takeLoungeBookmark();
-    Q_INVOKABLE void memoBookmark(QString memo);
+    Q_INVOKABLE QVariant quickestBookmark();
+    Q_INVOKABLE QVariant quickestBookmark(int offset);
+    Q_INVOKABLE QVariant loungeBookmark();
+    Q_INVOKABLE QVariant loungeBookmark(int offset);
     Q_INVOKABLE void memoBookmark(QString url, QString memo);
-    Q_INVOKABLE void keepBookmark(bool keep);
     Q_INVOKABLE void keepBookmark(QString url, bool keep);
     Q_INVOKABLE void removeBookmark(QString url);
     Q_INVOKABLE void removeBookmark(QString url, bool deliberate);
@@ -79,16 +75,14 @@ public:
     Q_INVOKABLE void pocketSetInterval(int);
     Q_INVOKABLE void refreshBookmarks();
     Q_INVOKABLE void refreshBookmarks(QString query);
-    QDate getOldestDate();
+    Q_INVOKABLE void fetchContent(QString url);
     int getQuickestSize();
     void pocketPost(QUrl);
-    void pocketArchive(qlonglong pocketId);
-    void pocketSetFavourite(qlonglong pocketId, bool favourite);
+    void pocketArchiveDelete(qlonglong pocketId, bool permanent);
     void memoBookmark(QUrl url, QString memo);
     void keepBookmark(QUrl url, bool keep);
     void removeBookmark(QUrl url);
     void removeBookmark(QUrl url, bool deliberate);
-    void removeBookmark(QUrl url, bool deliberate, bool pocketCleaning);
     virtual ~Backpack();
 
     Q_INVOKABLE static const int ALL;
@@ -100,10 +94,12 @@ public:
 public Q_SLOTS:
 	void handleInvoke(const bb::system::InvokeRequest&);
 	void handleDownloadFailed(QUrl url);
-	void updateSize();
-	void updateImage(QUrl);
-	void updateFavicon(QUrl);
-	void updateTitle(QString);
+	void handleBookmarkComplete(QUrl, int);
+	void updateTitle(QUrl, QString);
+	void updateFavicon(QUrl, QUrl);
+	void updateImage(QUrl, QUrl);
+	void updateActiveFrame();
+	void freeLoadingPage(uint);
     Q_INVOKABLE void pocketRetrieve();
 
 private:
@@ -113,8 +109,9 @@ private:
 	SqlDataAccess *data;
     InvokeManager *iManager;
     ListView *bookmarks;
-    QMap<uint, Bookmark*> bookmark;
-    QUrl currentUrl;
+    GroupDataModel *bookmarksByURL;
+    GroupDataModel *bookmarksByDate;
+    QMap<uint, Bookmark*> loading;
     QTimer *timeout;
     SystemToast *backupToast;
 
@@ -123,23 +120,25 @@ private:
     QNetworkAccessManager *network;
     QNetworkReply *reply;
     QByteArray requestToken;
-	QTimer *updateTimer;
+	QTimer *pocketUpdateTimer;
+    QTimer *frameUpdateTimer;
+	bool refreshRequested;
 
     ActiveFrame *activeFrame;
 
-    uint cleanUrlHash(QUrl url);
    	bool databaseExists();
     void createDatabase();
-    void refreshBookmarks(bool reload);
-    void refreshBookmarks(bool reload, QString query);
+    void fetchPocketContent();
+	void updateImage(const char*, QUrl);
+    void updateActiveFrame(bool force);
 
 private Q_SLOTS:
-	void reloadQML(QUrl mainFile);
-    void cleanup();
     void restoreFinishedFeedback(bb::system::SystemUiResult::Type);
 	void deleteBackupFeedback(bb::system::SystemUiResult::Type);
 	void deleteBackupConfirmation();
 	void pocketHandlePostFinished();
+//	void reloadQML(QUrl);
+//    void cleanup();
 };
 
 #endif /* Backpack_HPP_ */

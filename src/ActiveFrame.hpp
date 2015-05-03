@@ -25,17 +25,15 @@ public:
 	virtual ~ActiveFrame();
 
 public slots:
-	void update();
-	void update(bool force);
-	void takeFigures(QObject *parent);
+	QUrl update(bool force);
 
 private:
 	Container *coverContainer;
 	QmlDocument *qmlCover;
-	QTimer *updateTimer;
 	QFile dbFile;
 	SqlDataAccess *sql;
 	QVariantList bookmarks;
+	QVariantMap previous;
 };
 
 #endif /* ACTIVEFRAME_HPP_ */
