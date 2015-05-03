@@ -1,12 +1,11 @@
-import bb.cascades 1.0
+
+import bb.cascades 1.3
 
 TabbedPane {
     id: mainPage
-    showTabsOnActionBar: true
     
     property string username
     onUsernameChanged: {
-        homePage.updateUsername(username)
         browsePage.updateUsername(username)
         putinPage.updateUsername(username)
     }
@@ -70,23 +69,11 @@ TabbedPane {
     }
     
     Tab {
-        id: readTab
-        objectName: "readTab"
-        
-        title: "Read"
-        imageSource: "asset:///images/menuicons/ic_doctype_web.png"
-
-        HomePage {
-            id: homePage
-        }
-    }
-    
-    Tab {
         id: exploreTab
         objectName: "exploreTab"
         
-        title: "Explore"
-        imageSource: "asset:///images/menuicons/ic_search.png"
+        title: "All articles"
+        imageSource: "asset:///images/menuicons/ic_all.png"
 
         BrowsePage {
             id: browsePage
@@ -95,11 +82,12 @@ TabbedPane {
     
     Tab {
         id: putinTab
+        objectName: "putinTab"
         
         title: "Put in"
         imageSource: "asset:///images/menuicons/ic_doctype_add.png"
 
-		PutinPage {
+        PutinPage {
       		id: putinPage
         }
     }

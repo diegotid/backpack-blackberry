@@ -1,5 +1,5 @@
 
-import bb.cascades 1.0
+import bb.cascades 1.4
 import bb.system 1.0
 
 Page {
@@ -44,7 +44,7 @@ Page {
         pocketError.errorMessage = error
         pocketError.show()
     }
-
+    
     attachedObjects: [
         Invocation {
             id: pocketLink
@@ -76,7 +76,7 @@ Page {
 	        }
 	            
 	        Container {
-	            topPadding: 0
+	            topPadding: ui.du(2)
 	            rightPadding: 30
 	            bottomPadding: 0
 	            leftPadding: 30
@@ -150,6 +150,8 @@ Page {
                                 app.pocketCompleteAuth()
                                 state = "on"
                                 syncingIndicator.visible = true
+                                cleanButton.enabled = true
+                                logoutButton.enabled = true
                             }
                         }
                     }            
@@ -320,6 +322,7 @@ Page {
                         horizontalAlignment: HorizontalAlignment.Fill
                         
                         Button {
+                            id: cleanButton
                             text: "Clean " + username + "'s content"
                             horizontalAlignment: HorizontalAlignment.Fill
                             attachedObjects: [
@@ -330,6 +333,7 @@ Page {
                                     onFinished: {
                                         if (result == SystemUiResult.ConfirmButtonSelection) {
                                             app.pocketCleanContent()
+                                            cleanButton.enabled = false
                                         } else {
                                             cleanDialog.close()
                                         }
@@ -340,9 +344,13 @@ Page {
                         }
                         
                         Button {
+                            id: logoutButton
                             text: "Logout on getpocket.com"
                             horizontalAlignment: HorizontalAlignment.Fill
-                            onClicked: pocketLink.trigger("bb.action.OPEN")
+                            onClicked: {
+                                pocketLink.trigger("bb.action.OPEN")
+                                logoutButton.enabled = false
+                            }
                         }
                         
                         Button {

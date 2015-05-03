@@ -1,15 +1,22 @@
 
-import bb.cascades 1.0
+import bb.cascades 1.3
 
 Page {
     id: invokedForm
     objectName: "invokedForm"
     
     property variant item
-    signal close();
+    signal close()
+    
+    onItemChanged: {
+        titleBar.title = "Edit item"
+        status.text = ""
+        invokedImage.visible = item.image && item.image.toString().length > 0
+        invokedFavicon.visible = item.favicon && item.favicon.toString().length > 0
+    }
     
     titleBar: TitleBar {
-        title: "Backpack"
+        title: "New item"
         
         dismissAction: ActionItem {
             id: dismissButton
@@ -34,7 +41,7 @@ Page {
             enabled: false
             
             onTriggered: {
-                item ? app.memoBookmark(item.url, memo.text) : app.memoBookmark(memo.text)
+                app.memoBookmark(invokedURL.text, memo.text)
                 invokedForm.close()
             }
         }
@@ -43,7 +50,17 @@ Page {
     paneProperties: NavigationPaneProperties {
         backButton: dismissButton
     }
-    
+        
+    function domain(url) {
+        var domain = url.substring(url.indexOf("://") + (url.indexOf("://") < 0 ? 1 : 3));
+        console.log("domain: " + domain)
+        if (domain.indexOf('/') < domain.indexOf('.')) {
+            return domain
+        } else {
+            return domain.substring(0, domain.indexOf('/'))
+        }
+    }
+
     Container {
         layout: DockLayout {}
         
@@ -58,7 +75,7 @@ Page {
             ImageView {
                 id: invokedImage
                 objectName: "invokedImage"
-                imageSource: item ? item.image : ""
+                imageSource: item ? "file://" + item.image : "asset:///images/backpack.png"
                 scalingMethod: ScalingMethod.AspectFill
                 verticalAlignment: VerticalAlignment.Fill
                 horizontalAlignment: HorizontalAlignment.Fill
@@ -78,7 +95,6 @@ Page {
                 horizontalAlignment: HorizontalAlignment.Fill
                 minWidth: imageHandler.layoutFrame.width
                 minHeight: imageHandler.layoutFrame.height
-                rotationZ: 180.0
             }
         }
 
@@ -87,11 +103,12 @@ Page {
             leftPadding: 25
             rightPadding: 25
             bottomPadding: 25
+            verticalAlignment: VerticalAlignment.Bottom
             
             Label {
                 id: status
                 objectName: "status"
-                textStyle.color: Color.create("#07b1e6")
+                textStyle.color: ui.palette.primary
                 textStyle.fontSize: FontSize.Large
                 translationX: 8
 //                text: "Comment this for release"
@@ -101,7 +118,6 @@ Page {
                 layout: StackLayout {
                     orientation: LayoutOrientation.LeftToRight
                 }
-                maxHeight: 145
                 leftPadding: 5
                 rightPadding: 5
                 bottomMargin: 0
@@ -116,6 +132,7 @@ Page {
                     
                     ActivityIndicator {
                         running: true
+                        accessibility.name: "Loading content"
                     }             
                 }
                 
@@ -128,6 +145,7 @@ Page {
                     multiline: true
                     text: item ? item.title : ""
 //                    text: "Comment this for release but must be at least three lines adslfkjasñdlkfjasñld  fñlaskdjf a"
+//                    text: "Título corto de dos líneas por lo menos"
                 }
             }
             
@@ -139,13 +157,13 @@ Page {
                     layout: StackLayout {
                         orientation: LayoutOrientation.LeftToRight
                     }
-                    topPadding: 5
+                    topPadding: 10
                     bottomPadding: 10
 
                     ImageView {
                         id: invokedFavicon
                         objectName: "invokedFavicon"
-                    	imageSource: item ? item.favicon : "asset:///images/favicon.png"
+                    	imageSource: item ? "file://" + item.favicon : "asset:///images/favicon.png"
                     	minHeight: 26
                     	minWidth: 26
                     	translationY: 5
@@ -155,7 +173,8 @@ Page {
                     Label {
                         id: invokedURL
                         objectName: "invokedURL"
-                        text: item.url
+                        text: domain(item.url)
+//                        text: "www.bbornot2b.com"
                         textStyle.color: Color.LightGray
                         textStyle.fontSize: FontSize.XSmall
                     }
@@ -178,60 +197,61 @@ Page {
                         }
                     }
                 }
+            }
+            
+            Container {
+                layout: DockLayout {}
+                topPadding: 35
+                bottomPadding: 35
+                rightPadding: 10
+                horizontalAlignment: HorizontalAlignment.Fill
+                verticalAlignment: VerticalAlignment.Bottom
                 
                 Container {
-                    layout: DockLayout {}
-                    topPadding: 10
-                    bottomPadding: 35
-                    horizontalAlignment: HorizontalAlignment.Fill
-                    
-                    Container {
-                        layout: StackLayout {
-                            orientation: LayoutOrientation.LeftToRight
-                        }
-                        
-                        ImageView {
-                            id: keepStar
-                            imageSource: "asset:///images/menuicons/zip.png"
-                            translationX: -15
-                            scaleX: 0.9
-                            scaleY: 0.9
-                            scalingMethod: ScalingMethod.AspectFit
-                        }
-                        
-                        Label {
-                            text: "Favorite"
-                            verticalAlignment: VerticalAlignment.Center
-                            translationX: -25
-                        }
-                        
-                        Label {
-                            text: "(keep after read)"
-                            visible: !app.getKeepAfterRead()
-                            textStyle.color: Color.LightGray
-                            verticalAlignment: VerticalAlignment.Center
-                            translationX: -25
-                            translationY: 3
-                            textStyle.fontSize: FontSize.XSmall
-                        }
+                    layout: StackLayout {
+                        orientation: LayoutOrientation.LeftToRight
                     }
                     
-                    ToggleButton {
-                        id: keepCheck
-                        objectName: "keepCheck"
-                        horizontalAlignment: HorizontalAlignment.Right                  
+                    ImageView {
+                        id: keepStar
+                        imageSource: "asset:///images/keep.png"
+                        scalingMethod: ScalingMethod.AspectFit
+                        scaleX: 0.7
+                        scaleY: 0.7
+                    }
+                    
+                    Label {
+                        text: "Favorite"
                         verticalAlignment: VerticalAlignment.Center
-                        checked: item && item.keep == "true"
-                        property bool invokeChecked: false
-                        
-                        onCheckedChanged: {
-                            item ? app.keepBookmark(item.url, checked) : app.keepBookmark(checked)
-                            keepStar.imageSource = "asset:///images/menuicons/zip" + (checked ? "On" : "") + ".png"
-                        }
-                        onInvokeCheckedChanged: keepCheck.checked = invokeChecked
+                        translationX: -10
+                    }
+                    
+                    Label {
+                        text: "(keep after read)"
+                        visible: !app.getKeepAfterRead()
+                        textStyle.color: Color.LightGray
+                        verticalAlignment: VerticalAlignment.Center
+                        translationX: -20
+                        translationY: 2
+                        textStyle.fontSize: FontSize.XSmall
                     }
                 }
+                
+                ToggleButton {
+                    id: keepCheck
+                    objectName: "keepCheck"
+                    horizontalAlignment: HorizontalAlignment.Right                  
+                    verticalAlignment: VerticalAlignment.Center
+                    checked: item && item.keep == "true"
+                    property bool invokeChecked: false
+                    
+                    onCheckedChanged: {
+                        app.keepBookmark(invokedURL.text, checked)
+                        keepStar.imageSource = "asset:///images/menuicons/zip" + (checked ? "On" : "") + ".png"
+                    }
+                    onInvokeCheckedChanged: keepCheck.checked = invokeChecked
+                }
             }
-        }	        	                   
-    }
+        }
+    }	        	                   
 }

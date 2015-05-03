@@ -1,5 +1,5 @@
 
-import bb.cascades 1.0
+import bb.cascades 1.4
     
 Container {
     layout: DockLayout {}
@@ -40,48 +40,11 @@ Container {
         horizontalAlignment: HorizontalAlignment.Fill
         opacity: 0.75
     }
-    
-    Container { // Header
-        layout: DockLayout {}
-        horizontalAlignment: HorizontalAlignment.Fill
-        background: Color.create(0, 0, 0, 0.6)
-        
-        Container {
-            topPadding: 8
-            rightPadding: 10
-            horizontalAlignment: HorizontalAlignment.Right
-            ImageView {
-                imageSource: "asset:///images/small_icon.png"
-            }        
-        }
-
-        Container {
-            topPadding: 6
-            bottomPadding: 10
-            rightPadding: 10
-            leftPadding: 10
-            Label {
-                objectName: "oldest"
-//                text: "Oldest: 1 week ago"
-                textStyle.color: Color.White
-                textStyle.fontSize: FontSize.XXSmall
-                bottomMargin: 0
-            } 
-            Label {
-                objectName: "quickest"
-                topMargin: 0
-//                text: "Quickest: 3 min"
-                textStyle.color: Color.White
-                textStyle.fontSize: FontSize.XXSmall
-            }             
-        }
-    }
 
     Container {
-        layout: DockLayout {}
+        layout: StackLayout {}
         horizontalAlignment: HorizontalAlignment.Fill
         verticalAlignment: VerticalAlignment.Fill
-        topPadding: 70
 
         Container {
             layout: StackLayout {
@@ -92,35 +55,32 @@ Container {
             bottomPadding: 10
             leftPadding: 10
             horizontalAlignment: HorizontalAlignment.Left
-            verticalAlignment: VerticalAlignment.Bottom
+            verticalAlignment: VerticalAlignment.Top
             
-            attachedObjects: LayoutUpdateHandler {
-                id: footHandler
-            }
-
             ImageView {
                 id: bookmarkIcon
                 objectName: "bookmarkIcon"
-                imageSource: "asset:///images/favicon.png"
+//                imageSource: "asset:///images/favicon.png"
                 minHeight: 24
                 minWidth: 24
                 verticalAlignment: VerticalAlignment.Center
                 translationY: 2
+                visible: imageSource && imageSource.toString().length > 0
             }
             
             Label {
                 id: bookmarkURL
                 objectName: "bookmarkURL"
-//                text: "Maecenas sit amet tellus eros, porttitor rhoncus ipsum. Sed rutrum lacus non dolor tincidunt posuere eget ut tortor. Proin ut nisi metus askdfañsl"
+//                text: "www.bbornot2b.com"
                 textStyle.color: Color.White
                 textStyle.fontSize: FontSize.XSmall
                 leftMargin: 10
                 onTextChanged: {
-                    if (text.toString().length > 0) {
-                        if (text.indexOf("http://") == 0)
-                            bookmarkURL.setText(text.substr(7));   
-                        else if (text.indexOf("/") == text.toString().length - 1)
-                            bookmarkURL.setText(text.substring(0, text.toString().length - 1));
+                    var domain = text.substring(text.indexOf("://") + (text.indexOf("://") < 0 ? 1 : 3));
+                    if (domain.indexOf('/') < domain.indexOf('.')) {
+                        bookmarkURL.setText(domain)
+                    } else {
+                        bookmarkURL.setText(domain.substring(0, domain.indexOf('/')))
                     }
                 }
             }
@@ -129,39 +89,22 @@ Container {
         Container {
             rightPadding: 10
             leftPadding: 10
-            verticalAlignment: VerticalAlignment.Bottom
-            bottomPadding: footHandler.layoutFrame.height
+            bottomPadding: ui.sdu(2)
+            layout: DockLayout {}
+            layoutProperties: StackLayoutProperties {
+                spaceQuota: 1
+            }
 
-            Container {
-	            id: titleCase
-	            visible: bookmarkTitle.text.toString().length > 0
-	            
-	            Label {
-	                id: bookmarkTitle
-	                objectName: "bookmarkTitle"
-	                multiline: true
-//	                text: "Probando por aquí"
-//	                text: "Maecenas sit amet tellus eros, porttitor rhoncus ipsum. Sed rutrum lacus non dolor tincidunt posuere eget ut tortor. Proin ut nisi metus askdfañsl"
-	                textStyle.color: Color.White
-	                textStyle.fontWeight: FontWeight.Bold
-	            }
-	        }        
-	        	        
-	        Container {
-	            id: memoCase
-	            visible: memo.text.toString().length > 0
-	            
-	            Label {
-	                id: memo
-	                objectName: "memo"
-	                multiline: true
-//	                text: "Y un comentario por acá"
-//	                text: "Maecenas sit amet tellus eros, porttitor rhoncus ipsum. Sed rutrum lacus non dolor tincidunt posuere eget ut tortor. Proin ut nisi metus askdfañsl"
-	                textStyle.color: Color.White
-	                textStyle.fontSize: FontSize.Small
-	                preferredHeight: 300
-	            }
-	        }
+            Label {
+                id: bookmarkTitle
+                objectName: "bookmarkTitle"
+                multiline: true
+                verticalAlignment: VerticalAlignment.Bottom
+//                text: "Probando por aquí"
+//                text: "Maecenas sit amet tellus eros, porttitor rhoncus ipsum. Sed rutrum lacus non dolor tincidunt posuere eget ut tortor. Proin ut nisi metus askdfañsl"
+                textStyle.color: Color.White
+                textStyle.fontWeight: FontWeight.Bold
+            }
 	    }
     }
 }
