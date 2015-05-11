@@ -85,7 +85,7 @@ Page {
             }
             
             TextField {
-                hintText: "Search something to put in..."
+                hintText: "Search something to put..."
                 input.submitKey: SubmitKey.Search
                 input.onSubmitted: app.launchSearchToPutin(text)
                 topMargin: ui.du(3)

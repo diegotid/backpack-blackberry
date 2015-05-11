@@ -19,13 +19,13 @@ Page {
         
 	    SegmentedControl {
 	        
+            Option {
+                id: readOption
+                text: "Read stuff"
+            }
 	        Option {
 	            id: putOption
 	            text: "Put stuff in"
-	        }
-	        Option {
-	            id: readOption
-	            text: "Read stuff"
 	        }
 	        Option {
 	            id: backupOption
@@ -37,119 +37,30 @@ Page {
                 backupSegment.visible = (selectedOption == backupOption)
             }
 	    }
-	    
-	    Container {
-            id: putSegment
-//            visible: false
-	
-            ScrollView {
-                scrollViewProperties.scrollMode: ScrollMode.Vertical
-                
-                Container {
-                
-                    Header {
-                        title: "How to put stuff in your Backpack from other apps"
-                        visible: true
-                    }
-                    
-		            Container {
-		                layout: StackLayout {
-		                    orientation: LayoutOrientation.LeftToRight
-		                }
-		                ImageView {
-		                    minWidth: 270
-		                    maxWidth: 270
-		                    imageSource: "asset:///images/share-hint.png"
-                            scalingMethod: ScalingMethod.AspectFill
-                        }
-		                Container {
-		                    topPadding: 10
-		                    rightPadding: 10
-		                    bottomPadding: 0
-		                    leftPadding: 10
-		                    Label {
-		                        multiline: true
-		                        textStyle.fontSize: FontSize.Small
-		                        text: "From wherever you find something you want to keep to read later, share it with:"
-		                        bottomMargin: 10
-		                    }
-		                    ImageView {
-		                        imageSource: "asset:///images/share-sample.png"
-		                    }
-		                }
-		            }
-		            		            
-                    Header {
-                        title: "How to add stuff from your Backpack"
-                        visible: true
-                    }
-                    
-                    Container {
-                        layout: StackLayout {
-                            orientation: LayoutOrientation.LeftToRight
-                        }
-                        topPadding: 10
-                        leftPadding: 10
-                        rightPadding: 30
-                        Label {
-                            multiline: true
-                            textStyle.fontSize: FontSize.Small
-                            text: "You can also search for new stuff from the 'Put in' tab"
-                        }
-                        ImageView {
-                            imageSource: "asset:///images/menuicons/ic_doctype_add.png"
-                            scalingMethod: ScalingMethod.AspectFit
-                            minWidth: 81
-                        }
-                    }
-                    
-                    Container {
-                        layout: StackLayout {
-                            orientation: LayoutOrientation.LeftToRight
-                        }
-                        topPadding: 10
-                        leftPadding: 10
-                        rightPadding: 26
-                        Label {
-                            multiline: true
-                            textStyle.fontSize: FontSize.Small
-                            text: "Or sync Backpack with your Pocket account to retrieve your stuff"
-                        }
-                        ImageView {
-                            imageSource: "asset:///images/menuicons/pocket.png"
-                            scalingMethod: ScalingMethod.AspectFit
-                            maxWidth: 80
-                            minWidth: 80
-                        }
-                    }
-		        }    
-	        }
-	    }
-		        
+	    		        
         Container {
             id: readSegment
-            visible: false
+//            visible: false
 
             ScrollView {
                 scrollViewProperties.scrollMode: ScrollMode.Vertical
                 
                 Container {
-                        		            
+
                     Header {
                         title: "Ways to use Backpack"
-                        bottomMargin: 10
+                        bottomMargin: 5
                     }
                     
 		            Container {
 		                layout: StackLayout {
                             orientation: LayoutOrientation.LeftToRight
 		                }
-		                maxHeight: 170                
 		                ImageView {
 		                    imageSource: "asset:///images/buttons/shuffle.png"
 		                    scalingMethod: ScalingMethod.AspectFit
-		                    minWidth: 170
-		                    maxWidth: 170
+		                    minWidth: 120
+		                    maxWidth: 120
 		                }
 		                Container {
 		                    topPadding: 12
@@ -166,12 +77,11 @@ Page {
 		                layout: StackLayout {
 		                    orientation: LayoutOrientation.LeftToRight
 		                }
-		                maxHeight: 170       
 		                ImageView {
 		                    imageSource: "asset:///images/buttons/quickest.png"
 		                    scalingMethod: ScalingMethod.AspectFit
-		                    minWidth: 170
-		                    maxWidth: 170
+		                    minWidth: 120
+		                    maxWidth: 120
 		                }
 		                Container {
                             topPadding: 12
@@ -188,12 +98,11 @@ Page {
 		                layout: StackLayout {
 		                    orientation: LayoutOrientation.LeftToRight
 		                }
-		                maxHeight: 170                
 		                ImageView {
 		                    imageSource: "asset:///images/buttons/lounge.png"
 		                    scalingMethod: ScalingMethod.AspectFit
-		                    minWidth: 170
-		                    maxWidth: 170
+		                    minWidth: 120
+		                    maxWidth: 120
 		                }
 		                Container {
 		                    topPadding: 12
@@ -205,10 +114,10 @@ Page {
 		                    }
 		                }
 		            }    
-		            
+            
                     Header {
                         title: "Explore the stuff in your Backpack"
-                        topMargin: 15
+                        topMargin: 5
                         bottomMargin: 10
                     }
                     
@@ -224,14 +133,13 @@ Page {
                         Label {
                             multiline: true
                             textStyle.fontSize: FontSize.Small
-                            text: "You may always explore what's in your Backpack from the Explore tab"
-                        }
-                        
+                            text: "Search content from the action menu or by typing on the keyboard"
+                            verticalAlignment: VerticalAlignment.Center
+                        }                        
                         ImageView {
                             imageSource: "asset:///images/menuicons/ic_search.png"
-                            scalingMethod: ScalingMethod.AspectFill
-                            minHeight: 90
-                            minWidth: 90
+                            scalingMethod: ScalingMethod.AspectFit
+                            minWidth: 75
                         }
                     }
                     
@@ -242,7 +150,7 @@ Page {
                         topPadding: 5
                         bottomPadding: 5
                         leftPadding: 18
-                        rightPadding: 25
+                        rightPadding: 18
                         
                         Label {
                             multiline: true
@@ -250,17 +158,121 @@ Page {
                             text: "And access it from other devices if connected to your Pocket account"
                             verticalAlignment: VerticalAlignment.Center
                         }
-                        
                         ImageView {
                             imageSource: "asset:///images/menuicons/pocket.png"
                             scalingMethod: ScalingMethod.AspectFit
-                            maxWidth: 80
-                            minWidth: 80
+                            minWidth: 75
                         }
                     }
 		        }
 			}
 		}
+
+        Container {
+            id: putSegment
+            visible: false
+
+            ScrollView {
+                scrollViewProperties.scrollMode: ScrollMode.Vertical
+                
+                Container {
+
+                    Header {
+                        title: "How to put stuff in your Backpack from other apps"
+                        visible: true
+                    }
+                    
+                    Container {
+                        horizontalAlignment: HorizontalAlignment.Fill
+
+                        Container {
+                            topPadding: 10
+                            rightPadding: 10
+                            bottomPadding: 0
+                            leftPadding: 10
+                            horizontalAlignment: HorizontalAlignment.Fill
+                            Label {
+                                multiline: true
+                                textStyle.fontSize: FontSize.Small
+                                text: "From wherever you find something you want to keep to read later, share it with:"
+                                bottomMargin: 10
+                            }
+                            Container {
+                                layout: StackLayout {
+                                    orientation: LayoutOrientation.LeftToRight
+                                }
+                                horizontalAlignment: HorizontalAlignment.Center
+                                ImageView {
+                                    imageSource: "asset:///images/menuicons/ic_overflow_action.png"
+                                }
+                                ImageView {
+                                    imageSource: "asset:///images/next_step.png"
+                                    rightMargin: 15
+                                }
+                                ImageView {
+                                    imageSource: "asset:///images/menuicons/ic_share.png"
+                                }
+                                ImageView {
+                                    imageSource: "asset:///images/next_step.png"                                
+                                    rightMargin: 15
+                                }
+                                ImageView {
+                                    imageSource: "asset:///images/share-sample.png"
+                                    verticalAlignment: VerticalAlignment.Center
+                                }
+                            }
+                        }
+                    }
+                    
+                    Header {
+                        title: "How to add stuff from your Backpack"
+                        visible: true
+                    }
+                    
+                    Container {
+                        layout: StackLayout {
+                            orientation: LayoutOrientation.LeftToRight
+                        }
+                        topPadding: 10
+                        leftPadding: 10
+                        rightPadding: 25
+
+                        ImageView {
+                            imageSource: "asset:///images/menuicons/ic_doctype_add.png"
+                            scalingMethod: ScalingMethod.AspectFit
+                            minWidth: 75
+                        }
+                        Label {
+                            multiline: true
+                            textStyle.fontSize: FontSize.Small
+                            text: "You can also search for new stuff from the 'Put something in' tab at the tab menu"
+                            verticalAlignment: VerticalAlignment.Center
+                        }
+                    }
+                    
+                    Container {
+                        layout: StackLayout {
+                            orientation: LayoutOrientation.LeftToRight
+                        }
+                        topPadding: 10
+                        leftPadding: 10
+                        rightPadding: 25
+
+                        ImageView {
+                            imageSource: "asset:///images/menuicons/pocket.png"
+                            scalingMethod: ScalingMethod.AspectFit
+                            minWidth: 75
+                        }
+                        Label {
+                            multiline: true
+                            textStyle.fontSize: FontSize.Small
+                            text: "Or sync Backpack with your Pocket account to retrieve your stuff"
+                            verticalAlignment: VerticalAlignment.Center
+                        }
+                    }
+                }    
+            }
+        }
 
     	Container {
             id: backupSegment
@@ -305,7 +317,7 @@ Page {
                         topMargin: 15
                         bottomMargin: 10
                     }
-                    
+                 
                     Container {
                         layout: StackLayout {
                             orientation: LayoutOrientation.LeftToRight
@@ -324,8 +336,7 @@ Page {
                         ImageView {
                             imageSource: "asset:///images/menuicons/pocket.png"
                             scalingMethod: ScalingMethod.AspectFit
-                            maxWidth: 80
-                            minWidth: 80
+                            minWidth: 75
                         }
                     }
                 }

@@ -72,8 +72,8 @@ TabbedPane {
         id: exploreTab
         objectName: "exploreTab"
         
-        title: "All articles"
-        imageSource: "asset:///images/menuicons/ic_all.png"
+        title: "Browse"
+        imageSource: "asset:///images/menuicons/backpack.png"
 
         BrowsePage {
             id: browsePage
@@ -84,9 +84,9 @@ TabbedPane {
         id: putinTab
         objectName: "putinTab"
         
-        title: "Put in"
-        imageSource: "asset:///images/menuicons/ic_doctype_add.png"
-
+        title: "Put something in"
+        imageSource: "asset:///images/menuicons/ic_add_entry.png"
+        
         PutinPage {
       		id: putinPage
         }
