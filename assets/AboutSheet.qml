@@ -26,7 +26,7 @@ Page {
             
             Label {
                 multiline: true
-                text: "Backpack " + app.getAppVersion()
+                text: "Backpack 3.0"
                 textStyle.fontWeight: FontWeight.Bold
                 textStyle.fontSize: FontSize.Large
             }
