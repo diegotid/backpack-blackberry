@@ -162,7 +162,6 @@ void Backpack::updateActiveFrame(bool force) {
 
     QUrl toFetch = activeFrame->update(force);
     if (toFetch.toString().trimmed().length() > 0) {
-        qDebug() << ">> BAJANDO IMÁGENES DE " << toFetch.toString().trimmed();
         fetchContent(toFetch.toString().trimmed());
     }
 }
@@ -359,7 +358,6 @@ void Backpack::refreshBookmarks(QString query) {
             bmMap["title"] = QString("...");
             uint urlHash = Bookmark::cleanUrlHash(QUrl(bmMap["url"].toString()));
             loading[urlHash] = new Bookmark(QUrl(bmMap["url"].toString()), data, this);
-            qDebug() << "* Loading " << loading.size() << " bookmarks";
             loading[urlHash]->fetchContent();
             bool res_loading_end = connect(loading[urlHash], SIGNAL(downloadComplete(uint)), this, SLOT(freeLoadingPage(uint)));
             Q_ASSERT(res_loading_end);
@@ -649,7 +647,6 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
     }
 
     loading[urlHash] = new Bookmark(request.uri(), data, this);
-    qDebug() << "* Loading " << loading.size() << " bookmarks";
     loading[urlHash]->fetchContent();
     bool res_loading_end = connect(loading[urlHash], SIGNAL(downloadComplete(uint)), this, SLOT(freeLoadingPage(uint)));
     Q_ASSERT(res_loading_end);
@@ -850,7 +847,6 @@ QVariant Backpack::quickestBookmark(int offset) {
     if (!loading.contains(urlHash)
     && (values.value("image").isNull() || values.value("image").toString().length() == 0)) {
         loading[urlHash] = new Bookmark(url, data, this);
-        qDebug() << "* Loading " << loading.size() << " bookmarks";
         loading[urlHash]->fetchContent();
         bool res_loading_end = connect(loading[urlHash], SIGNAL(downloadComplete(uint)), this, SLOT(freeLoadingPage(uint)));
         Q_ASSERT(res_loading_end);
@@ -896,7 +892,6 @@ QVariant Backpack::loungeBookmark(int offset) {
     if (!loading.contains(urlHash)
     && (values.value("image").isNull() || values.value("image").toString().length() == 0)) {
         loading[urlHash] = new Bookmark(url, data, this);
-        qDebug() << "* Loading " << loading.size() << " bookmarks";
         loading[urlHash]->fetchContent();
         bool res_loading_end = connect(loading[urlHash], SIGNAL(downloadComplete(uint)), this, SLOT(freeLoadingPage(uint)));
         Q_ASSERT(res_loading_end);
@@ -1196,8 +1191,6 @@ void Backpack::pocketArchiveDelete(qlonglong pocketId, bool permanent) {
 }
 
 void Backpack::pocketHandlePostFinished() {
-
-//    qDebug() << "-> pocketHandlePostFinished";
 
 	if (!reply->isFinished())
 		return;

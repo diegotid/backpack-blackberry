@@ -15,10 +15,6 @@ Container {
 //    maxWidth: 319
 //    maxHeight: 437
 
-	attachedObjects: LayoutUpdateHandler {
-        id: frameHandler
-    }
-       
     ImageView {
         id: bookmarkPic
         objectName: "bookmarkPic"
