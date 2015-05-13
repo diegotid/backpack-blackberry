@@ -118,6 +118,7 @@
 		<image>splash.png</image>
 		<image>splash-Q.png</image>
 		<image>splash-Z.png</image>
+  <image>splash-P.png</image>
 	</splashScreens>
 
 	<asset path="splash.png">splash.png</asset>
@@ -125,5 +126,6 @@
 	<asset path="splash-Z.png">splash-Z.png</asset>
 	<asset path="icon-Z.png">icon-Z.png</asset>
 	<asset path="icon-Q.png">icon-Q.png</asset>
+ <asset path="splash-P.png">splash-P.png</asset>
 
 </qnx>

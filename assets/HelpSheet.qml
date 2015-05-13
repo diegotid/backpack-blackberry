@@ -49,7 +49,8 @@ Page {
 
                     Header {
                         title: "Ways to use Backpack"
-                        bottomMargin: 5
+                        topMargin: 15
+                        bottomMargin: 10
                     }
                     
 		            Container {
@@ -117,7 +118,7 @@ Page {
             
                     Header {
                         title: "Explore the stuff in your Backpack"
-                        topMargin: 5
+                        topMargin: 15
                         bottomMargin: 10
                     }
                     
@@ -179,7 +180,8 @@ Page {
 
                     Header {
                         title: "How to put stuff in your Backpack from other apps"
-                        visible: true
+                        topMargin: 15
+                        bottomMargin: 10
                     }
                     
                     Container {
@@ -226,7 +228,8 @@ Page {
                     
                     Header {
                         title: "How to add stuff from your Backpack"
-                        visible: true
+                        topMargin: 15
+                        bottomMargin: 10
                     }
                     
                     Container {
@@ -291,6 +294,7 @@ Page {
                     
                     Header {
                         title: "Backup, share and restore your stuff"
+                        topMargin: 15
                         bottomMargin: 10
                     }
                     

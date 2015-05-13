@@ -1,5 +1,5 @@
 
-import bb.cascades 1.0
+import bb.cascades 1.4
 import bb.cascades.pickers 1.0
 
 Page {
@@ -14,7 +14,7 @@ Page {
             onTriggered: backup.close();   
         }
     }
-    
+
     attachedObjects: [
         FilePicker {
             id: importFilePicker
@@ -32,6 +32,11 @@ Page {
             subtitle: "Save Backpack content for later use on this or other device"
         }
         
+        attachedObjects: LayoutUpdateHandler {
+            id: pageHandler
+            onLayoutFrameChanged: Qt.pageHandler = pageHandler
+        }
+
         Container {
             topPadding: 20.0
             leftPadding: 20.0
@@ -43,15 +48,15 @@ Page {
             Button {
                 text: "Import from file"
                 horizontalAlignment: HorizontalAlignment.Left
-                minWidth: 300
                 onClicked: importFilePicker.open()
+                maxWidth: ui.sdu(36)
             }
 
             Button {
                 text: "New backup"
                 horizontalAlignment: HorizontalAlignment.Right
-                minWidth: 300
                 onClicked: app.saveBackup();
+                maxWidth: ui.sdu(36)
             }
         }
         
@@ -80,9 +85,9 @@ Page {
                 id: backupsList
                 objectName: "backupsList"
 
-//                dataModel: XmlDataModel {
-//                    source: "debug.xml"
-//                }
+                dataModel: XmlDataModel {
+                    source: "debug.xml"
+                }
 
                 listItemComponents: [
                                            
@@ -123,7 +128,7 @@ Page {
                                 rightPadding: 20
                                 bottomPadding: 10
                                 layout: DockLayout {}
-                                preferredWidth: 768
+                                preferredWidth: Qt.pageHandler.layoutFrame.width
 
 								Container {
                                     verticalAlignment: VerticalAlignment.Center
@@ -135,6 +140,7 @@ Page {
                                         verticalAlignment: VerticalAlignment.Center
                                         text: ListItemData.date
                                     }
+                                    
                                     onTouch: {
                                         if (event.touchType == TouchType.Down)
                                             highlight.visible = true

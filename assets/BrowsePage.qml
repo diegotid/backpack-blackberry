@@ -433,7 +433,7 @@ Page {
                                     
                                     Container {
                                         layout: DockLayout {}
-                                        minWidth: Qt.pageHandler.layoutFrame.width - 125
+                                        minWidth: Qt.pageHandler.layoutFrame.width - ui.sdu(14)
                                         
                                         Container {
                                             layout: StackLayout {

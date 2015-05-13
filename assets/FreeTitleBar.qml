@@ -37,6 +37,7 @@ Container {
             id: pocketConnSignal
             objectName: "pocketConnSignal"
             topPadding: 3
+            verticalAlignment: VerticalAlignment.Center
             ImageView {
                 imageSource: "asset:///images/pocket-logo.png"
             }
@@ -47,6 +48,7 @@ Container {
             id: pocketErrorSignal
             objectName: "pocketErrorSignal"
             topPadding: 3
+            verticalAlignment: VerticalAlignment.Center
             ImageView {
                 imageSource: "asset:///images/pocket-error.png"
             }
@@ -55,7 +57,8 @@ Container {
         
         Container {
             topPadding: 1
-	        ActivityIndicator {
+            verticalAlignment: VerticalAlignment.Center
+            ActivityIndicator {
 	            id: syncingActivity
 	            objectName: "syncingActivity"
 	            running: !pocketConnSignal.visible && !pocketErrorSignal.visible
@@ -65,6 +68,7 @@ Container {
         Container {
             topPadding: 2
             leftMargin: 12
+            verticalAlignment: VerticalAlignment.Center
             Label {
                 id: pocketUsername
                 text: username
