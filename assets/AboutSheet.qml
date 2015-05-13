@@ -64,7 +64,7 @@ Page {
                     ]
                     onClicked: invoke.trigger("bb.action.OPEN")
                 }
-            }            
+            }
 	    }
 	}
 }
