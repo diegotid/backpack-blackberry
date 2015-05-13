@@ -53,7 +53,16 @@ Page {
                 Button {
                     text: "Rate it!"
                     horizontalAlignment: HorizontalAlignment.Center
-                    onClicked: app.launchRating()
+                    attachedObjects: [
+                        Invocation {
+                            id: invoke
+                            query: InvokeQuery {
+                                mimeType: "application/x-bb-appworld"
+                                uri: "appworld://content/20399673"
+                            }
+                        }
+                    ]
+                    onClicked: invoke.trigger("bb.action.OPEN")
                 }
             }            
 	    }

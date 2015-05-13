@@ -1081,16 +1081,6 @@ void Backpack::launchSearchToPutin(QString query) {
 	invokeSender.invoke(request);
 }
 
-void Backpack::launchRating() {
-
-	InvokeManager invokeSender;
-	InvokeRequest request;
-	request.setTarget("sys.appworld");
-	request.setAction("bb.action.OPEN");
-	request.setUri("http://appworld.blackberry.com/webstore/content/20399673");
-	invokeSender.invoke(request);
-}
-
 void Backpack::pocketConnect() {
 
 	QUrl query;
