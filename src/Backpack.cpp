@@ -385,7 +385,13 @@ void Backpack::refreshBookmarks(QString query) {
 		mainPage->setActiveTab(mainPage->findChild<Tab*>("putinTab"));
 	}
     mainPage->findChild<Label*>("emptyHint")->setVisible(type == 0 && query.isNull() && list.size() == 0);
-    mainPage->findChild<Tab*>("exploreTab")->setEnabled(type > 0 || !query.isNull() || list.size() > 0);
+
+    Tab *exploreTab = mainPage->findChild<Tab*>("exploreTab");
+    bool prevExploreTab = exploreTab->isEnabled();
+    exploreTab->setEnabled(type > 0 || !query.isNull() || list.size() > 0);
+    if (!prevExploreTab && exploreTab->isEnabled()) {
+        mainPage->setActiveTab(exploreTab);
+    }
 }
 
 void Backpack::saveBackup() {
@@ -1111,6 +1117,9 @@ void Backpack::pocketCleanContent() {
     bookmarksByDate->clear();
 
     data->execute("DELETE FROM Bookmark");
+
+    mainPage->setActiveTab(mainPage->findChild<Tab*>("putinTab"));
+    mainPage->findChild<Tab*>("exploreTab")->setEnabled(false);
 
     updateActiveFrame(true);
 }
