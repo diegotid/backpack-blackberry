@@ -57,7 +57,6 @@ public:
     Q_INVOKABLE void removeBookmark(QString url);
     Q_INVOKABLE void removeBookmark(QString url, bool deliberate);
     Q_INVOKABLE void launchSearchToPutin(QString query);
-    Q_INVOKABLE void launchRating();
     Q_INVOKABLE QString getAppVersion();
     Q_INVOKABLE void saveBackup();
     Q_INVOKABLE void showBackups();
