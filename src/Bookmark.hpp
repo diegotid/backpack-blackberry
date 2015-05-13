@@ -38,6 +38,7 @@ public:
     bool isKept();
     void remove();
 
+    void static remove(SqlDataAccess *data, QUrl url);
     QString static cleanUrl(QUrl url);
     uint static cleanUrlHash(QUrl url);
     void static setKept(SqlDataAccess *data, QUrl, bool);

@@ -1051,6 +1051,8 @@ void Backpack::removeBookmark(QUrl url, bool deliberate) {
     if (loading.contains(urlHash)) {
         loading[urlHash]->remove();
         loading.remove(urlHash);
+    } else {
+        Bookmark::remove(data, url);
     }
 
     if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {

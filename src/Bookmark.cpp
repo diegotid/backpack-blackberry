@@ -348,6 +348,31 @@ void Bookmark::remove() {
     emit downloadComplete(this->hashUrl);
 }
 
+void Bookmark::remove(SqlDataAccess *data, QUrl url) {
+
+    QVariantList bookmarks = data->execute("SELECT * FROM Bookmark WHERE hash_url = ?", QVariantList() << cleanUrlHash(url)).toList();
+
+    if (bookmarks.size() == 0) {
+        return;
+    }
+
+    QVariantMap bookmark = bookmarks.value(0).toMap();
+
+    if (!bookmark.value("favicon").isNull()) {
+        QFile *iconFile = new QFile(bookmark.value("favicon").toString());
+        if (iconFile->exists()) iconFile->remove();
+        iconFile->deleteLater();
+    }
+
+    if (!bookmark.value("image").isNull()) {
+        QFile *imageFile = new QFile(bookmark.value("image").toString());
+        if (imageFile->exists()) imageFile->remove();
+        imageFile->deleteLater();
+    }
+
+    data->execute("DELETE FROM Bookmark WHERE hash_url = ?", QVariantList() << cleanUrlHash(url));
+}
+
 QString Bookmark::cleanUrl(QUrl url) {
 
 	QString clean = url.toString();
