@@ -68,7 +68,7 @@
     <!-- <copyright></copyright> -->
 
     <!--  Name of author which is used for signing. Must match the developer name of your development certificate. -->
-    <authorId>gYAAgLKyKAote3z_0KwOZL_5Clw</authorId>
+    <authorId>gYAAgBtvetbQKY1kZjZAQOFBxZ4</authorId>
     <author>BBornot2B</author>
     <buildIdFile>buildnum</buildIdFile>
     
@@ -118,7 +118,7 @@
 		<image>splash.png</image>
 		<image>splash-Q.png</image>
 		<image>splash-Z.png</image>
-  <image>splash-P.png</image>
+  		<image>splash-P.png</image>
 	</splashScreens>
 
 	<asset path="splash.png">splash.png</asset>
