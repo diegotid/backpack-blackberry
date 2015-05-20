@@ -289,31 +289,6 @@ void Backpack::handleDownloadFailed(QUrl url) {
 	}
 }
 
-int Backpack::getQuickestSize() {
-
-	QSettings settings;
-	if (settings.value("ignoreKeptQuickest").isNull())
-		settings.setValue("ignoreKeptQuickest", true);
-
-	QVariant quickest;
-
-	if (settings.value("ignoreKeptQuickest").toBool()) {
-		quickest = data->execute("SELECT MIN(size) FROM Bookmark WHERE keep = ? AND size IS NOT NULL AND size > 0", QVariantList() << false).toList().value(0).toMap().value("MIN(size)");
-		if (quickest.isNull() || quickest.toInt() == 0)
-			quickest = data->execute("SELECT MIN(size) FROM Bookmark WHERE keep = ?", QVariantList() << false).toList().value(0).toMap().value("MIN(size)");
-	}
-
-	if (quickest.isNull() || quickest.toInt() == 0)
-		quickest = data->execute("SELECT MIN(size) FROM Bookmark WHERE size IS NOT NULL AND size > 0").toList().value(0).toMap().value("MIN(size)");
-	if (quickest.isNull() || quickest.toInt() == 0)
-		quickest = data->execute("SELECT MIN(size) FROM Bookmark").toList().value(0).toMap().value("MIN(size)");
-
-	if (quickest.isNull())
-		return 0;
-	else
-		return quickest.toInt();
-}
-
 void Backpack::refreshBookmarks() {
 
     refreshBookmarks(NULL);
@@ -682,6 +657,7 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
             mainPage->setActiveTab(mainPage->findChild<Tab*>("exploreTab"));
         }
 	}
+
 	invokedForm->findChild<ToggleButton*>("keepCheck")->setChecked(false);
 }
 

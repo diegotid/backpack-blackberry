@@ -75,7 +75,6 @@ public:
     Q_INVOKABLE void refreshBookmarks();
     Q_INVOKABLE void refreshBookmarks(QString query);
     Q_INVOKABLE void fetchContent(QString url);
-    int getQuickestSize();
     void pocketPost(QUrl);
     void pocketArchiveDelete(qlonglong pocketId, bool permanent);
     void memoBookmark(QUrl url, QString memo);
