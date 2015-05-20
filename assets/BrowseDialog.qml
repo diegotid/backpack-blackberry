@@ -114,7 +114,7 @@ Page {
             }
             
             ImageView {
-                imageSource: "asset:///images/home-shadow.png"
+                imageSource: "asset:///images/shadow.png"
                 scalingMethod: ScalingMethod.AspectFill
                 verticalAlignment: VerticalAlignment.Fill
                 horizontalAlignment: HorizontalAlignment.Fill

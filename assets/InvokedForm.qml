@@ -89,7 +89,7 @@ Page {
             }
             
             ImageView {
-                imageSource: "asset:///images/home-shadow.png"
+                imageSource: "asset:///images/shadow.png"
                 scalingMethod: ScalingMethod.AspectFill
                 verticalAlignment: VerticalAlignment.Fill
                 horizontalAlignment: HorizontalAlignment.Fill
@@ -139,7 +139,7 @@ Page {
                 Label {
                     id: title
                     objectName: "title"
-                    textStyle.fontSize: FontSize.XLarge
+                    textStyle.fontSize: FontSize.Large
                     textStyle.color: Color.White
                     verticalAlignment: VerticalAlignment.Center
                     multiline: true
@@ -150,6 +150,7 @@ Page {
             }
             
             Container { // Memo & keep switch
+                topPadding: 7
                 leftPadding: 5
                 rightPadding: 5
                 
@@ -201,9 +202,10 @@ Page {
             
             Container {
                 layout: DockLayout {}
-                topPadding: 35
-                bottomPadding: 35
+                topPadding: 25
+                bottomPadding: 10
                 rightPadding: 10
+                leftPadding: 10
                 horizontalAlignment: HorizontalAlignment.Fill
                 verticalAlignment: VerticalAlignment.Bottom
                 

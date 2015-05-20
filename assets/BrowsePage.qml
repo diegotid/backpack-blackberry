@@ -427,6 +427,7 @@ Page {
                                             id: bookmarkTitle
                                             text: ListItemData.title
                                             textStyle.fontSize: FontSize.XLarge
+                                            maxWidth: rowHandler.layoutFrame.width - (ListItemData.keep == "true" ? ui.sdu(8) : 0)
                                             translationX: -7
                                         }
                                     }

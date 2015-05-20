@@ -3,6 +3,9 @@ import bb.cascades 1.4
 
 Page {
     
+    actionBarVisibility: ChromeVisibility.Overlay
+    actionBarAutoHideBehavior: ActionBarAutoHideBehavior.HideOnScroll
+
     titleBar: TitleBar {
         kind: TitleBarKind.FreeForm
         kindProperties: FreeFormTitleBarKindProperties {
@@ -35,7 +38,7 @@ Page {
         ActionItem {
             title: "Pocket sync"
             imageSource: "asset:///images/menuicons/pocket.png"
-            ActionBar.placement: ActionBarPlacement.OnBar
+            ActionBar.placement: ActionBarPlacement.Signature
             onTriggered: {
                 pocketPage.state = (username == "") ? "sync" : "on"
                 pocketSheet.open()
@@ -77,11 +80,30 @@ Page {
                 text: "To put content in your backpack just use the share menu option from your browser on any page and select \"Backpack\""
             }
             
-            ImageView {
-                imageSource: "asset:///images/empty-hint.png"
+            Container {
+                layout: StackLayout {
+                    orientation: LayoutOrientation.LeftToRight
+                }
                 horizontalAlignment: HorizontalAlignment.Center
-                scalingMethod: ScalingMethod.AspectFit
-                visible: pageHandler.layoutFrame.height > 720 || freeTitleBar.username.length > 0
+                topMargin: 20
+                ImageView {
+                    imageSource: "asset:///images/menuicons/ic_overflow_action.png"
+                }
+                ImageView {
+                    imageSource: "asset:///images/next_step.png"
+                    rightMargin: 15
+                }
+                ImageView {
+                    imageSource: "asset:///images/menuicons/ic_share.png"
+                }
+                ImageView {
+                    imageSource: "asset:///images/next_step.png"                                
+                    rightMargin: 15
+                }
+                ImageView {
+                    imageSource: "asset:///images/share-sample.png"
+                    verticalAlignment: VerticalAlignment.Center
+                }
             }
             
             TextField {
@@ -89,10 +111,8 @@ Page {
                 input.submitKey: SubmitKey.Search
                 input.onSubmitted: app.launchSearchToPutin(text)
                 topMargin: ui.du(3)
-                bottomMargin: ui.du(5)
+                bottomMargin: ui.du(3)
             }
-
-            Divider {}
             
             Label {
                 id: pocketHint

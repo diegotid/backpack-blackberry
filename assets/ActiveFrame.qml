@@ -20,7 +20,7 @@ Container {
         objectName: "bookmarkPic"
         imageSource: "asset:///images/backpack.png"
         onImageSourceChanged: {
-            if (imageSource.toString().length == 0) {
+            if (imageSource.toString().length <= 1) {
                 bookmarkPic.imageSource = "asset:///images/backpack.png"
             }            
         }
@@ -30,7 +30,7 @@ Container {
     }
     
     ImageView {
-        imageSource: "asset:///images/frame-shadow.png"
+        imageSource: "asset:///images/shadow.png"
         scalingMethod: ScalingMethod.AspectFill
         verticalAlignment: VerticalAlignment.Fill
         horizontalAlignment: HorizontalAlignment.Fill
