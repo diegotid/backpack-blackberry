@@ -10,6 +10,9 @@ Page {
     property int minSize: 10000
     
     property string readmode: "Backpack"
+    property string username
+    property int keepAfterRead
+    property bool ignoreFavourites
 
     onReadmodeChanged: {
         offset = 0
@@ -31,7 +34,10 @@ Page {
         
         dismissAction: ActionItem {
             title: "Cancel"            
-            onTriggered: browseDialog.close()
+            onTriggered: {
+                readmode = "Backpack"
+                browseDialog.close()
+            }
         }
         
         acceptAction: ActionItem {
@@ -193,6 +199,18 @@ Page {
                 onClicked: {
                     app.browseBookmark(bookmark.url)
                     browseDialog.close()
+                }
+            }
+            
+            Container {
+                Label {
+                    text: (ignoreFavourites || !keepAfterRead ? "Current settings: " : "")
+                    + (ignoreFavourites ? "No favorites" : "")
+                    + (ignoreFavourites && !keepAfterRead ? ", " : "")
+                    + (keepAfterRead ? "" : (username.length > 0 ? "Archiving" : "Discarding") + " read articles")
+                    multiline: true
+                    textStyle.color: Color.LightGray
+                    textStyle.fontSize: FontSize.XSmall
                 }
             }
         }

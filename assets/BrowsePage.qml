@@ -133,6 +133,9 @@ Page {
             ActionBar.placement: ActionBarPlacement.OnBar
             onTriggered: {
                 browseDialog.readmode = "Lounge"
+                browseDialog.username = freeTitleBar.username
+                browseDialog.keepAfterRead = app.getKeepAfterRead()
+                browseDialog.ignoreFavourites = app.getIgnoreKeptLounge()
                 browseSheet.open()
             }
         },
@@ -142,6 +145,9 @@ Page {
             ActionBar.placement: ActionBarPlacement.OnBar
             onTriggered: {
                 browseDialog.readmode = "Quickest"
+                browseDialog.username = freeTitleBar.username
+                browseDialog.keepAfterRead = app.getKeepAfterRead()
+                browseDialog.ignoreFavourites = app.getIgnoreKeptQuickest()
                 browseSheet.open()
             }
         },
@@ -538,6 +544,7 @@ Page {
                 
                 function openEditSheet(row) {
                     invokedForm.item = row
+                    invokedForm.username = freeTitleBar.username
                     bookmarkSheet.open()
                 }
                 
