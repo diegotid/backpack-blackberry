@@ -59,9 +59,9 @@ Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
 
 	network = new QNetworkAccessManager(this);
 
-	pocketUpdateTimer = new QTimer();
-	pocketUpdateTimer->setSingleShot(false);
-	bool updaterConnected = connect(pocketUpdateTimer, SIGNAL(timeout()), this, SLOT(pocketRetrieve()));
+    pocketUpdateTimer = new QTimer();
+    pocketUpdateTimer->setSingleShot(false);
+    bool updaterConnected = connect(pocketUpdateTimer, SIGNAL(timeout()), this, SLOT(pocketRetrieve()));
     Q_ASSERT(updaterConnected);
     Q_UNUSED(updaterConnected);
 
@@ -602,25 +602,25 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 
     invokedForm->findChild<QObject*>("invokedURL")->setProperty("text", request.uri().toString());
 
-    QVariantMap queryMap;
-    queryMap["url"] = Bookmark::cleanUrl(request.uri());
-    uint urlHash = Bookmark::cleanUrlHash(request.uri());
+    QVariantList bookmarks = data->execute("SELECT * FROM Bookmark WHERE hash_url = ?", QVariantList() << Bookmark::cleanUrlHash(request.uri())).toList();
 
-    QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
-    if (!indexPathByURL.isEmpty()) {
-        QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
+    if (bookmarks.size() > 0) {
+        QVariantMap bookmarkContent = bookmarks.value(0).toMap();
         invokedForm->titleBar()->setTitle("Edit item");
-        invokedForm->findChild<QObject*>("status")->setProperty("text", "Item already in place");
+        invokedForm->findChild<QObject*>("status")->setProperty("text", "Article is already in your Backpack");
         invokedForm->findChild<QObject*>("title")->setProperty("text", bookmarkContent["title"]);
         invokedForm->findChild<QObject*>("memo")->setProperty("text", bookmarkContent["memo"]);
         invokedForm->findChild<ImageView*>("invokedImage")->setImageSource(QString("file://").append(bookmarkContent["image"].toString()));
         invokedForm->findChild<ImageView*>("invokedImage")->setVisible(true);
         invokedForm->findChild<ToggleButton*>("keepCheck")->setProperty("invokeChecked", bookmarkContent["keep"]);
         invokedForm->findChild<Container*>("activity")->setVisible(false);
-        mainPage->findChild<Sheet*>("bookmarkSheet")->open();
+        if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
+            mainPage->findChild<Sheet*>("bookmarkSheet")->open();
+        }
         return;
     }
 
+    uint urlHash = Bookmark::cleanUrlHash(request.uri());
     loading[urlHash] = new Bookmark(request.uri(), data, this);
     loading[urlHash]->fetchContent();
     bool res_loading_end = connect(loading[urlHash], SIGNAL(downloadComplete(uint)), this, SLOT(freeLoadingPage(uint)));
