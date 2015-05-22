@@ -600,6 +600,7 @@ void Backpack::freeLoadingPage(uint urlHash) {
 
 void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 
+    invokedForm->setProperty("item", NULL);
     invokedForm->findChild<QObject*>("invokedURL")->setProperty("text", request.uri().toString());
 
     QVariantList bookmarks = data->execute("SELECT * FROM Bookmark WHERE hash_url = ?", QVariantList() << Bookmark::cleanUrlHash(request.uri())).toList();
@@ -989,7 +990,7 @@ void Backpack::keepBookmark(QUrl url, bool keep) {
         QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
         QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
         QVariantList indexPath = bookmarksByDate->findExact(bookmarkContent);
-        bookmarkContent["keep"] = keep;
+        bookmarkContent["keep"] = keep ? "true" : "false";
         bookmarksByURL->updateItem(indexPathByURL, bookmarkContent);
         bookmarksByDate->updateItem(indexPath, bookmarkContent);
 	}

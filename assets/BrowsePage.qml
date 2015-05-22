@@ -323,9 +323,9 @@ Page {
                                         onTriggered: bookmark.ListItem.view.openEditSheet(ListItemData)
                                     }
                                     ActionItem {
-                                        title: "Favorite"
-                                        imageSource: "asset:///images/menuicons/zip.png"
-                                        onTriggered: bookmark.ListItem.view.toggleKeep(ListItemData.url, ListItemData.keep != true)
+                                        title: ListItemData.keep == "true" ? "Unfavorite" : "Favorite"
+                                        imageSource: ListItemData.keep == "true" ? "asset:///images/menuicons/unzip.png" : "asset:///images/menuicons/zip.png"
+                                        onTriggered: bookmark.ListItem.view.toggleKeep(ListItemData.url, ListItemData.keep != "true")
                                     }
                                     DeleteActionItem {
                                         onTriggered: {
@@ -390,13 +390,6 @@ Page {
                                         verticalAlignment: VerticalAlignment.Fill
                                         horizontalAlignment: HorizontalAlignment.Fill
                                     }
-                                    
-                                    Container {
-                                        visible: !ListItemData.image || ListItemData.image.toString().length <= 1 // length > 1 is for '.'  meaning no image available
-                                        background: Color.create(0, 0, 0, 0.5)
-                                        verticalAlignment: VerticalAlignment.Fill
-                                        horizontalAlignment: HorizontalAlignment.Fill
-                                    }                        
                                 }
                                 
                                 Container {
@@ -510,7 +503,7 @@ Page {
                             
                             ImageView {
                                 imageSource: "asset:///images/keep.png"
-                                visible: ListItemData.keep
+                                visible: ListItemData.keep == "true"
                                 horizontalAlignment: HorizontalAlignment.Right
                                 translationX: -10
                                 translationY: 12

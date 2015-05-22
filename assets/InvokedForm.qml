@@ -1,18 +1,22 @@
 
-import bb.cascades 1.3
+import bb.cascades 1.4
 
 Page {
     id: invokedForm
     objectName: "invokedForm"
-    
-    property variant item
+        
     signal close()
+
+    property string username
+    property variant item
+    property bool favourite: false
     
     onItemChanged: {
         titleBar.title = "Edit item"
         status.text = ""
         invokedImage.visible = item.image && item.image.toString().length > 0
         invokedFavicon.visible = item.favicon && item.favicon.toString().length > 0
+        favourite = item && (item.keep == "true")
     }
     
     titleBar: TitleBar {
@@ -201,6 +205,7 @@ Page {
             }
             
             Container {
+                visible: !item // Only visible on invocation, not for editing existing bookmarks
                 layout: DockLayout {}
                 topPadding: 25
                 bottomPadding: 10
@@ -213,28 +218,19 @@ Page {
                     layout: StackLayout {
                         orientation: LayoutOrientation.LeftToRight
                     }
-                    
-                    ImageView {
-                        id: keepStar
-                        imageSource: "asset:///images/keep.png"
-                        scalingMethod: ScalingMethod.AspectFit
-                        scaleX: 0.7
-                        scaleY: 0.7
-                    }
-                    
+                                        
                     Label {
                         text: "Favorite"
                         verticalAlignment: VerticalAlignment.Center
-                        translationX: -10
+                        translationY: 2
                     }
                     
                     Label {
                         text: "(keep after read)"
-                        visible: !app.getKeepAfterRead()
+                        visible: username && username.length == 0 && !app.getKeepAfterRead()
                         textStyle.color: Color.LightGray
                         verticalAlignment: VerticalAlignment.Center
-                        translationX: -20
-                        translationY: 2
+                        translationY: 4
                         textStyle.fontSize: FontSize.XSmall
                     }
                 }
@@ -244,16 +240,12 @@ Page {
                     objectName: "keepCheck"
                     horizontalAlignment: HorizontalAlignment.Right                  
                     verticalAlignment: VerticalAlignment.Center
-                    checked: item && item.keep == "true"
-                    property bool invokeChecked: false
-                    
+                    checked: favourite
                     onCheckedChanged: {
                         app.keepBookmark(invokedURL.text, checked)
-                        keepStar.imageSource = "asset:///images/menuicons/zip" + (checked ? "On" : "") + ".png"
                     }
-                    onInvokeCheckedChanged: keepCheck.checked = invokeChecked
                 }
             }
         }
-    }	        	                   
+    }
 }
