@@ -55,9 +55,8 @@ Page {
         backButton: dismissButton
     }
         
-    function domain(url) {
+    function getDomain(url) {
         var domain = url.substring(url.indexOf("://") + (url.indexOf("://") < 0 ? 1 : 3));
-        console.log("domain: " + domain)
         if (domain.indexOf('/') < domain.indexOf('.')) {
             return domain
         } else {
@@ -176,9 +175,16 @@ Page {
                     }
                     
                     Label {
+                        visible: false
                         id: invokedURL
                         objectName: "invokedURL"
-                        text: domain(item.url)
+                        text: item ? item.url : ""
+                        onTextChanged: domain.text = getDomain(text)
+                    }
+                    
+                    Label {
+                        id: domain
+                        text: item ? getDomain(item.url) : ""
 //                        text: "www.bbornot2b.com"
                         textStyle.color: Color.LightGray
                         textStyle.fontSize: FontSize.XSmall
