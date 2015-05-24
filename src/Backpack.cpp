@@ -993,6 +993,12 @@ void Backpack::keepBookmark(QUrl url, bool keep) {
         bookmarkContent["keep"] = keep ? "true" : "false";
         bookmarksByURL->updateItem(indexPathByURL, bookmarkContent);
         bookmarksByDate->updateItem(indexPath, bookmarkContent);
+
+        // Update fav indicator on read preview
+        Page *previewSheet = mainPage->findChild<Page*>("browseDialog");
+        QVariantMap proposedBookmark = previewSheet->property("bookmark").toMap();
+        proposedBookmark["keep"] = keep ? "true" : "false";
+        previewSheet->setProperty("bookmark", proposedBookmark);
 	}
 }
 
