@@ -191,6 +191,7 @@ Page {
             id: browseSheet
             BrowseDialog {
                 id: browseDialog
+                objectName: "browseDialog"
                 onClose: browseSheet.close()
             }
         }

@@ -397,7 +397,7 @@ void Backpack::saveBackup() {
 
 void Backpack::showBackups() {
 
-	Page *backupSheet = mainPage->findChild<Page*>("backupSheet");
+	Page *backupSheet = mainPage->findChild<Page*>("backupPage");
 	ListView *backupsList = backupSheet->findChild<ListView*>("backupsList");
 
 	QDir appDir;
@@ -552,7 +552,6 @@ void Backpack::deleteBackup(QString backupFilename) {
 void Backpack::restoreFinishedFeedback(bb::system::SystemUiResult::Type value) {
 
 	if (value == SystemUiResult::ButtonSelection) {
-    //	mainPage->setActiveTab(mainPage->at(1));
         mainPage->findChild<Sheet*>("backupSheet")->close();
 	}
 	backupToast->deleteLater();
@@ -967,6 +966,7 @@ void Backpack::keepBookmark(QUrl url, bool keep) {
 
 	QSettings settings;
 	if (!settings.value("pocketUser").isNull()) {
+
 	    QVariantMap query;
 	    query.insert("consumer_key", APIKEY);
 	    query.insert("access_token", settings.value("pocketToken").toString());
@@ -985,6 +985,8 @@ void Backpack::keepBookmark(QUrl url, bool keep) {
 	}
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
+
+	    // Update fav indicator on list
         QVariantMap queryMap;
         queryMap["url"] = url.toString();
         QVariantList indexPathByURL = bookmarksByURL->find(queryMap);

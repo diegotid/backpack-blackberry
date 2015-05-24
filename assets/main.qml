@@ -21,7 +21,7 @@ TabbedPane {
             id: backupSheet
             objectName: "backupSheet"
             BackupSheet {
-                objectName: "backupSheet"
+                objectName: "backupPage"
                 onClose: backupSheet.close();
             }
         },
