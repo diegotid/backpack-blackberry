@@ -119,7 +119,11 @@ Page {
 	                        textFormat: TextFormat.Html
 	                        horizontalAlignment: HorizontalAlignment.Right
 	                        textStyle.fontSize: FontSize.Small
-	                        onTouch: pocketLink.trigger("bb.action.OPEN")
+	                        onTouch: {
+                                if (event.touchType == TouchType.Down) {
+                                    pocketLink.trigger("bb.action.OPEN")
+                                }
+                            }
 	                    }            
 	                }
 	            }

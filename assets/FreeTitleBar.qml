@@ -31,7 +31,11 @@ Container {
         verticalAlignment: VerticalAlignment.Center
         horizontalAlignment: HorizontalAlignment.Right
         
-        onTouch: putinPage.pocketState()
+        onTouch: {
+            if (event.touchType == TouchType.Down) {
+                putinPage.pocketState()
+            }
+        }
         
         Container {
             id: pocketConnSignal
