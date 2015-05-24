@@ -184,6 +184,14 @@ Page {
                 }
             }
             
+            Label {
+                visible: text
+                id: articleMemo
+                multiline: true
+                textStyle.fontSize: FontSize.XSmall
+//                text: "Te meto aquí un comentario muy largo que he escrito anterioemente y que quiereo que salga cuando esté leyendo también"
+            }
+            
             Button {
                 text: "Read"
                 horizontalAlignment: HorizontalAlignment.Fill
