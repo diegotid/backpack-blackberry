@@ -78,7 +78,7 @@ Page {
             ImageView {
                 id: invokedImage
                 objectName: "invokedImage"
-                imageSource: item ? "file://" + item.image : "asset:///images/backpack.png"
+                imageSource: (item.image && item.image.length > 1) ? "file://" + item.image : "asset:///images/backpack.png"
                 scalingMethod: ScalingMethod.AspectFill
                 verticalAlignment: VerticalAlignment.Fill
                 horizontalAlignment: HorizontalAlignment.Fill
