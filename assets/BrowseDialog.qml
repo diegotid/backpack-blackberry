@@ -1,5 +1,6 @@
 
 import bb.cascades 1.4
+import bb.system 1.0
 
 Page {
     signal close()
@@ -29,6 +30,22 @@ Page {
         }
     }
     
+    function jumpToNext() {
+        switch (readmode) {
+            case "Quickest":
+                next = app.quickestBookmark(offset++)
+                break
+            case "Lounge":
+                next = app.loungeBookmark(offset++)
+                break
+        }
+        if (next == null || next.size == null || next.size < minSize) {
+            nextButton.enabled = false
+        } else {
+            bookmark = next
+        }
+    }
+    
     titleBar: TitleBar {
         title: readmode + " reading"
         
@@ -43,32 +60,18 @@ Page {
         acceptAction: ActionItem {
             title: "Next"
             id: nextButton
-            onTriggered: {
-                switch (readmode) {
-                    case "Quickest":
-                        next = app.quickestBookmark(offset++)
-                        break
-                    case "Lounge":
-                        next = app.loungeBookmark(offset++)
-                        break
-                }
-                if (next == null || next.size == null || next.size < minSize) {
-                    enabled = false
-                } else {
-                    bookmark = next
-                }
-            }
-
+            onTriggered: jumpToNext()
         }
     }
     
     onBookmarkChanged: {
-        favourite.visible = bookmark.keep
         articleTitle.text = bookmark.title
+        articleMemo.text = bookmark.memo
         articleSize.text = formatTime(bookmark.size)
         articleImage.imageSource = (bookmark.image && bookmark.image.toString().length > 1) ? "file://" + bookmark.image : "asset:///images/backpack.png" // length > 1 is for '.'  meaning no image available
         articleIcon.imageSource = "file://" + bookmark.favicon
         articleUrl.text = domain(bookmark.url)
+        favIndicator.imageSource = (bookmark.keep == "true") ? "asset:///images/keep.png" : "asset:///images/nonkept.png"
     }
     
     function domain(url) {
@@ -128,7 +131,7 @@ Page {
                 minHeight: imageHandler.layoutFrame.height
             }
         }
-
+        
         Container {
             topPadding: ui.sdu(4)
             leftPadding: ui.sdu(4)
@@ -147,17 +150,6 @@ Page {
                     textStyle.color: ui.palette.primary
                     textStyle.fontSize: FontSize.Large
                 }			
-                
-                ImageView {
-                    id: favourite
-                    imageSource: "asset:///images/keep.png"
-                    maxWidth: ui.du(6)
-                    maxHeight: ui.du(6)
-                    scalingMethod: ScalingMethod.AspectFill
-                    horizontalAlignment: HorizontalAlignment.Right
-                    verticalAlignment: VerticalAlignment.Center
-                    visible: false
-                }        
             }
                                         
             Label {
@@ -186,7 +178,7 @@ Page {
                 
                 Label {
                     id: articleUrl
-//                    text: "http://www.bbornot2b.com/"
+                    // text: "http://www.bbornot2b.com/"
                     textStyle.fontSize: FontSize.XSmall
                     verticalAlignment: VerticalAlignment.Center
                 }
@@ -211,6 +203,66 @@ Page {
                     multiline: true
                     textStyle.color: Color.LightGray
                     textStyle.fontSize: FontSize.XSmall
+                }
+            }
+        }
+        
+        Container {
+            verticalAlignment: VerticalAlignment.Top
+            horizontalAlignment: HorizontalAlignment.Right
+            topPadding: ui.sdu(4.3)
+            rightPadding: ui.sdu(4.3)
+            
+            ImageView {
+                id: favIndicator
+                imageSource: (bookmark.keep == "true") ? "asset:///images/keep.png" : "asset:///images/nonkept.png"
+            }
+            
+            attachedObjects: [
+                SystemToast {
+                    id: favAndJump
+                    body: "Article favorited!"
+                    button.label: "Next non-favorite"
+                    button.enabled: true 
+                    onFinished: {
+                        if (result == SystemUiResult.ButtonSelection) {
+                            jumpToNext()
+                        }
+                    }
+                },
+                SystemToast {
+                    id: unfavorite
+                    body: "Article unfavorited"
+                    button.label: "Undo"
+                    button.enabled: true
+                    onFinished: {
+                        if (result == SystemUiResult.ButtonSelection) {
+                            app.keepBookmark(bookmark.url, true)
+                            bookmark.keep = "true"
+                            favIndicator.imageSource = "asset:///images/keep.png";
+                        }
+                    }
+                }
+            ]
+            
+            onTouch: {
+                if (event.touchType == TouchType.Down) {
+                    if (bookmark.keep != "true") {
+                        app.keepBookmark(bookmark.url, true)
+                        offset--
+                        bookmark.keep = "true"
+                        favIndicator.imageSource = "asset:///images/keep.png";
+                        if ((readmode == "Quickest" && app.getIgnoreKeptQuickest())
+                        || (readmode == "Lounge" && app.getIgnoreKeptLounge())) {
+                            favAndJump.show()
+                        }
+                    } else {
+                        app.keepBookmark(bookmark.url, false)
+                        offset++
+                        bookmark.keep = "false"
+                        favIndicator.imageSource = "asset:///images/nonkept.png";
+                        unfavorite.show()
+                    }
                 }
             }
         }
