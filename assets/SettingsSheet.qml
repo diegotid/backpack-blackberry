@@ -72,7 +72,7 @@ Page {
 	            }
 	            
 	            Label {
-                    text: "Pocket action on read: Archive non favorites"
+                    text: "Pocket action on read: Archive non-favorites"
                     visible: username && keepAfterReadMode.selectedOption.value < 1
                     textStyle.fontSize: FontSize.Small
                     translationY: -10
@@ -100,7 +100,7 @@ Page {
 
             Header {
                 title: "Ignore favorite bookmarks on mode..."
-                subtitle: "(if any non favorite)"
+                subtitle: "(if any non-favorite)"
             }
 
             Container {
