@@ -171,7 +171,6 @@ Page {
                     	minHeight: 26
                     	minWidth: 26
                     	translationY: 5
-                        visible: invokedURL.text.toString().length > 0
                     }
                     
                     Label {
