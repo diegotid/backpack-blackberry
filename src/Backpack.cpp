@@ -648,7 +648,7 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
 
 	    QVariantMap newMap;
-        newMap["url"] = request.uri().toString();
+        newMap["url"] = Bookmark::cleanUrl(request.uri());
         newMap["hash_url"] = Bookmark::cleanUrlHash(request.uri());
         newMap["time"] = QDateTime::currentDateTime().toString(Qt::ISODate);
         newMap["date"] = newMap["time"].toDate().toString("yyyy-MM-dd");

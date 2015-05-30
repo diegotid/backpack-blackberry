@@ -8,7 +8,7 @@
 Bookmark::Bookmark(QUrl url, SqlDataAccess *data, QObject *parent) : QObject(parent) {
 
     this->data = data;
-	this->url = url;
+	this->url = QUrl(cleanUrl(url));
 	this->hashUrl = cleanUrlHash(this->url);
 
 	QVariantList currentList = data->execute("SELECT pocket_id, title, memo, keep, image, favicon FROM Bookmark WHERE hash_url = ?", QVariantList() << this->hashUrl).toList();
@@ -34,7 +34,7 @@ Bookmark::Bookmark(QUrl url, SqlDataAccess *data, QObject *parent) : QObject(par
 Bookmark::Bookmark(QUrl url, qlonglong pocketId, QString title, bool favorited, SqlDataAccess *data, QObject *parent) : QObject(parent) {
 
 	this->data = data;
-    this->url = url;
+    this->url = QUrl(cleanUrl(url));
 	this->hashUrl = cleanUrlHash(this->url);
 	this->pocketId = pocketId;
 	this->title = title;
@@ -75,7 +75,7 @@ void Bookmark::pocketSync(qlonglong id, QDateTime added) {
 
 qlonglong Bookmark::getPocketId(SqlDataAccess *data, QUrl url) {
 
-    QVariantList bookmarks = data->execute("SELECT pocket_id FROM Bookmark WHERE hash_url = ?", QVariantList() << cleanUrlHash(url)).toList();
+    QVariantList bookmarks = data->execute("SELECT pocket_id FROM Bookmark WHERE url = ?", QVariantList() << cleanUrl(url)).toList();
     if (bookmarks.length() > 0)
         return bookmarks.value(0).toMap().value("pocket_id").toLongLong();
     else
