@@ -14,8 +14,6 @@ Page {
     onItemChanged: {
         status.text = ""
         titleBar.title = item ? "Edit item" : "New item"
-        invokedImage.visible = item.image && item.image.toString().length > 0
-        invokedFavicon.visible = item.favicon && item.favicon.toString().length > 0
         favourite = item && (item.keep == "true")
     }
     

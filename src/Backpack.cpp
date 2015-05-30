@@ -616,7 +616,6 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
         invokedForm->findChild<QObject*>("title")->setProperty("text", bookmarkContent["title"]);
         invokedForm->findChild<QObject*>("memo")->setProperty("text", bookmarkContent["memo"]);
         invokedForm->findChild<ImageView*>("invokedImage")->setImageSource(QString("file://").append(bookmarkContent["image"].toString()));
-        invokedForm->findChild<ImageView*>("invokedImage")->setVisible(true);
         invokedForm->findChild<ToggleButton*>("keepCheck")->setProperty("invokeChecked", bookmarkContent["keep"]);
         invokedForm->findChild<Container*>("activity")->setVisible(false);
         if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
@@ -624,6 +623,8 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
         }
         return;
     }
+    invokedForm->findChild<ImageView*>("invokedImage")->setImageSource(QString("asset:///images/backpack.png"));
+
     logEvent("Add");
 
     uint urlHash = Bookmark::cleanUrlHash(request.uri());
@@ -896,7 +897,6 @@ void Backpack::handleBookmarkComplete(QUrl page, int size) {
 void Backpack::updateImage(QUrl page, QUrl image) {
 
     invokedForm->findChild<ImageView*>("invokedImage")->setImageSource(QString("file://").append(image.toString()));
-    invokedForm->findChild<ImageView*>("invokedImage")->setVisible(true);
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
         QVariantMap queryMap;
