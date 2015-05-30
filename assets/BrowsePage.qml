@@ -125,7 +125,10 @@ Page {
             title: "Shuffle"
             ActionBar.placement: ActionBarPlacement.Signature
             imageSource: "asset:///images/buttons/shuffle.png"
-            onTriggered: app.shuffleBookmark()
+            onTriggered: {    
+                app.shuffleBookmark()
+                app.logEvent("Shuffle")
+            }
         },
         ActionItem {
             title: "Lounge"
@@ -525,6 +528,7 @@ Page {
                 onTriggered: {
                     var selectedItem = dataModel.data(indexPath)
                     app.browseBookmark(selectedItem.url)
+                    app.logEvent("Browse")
                 }
                 
                 function domain(url) {

@@ -172,6 +172,11 @@ QString Backpack::getAppVersion() {
 	return thisApp.version();
 }
 
+void Backpack::logEvent(QString mode) {
+
+    Flurry::Analytics::LogEvent(mode);
+}
+
 bool Backpack::databaseExists() {
 
 	data->execute("SELECT COUNT(pocket_id) FROM Bookmark");
@@ -619,6 +624,7 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
         }
         return;
     }
+    logEvent("Add");
 
     uint urlHash = Bookmark::cleanUrlHash(request.uri());
     loading[urlHash] = new Bookmark(request.uri(), data, this);
@@ -727,8 +733,6 @@ void Backpack::browseBookmark(QString uri) {
 	request.setUri(uri);
 	invokeSender.invoke(request);
 
-    Flurry::Analytics::LogEvent("Browse");
-
     QVariantMap queryMap;
     queryMap["url"] = uri;
     QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
@@ -770,8 +774,6 @@ void Backpack::shuffleBookmark() {
     request.setAction("bb.action.OPEN");
     request.setUri(url);
     invokeSender.invoke(request);
-
-    Flurry::Analytics::LogEvent("Shuffle");
 }
 
 QVariant Backpack::quickestBookmark() {

@@ -198,6 +198,7 @@ Page {
                 topMargin: ui.sdu(4)
                 onClicked: {
                     app.browseBookmark(bookmark.url)
+                    app.logEvent(readmode)
                     browseDialog.close()
                 }
             }

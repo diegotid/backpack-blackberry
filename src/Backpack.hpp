@@ -36,6 +36,7 @@ class Backpack : public QObject {
 
 public:
     Backpack(bb::cascades::Application *app);
+    Q_INVOKABLE void logEvent(QString mode);
     Q_INVOKABLE void setKeepAfterRead(int mode);
     Q_INVOKABLE int getKeepAfterRead();
     Q_INVOKABLE void setPocketDeleteMode(int mode);
