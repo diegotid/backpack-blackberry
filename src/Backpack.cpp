@@ -1290,6 +1290,7 @@ void Backpack::pocketHandlePostFinished() {
 		debugSynced.setTime_t(lastSynced.toUInt());
 
         QVariantList toInsert;
+        QVariantList toUpdate;
         QVariantList toDelete;
 
 		for (int i = 0; i < retrieved.size(); i++) {
@@ -1306,19 +1307,21 @@ void Backpack::pocketHandlePostFinished() {
                     }
                     break;
                 default:
-                    int exists = data->execute("SELECT COUNT(*) number FROM Bookmark WHERE hash_url = ?", QVariantList() << urlHash).toList().value(0).toMap().value("number").toInt();
-                    if (exists < 1) {
-                        qlonglong pocketId = item.value("item_id").toLongLong();
-                        int size = 10000 * item.value("word_count").toInt() / 180; // Average 180 words per minute on a monitor; Assumed 10000 bytes per minute
-                        QString title = item.value("resolved_title").toString();
-                        bool favorited = item.value("favorite").toBool();
-                        QDateTime pocketAdded = QDateTime::fromTime_t(item.value("time_added").toInt());
-                        toInsert << QVariant::fromValue(QVariantList() << url << urlHash << title << size << favorited << pocketId << pocketAdded);
+                    qlonglong pocketId = item.value("item_id").toLongLong();
+                    int size = 10000 * item.value("word_count").toInt() / 180; // Average 180 words per minute on a monitor; Assumed 10000 bytes per minute
+                    QString title = item.value("resolved_title").toString();
+                    bool favorited = item.value("favorite").toBool();
+                    QDateTime pocketAdded = QDateTime::fromTime_t(item.value("time_added").toInt());
+                    if (1 > data->execute("SELECT COUNT(*) number FROM Bookmark WHERE hash_url = ?", QVariantList() << urlHash).toList().value(0).toMap().value("number").toInt()) {
+                        toInsert << QVariant::fromValue(QVariantList() << url.toString() << urlHash << title << size << favorited << pocketId << pocketAdded);
+                    } else {
+                        toUpdate << QVariant::fromValue(QVariantList() << pocketId << size << favorited << pocketAdded << urlHash);
                     }
                     break;
 			}
 		}
         data->executeBatch("INSERT INTO Bookmark (url, hash_url, title, size, keep, pocket_id, time) VALUES (?, ?, ?, ?, ?, ?, ?)", toInsert);
+        data->executeBatch("UPDATE Bookmark SET pocket_id = ?, size = ?, keep = ?, time = ? WHERE hash_url = ?", toUpdate);
         data->executeBatch("DELETE FROM Bookmark WHERE hash_url = ?", toDelete);
 
 		mainPage->findChild<Container*>("syncingIndicator")->setVisible(false);
