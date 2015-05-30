@@ -1295,7 +1295,7 @@ void Backpack::pocketHandlePostFinished() {
 
 		for (int i = 0; i < retrieved.size(); i++) {
 			QVariantMap item = retrieved.value(i).toMap();
-			QUrl url = item.value("resolved_url").toString();
+			QUrl url = QUrl(item.value("resolved_url").toString());
 			uint urlHash = Bookmark::cleanUrlHash(url);
 			if (urlHash == 0) continue;
 			switch (item.value("status").toInt()) {
