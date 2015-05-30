@@ -539,11 +539,13 @@ Page {
                 
                 function domain(url) {
                     var domain = url.substring(url.indexOf("://") + (url.indexOf("://") < 0 ? 1 : 3));
-                    if (domain.indexOf('/') < domain.indexOf('.')) {
-                        return domain
-                    } else {
-                        return domain.substring(0, domain.indexOf('/'))
+                    if (domain.indexOf('/') > domain.indexOf('.')) {
+                        domain = domain.substring(0, domain.indexOf('/'))
                     }
+                    if (domain.indexOf("www.") == 0) {
+                        domain = domain.substring(4)
+                    }
+                    return domain
                 }
                 
                 function openEditSheet(row) {
