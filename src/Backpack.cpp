@@ -647,7 +647,7 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
 
 	    QVariantMap newMap;
-        newMap["url"] = Bookmark::cleanUrl(request.uri());
+        newMap["url"] = request.uri().toString();
         newMap["hash_url"] = Bookmark::cleanUrlHash(request.uri());
         newMap["time"] = QDateTime::currentDateTime().toString(Qt::ISODate);
         newMap["date"] = newMap["time"].toDate().toString("yyyy-MM-dd");
@@ -1294,8 +1294,8 @@ void Backpack::pocketHandlePostFinished() {
 
 		for (int i = 0; i < retrieved.size(); i++) {
 			QVariantMap item = retrieved.value(i).toMap();
-			QString url = Bookmark::cleanUrl(QUrl(item.value("resolved_url").toString()));
-			uint urlHash = Bookmark::cleanUrlHash(QUrl(url));
+			QUrl url = item.value("resolved_url").toString();
+			uint urlHash = Bookmark::cleanUrlHash(url);
 			if (urlHash == 0) continue;
 			switch (item.value("status").toInt()) {
                 case 1:
