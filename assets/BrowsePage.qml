@@ -450,6 +450,7 @@ Page {
                                                 visible: ListItemData.favicon && ListItemData.favicon.toString().length > 0
                                                 topPadding: 10
                                                 rightMargin: 10
+                                                verticalAlignment: VerticalAlignment.Center
                                                 
                                                 ImageView {
                                                     id: iconImage
