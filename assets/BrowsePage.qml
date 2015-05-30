@@ -86,7 +86,10 @@ Page {
                 content: RadioGroup {
                     id: filterType
                     objectName: "filterType"
-                    onSelectedOptionChanged: app.refreshBookmarks(query.text.trim())
+                    onSelectedOptionChanged: {    
+                        app.refreshBookmarks(query.text.trim())
+                        updateEmptyLabel(bookmarks.size)
+                    }
                     options: [
                         Option {
                             value: 0
@@ -180,6 +183,27 @@ Page {
         freeTitleBar.username = username
     }
        
+    function updateEmptyLabel(size) {
+        emptyLabelContainer.visible = (size == 0)
+        var tale = query.text.toString().trim().length > 0 ? " found" : ""
+        switch (filterType.selectedOption.value) {
+            case 1:
+                emptyLabel.text = "No favorited items" + tale
+                break
+            case 2:
+                emptyLabel.text = "No articles" + tale
+                break
+            case 3:
+                emptyLabel.text = "No videos" + tale
+                break
+            case 4:
+                emptyLabel.text = "No images" + tale
+                break
+            default:
+                emptyLabel.text = "No items" + tale
+        }
+    }
+    
     attachedObjects: [
         Sheet {
             id: bookmarkSheet
@@ -221,31 +245,12 @@ Page {
                 }
                 scrollRole: ScrollRole.Main
                 
-//                dataModel: XmlDataModel {
-//                    source: "debug.xml"
-//                }
-                
-                property int size;
-                onSizeChanged: {
-                	emptyLabelContainer.visible = (size == 0)
-                	var tale = query.text.toString().trim().length > 0 ? " found" : ""
-                    switch (filterType.selectedOption.value) {
-                        case 1:
-                            emptyLabel.text = "No favorited items" + tale
-                            break
-                        case 2:
-                            emptyLabel.text = "No articles" + tale
-                            break
-                        case 3:
-                            emptyLabel.text = "No videos" + tale
-                            break
-                        case 4:
-                            emptyLabel.text = "No images" + tale
-                            break
-                        default:
-                            emptyLabel.text = "No items" + tale
-                    }
+/*                dataModel: XmlDataModel {
+                    source: "debug.xml"
                 }
+*/                
+                property int size;
+                onSizeChanged: updateEmptyLabel(size)
                 
                 listItemComponents: [
                     
