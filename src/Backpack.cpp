@@ -282,7 +282,7 @@ void Backpack::handleDownloadFailed(QUrl url) {
 			|| mainPage->findChild<Sheet*>("bookmarkSheet")->isOpened()) {
 		SystemToast *noConn = new SystemToast(this);
 		SystemUiButton *closeButton = noConn->button();
-		noConn->setBody("Unable to connect to the Internet to retreive content");
+		noConn->setBody("Unable to connect to the Internet to retrieve content");
 		closeButton->setLabel("Ok");
 		noConn->show();
 		if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication)
