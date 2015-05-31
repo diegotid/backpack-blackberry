@@ -15,6 +15,7 @@ Page {
         status.text = ""
         titleBar.title = item ? "Edit item" : "New item"
         favourite = item && (item.keep == "true")
+        memo.visible = true
     }
     
     titleBar: TitleBar {
@@ -208,6 +209,7 @@ Page {
             }
             
             Container {
+                objectName: "toggleFav"
                 visible: !item // Only visible on invocation, not for editing existing bookmarks
                 layout: DockLayout {}
                 topPadding: 25

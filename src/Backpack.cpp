@@ -615,6 +615,9 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
         invokedForm->findChild<QObject*>("status")->setProperty("text", "Article is already in your Backpack");
         invokedForm->findChild<QObject*>("title")->setProperty("text", bookmarkContent["title"]);
         invokedForm->findChild<QObject*>("memo")->setProperty("text", bookmarkContent["memo"]);
+        invokedForm->findChild<QObject*>("memo")->setProperty("enabled", false);
+        invokedForm->findChild<TextArea*>("memo")->setVisible(bookmarkContent["memo"].toString().trimmed().length() > 0);
+        invokedForm->findChild<Container*>("toggleFav")->setVisible(false);
         invokedForm->findChild<ImageView*>("invokedImage")->setImageSource(QString("file://").append(bookmarkContent["image"].toString()));
         invokedForm->findChild<ToggleButton*>("keepCheck")->setProperty("invokeChecked", bookmarkContent["keep"]);
         invokedForm->findChild<Container*>("activity")->setVisible(false);
