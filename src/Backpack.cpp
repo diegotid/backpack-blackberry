@@ -899,7 +899,11 @@ void Backpack::handleBookmarkComplete(QUrl page, int size) {
 
 void Backpack::updateImage(QUrl page, QUrl image) {
 
+    Label *urlLabel = invokedForm->findChild<Label*>("invokedURL");
+
+    if (page.toString() == urlLabel->text()) {
     invokedForm->findChild<ImageView*>("invokedImage")->setImageSource(QString("file://").append(image.toString()));
+    }
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
         QVariantMap queryMap;
@@ -923,8 +927,11 @@ void Backpack::updateImage(const char *item, QUrl image) {
 
 void Backpack::updateFavicon(QUrl page, QUrl favicon) {
 
+    Label *urlLabel = invokedForm->findChild<Label*>("invokedURL");
+
+    if (page.toString() == urlLabel->text()) {
     invokedForm->findChild<ImageView*>("invokedFavicon")->setImageSource(QString("file://").append(favicon.toString()));
-    invokedForm->findChild<ImageView*>("invokedFavicon")->setVisible(true);
+    }
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
         QVariantMap queryMap;
