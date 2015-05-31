@@ -937,13 +937,16 @@ void Backpack::updateFavicon(QUrl page, QUrl favicon) {
 
 void Backpack::updateTitle(QUrl page, QString title) {
 
-	Label *titleLable = invokedForm->findChild<Label*>("title");
-	if (invokedForm->findChild<QObject*>("item") == 0) {
-		invokedForm->findChild<Label*>("status")->setText("Added!");
-	}
-	titleLable->setText(title);
+    Label *urlLabel = invokedForm->findChild<Label*>("invokedURL");
 
-	invokedForm->findChild<QObject*>("activity")->setProperty("visible", false);
+    if (page.toString() == urlLabel->text()) {
+        Label *titleLabel = invokedForm->findChild<Label*>("title");
+        if (invokedForm->findChild<QObject*>("item") == 0) {
+            invokedForm->findChild<Label*>("status")->setText("Added!");
+        }
+        titleLabel->setText(title);
+        invokedForm->findChild<QObject*>("activity")->setProperty("visible", false);
+    }
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
         QVariantMap queryMap;
