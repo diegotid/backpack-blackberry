@@ -104,7 +104,7 @@ Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
 	    bookmarksByDate->setSortedAscending(false);
 	    bookmarks->setDataModel(bookmarksByDate);
 
-	    bookmarksByURL = new GroupDataModel(QStringList() << "url");
+	    bookmarksByURL = new GroupDataModel(QStringList() << "hash_url");
 	    bookmarksByURL->setGrouping(ItemGrouping::ByFullValue);
 
 		if (!username.isNull()
@@ -651,8 +651,8 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
 
 	    QVariantMap newMap;
+        newMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(request.uri()));
         newMap["url"] = request.uri().toString();
-        newMap["hash_url"] = Bookmark::cleanUrlHash(request.uri());
         newMap["time"] = QDateTime::currentDateTime().toString(Qt::ISODate);
         newMap["date"] = newMap["time"].toDate().toString("yyyy-MM-dd");
         newMap["keep"] = 0;
@@ -684,7 +684,7 @@ void Backpack::fetchContent(QString url) {
     }
 
     QVariantMap queryMap;
-    queryMap["url"] = url;
+    queryMap["hash_url"] = QString::number(urlHash);
     QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
     QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
     QVariantList indexPath = bookmarksByDate->findExact(bookmarkContent);
@@ -708,7 +708,7 @@ void Backpack::memoBookmark(QUrl url, QString memo) {
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
 		if (memo.length() > 0) {
 		    QVariantMap queryMap;
-		    queryMap["url"] = url.toString();
+		    queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(url));
 		    QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
             QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
             QVariantList indexPath = bookmarksByDate->findExact(bookmarkContent);
@@ -737,12 +737,13 @@ void Backpack::browseBookmark(QString uri) {
 	request.setUri(uri);
 	invokeSender.invoke(request);
 
+	QUrl url = QUrl(uri);
     QVariantMap queryMap;
-    queryMap["url"] = uri;
+    queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(url));
     QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
     QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
 	if (!getKeepAfterRead() && !bookmarkContent["keep"].toBool()) {
-		removeBookmark(QUrl(uri));
+		removeBookmark(url);
 	}
 }
 
@@ -765,7 +766,7 @@ void Backpack::shuffleBookmark() {
     QUrl url = ids.value(randomNumber).toMap().value("url").toUrl();
 
     QVariantMap queryMap;
-    queryMap["url"] = url.toString();
+    queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(url));
     QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
     QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
     if (!getKeepAfterRead() && !bookmarkContent["keep"].toBool()) {
@@ -887,7 +888,7 @@ void Backpack::handleBookmarkComplete(QUrl page, int size) {
 
 	if (!data->hasError() && iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
         QVariantMap queryMap;
-        queryMap["url"] = page.toString();
+        queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(page));
         QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
         QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
         QVariantList indexPath = bookmarksByDate->findExact(bookmarkContent);
@@ -902,12 +903,12 @@ void Backpack::updateImage(QUrl page, QUrl image) {
     Label *urlLabel = invokedForm->findChild<Label*>("invokedURL");
 
     if (page.toString() == urlLabel->text()) {
-    invokedForm->findChild<ImageView*>("invokedImage")->setImageSource(QString("file://").append(image.toString()));
+        invokedForm->findChild<ImageView*>("invokedImage")->setImageSource(QString("file://").append(image.toString()));
     }
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
         QVariantMap queryMap;
-        queryMap["url"] = page.toString();
+        queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(page));
         QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
         QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
         QVariantList indexPath = bookmarksByDate->findExact(bookmarkContent);
@@ -930,12 +931,12 @@ void Backpack::updateFavicon(QUrl page, QUrl favicon) {
     Label *urlLabel = invokedForm->findChild<Label*>("invokedURL");
 
     if (page.toString() == urlLabel->text()) {
-    invokedForm->findChild<ImageView*>("invokedFavicon")->setImageSource(QString("file://").append(favicon.toString()));
+        invokedForm->findChild<ImageView*>("invokedFavicon")->setImageSource(QString("file://").append(favicon.toString()));
     }
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
         QVariantMap queryMap;
-        queryMap["url"] = page.toString();
+        queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(page));
         QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
         QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
         QVariantList indexPath = bookmarksByDate->findExact(bookmarkContent);
@@ -960,7 +961,7 @@ void Backpack::updateTitle(QUrl page, QString title) {
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
         QVariantMap queryMap;
-        queryMap["url"] = page.toString();
+        queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(page));
         QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
         QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
         QVariantList indexPath = bookmarksByDate->findExact(bookmarkContent);
@@ -1003,7 +1004,7 @@ void Backpack::keepBookmark(QUrl url, bool keep) {
 
 	    // Update fav indicator on list
         QVariantMap queryMap;
-        queryMap["url"] = url.toString();
+        queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(url));
         QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
         QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
         QVariantList indexPath = bookmarksByDate->findExact(bookmarkContent);
@@ -1037,7 +1038,7 @@ void Backpack::removeBookmark(QUrl url) {
 void Backpack::removeBookmark(QUrl url, bool deliberate) {
 
     QVariantMap queryMap;
-    queryMap["url"] = url.toString();
+    queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(url));
     QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
     QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
     QVariantList indexPath = bookmarksByDate->findExact(bookmarkContent);
@@ -1056,8 +1057,6 @@ void Backpack::removeBookmark(QUrl url, bool deliberate) {
     }
 
     if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
-        QVariantMap queryMap;
-        queryMap["url"] = url.toString();
         bookmarksByURL->remove(queryMap);
         if (bookmarksByURL->size() == 0) {
             updateActiveFrame(true);
@@ -1256,27 +1255,8 @@ void Backpack::pocketHandlePostFinished() {
 
 		qlonglong pocketId = response.value("item_id").toLongLong();
 		QString pocketUrl = response.value("normal_url").toString();
-		QString url = Bookmark::cleanUrl(QUrl(pocketUrl));
 
-		int exists = data->execute("SELECT COUNT(*) number FROM Bookmark WHERE url = ?", QVariantList() << url).toList().value(0).toMap().value("number").toInt();
-		if (exists < 1 && pocketUrl.indexOf("s://") > 0) {
-			url = Bookmark::cleanUrl(QUrl(pocketUrl.replace("s://", "://")));
-
-			exists = data->execute("SELECT COUNT(*) number FROM Bookmark WHERE url = ?", QVariantList() << url).toList().value(0).toMap().value("number").toInt();
-			if (exists < 1 && pocketUrl.indexOf("://") > 0 && pocketUrl.indexOf("s://") < 0) {
-			    url = Bookmark::cleanUrl(QUrl(pocketUrl.replace("://", "s://")));
-
-			    exists = data->execute("SELECT COUNT(*) number FROM Bookmark WHERE url = ?", QVariantList() << url).toList().value(0).toMap().value("number").toInt();
-			    if (exists < 1 && pocketUrl.indexOf("www") < 0) {
-			        if (pocketUrl.indexOf("://") > 0) {
-			            url = Bookmark::cleanUrl(QUrl(pocketUrl.left(pocketUrl.indexOf("://")) % QString("://www.") % pocketUrl.right(pocketUrl.length() - pocketUrl.indexOf("://") - 3)));
-			        } else {
-			            url = Bookmark::cleanUrl(QUrl(QString("www.") % pocketUrl));
-			        }
-			    }
-            }
-        }
-		data->execute("UPDATE Bookmark SET pocket_id = ? WHERE url = ?", QVariantList() << pocketId << url);
+		data->execute("UPDATE Bookmark SET pocket_id = ? WHERE hash_url = ?", QVariantList() << pocketId << Bookmark::cleanUrlHash(QUrl(pocketUrl)));
 
 	} else if (reply->request().url().toString().indexOf("v3/get") > 0) {
 

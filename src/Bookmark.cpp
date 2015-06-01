@@ -375,11 +375,11 @@ void Bookmark::remove(SqlDataAccess *data, QUrl url) {
 
 QString Bookmark::cleanUrl(QUrl url) {
 
-	QString clean = url.toString();
-	if (clean.indexOf("://") > 0)
-		clean = clean.right(clean.length() - clean.indexOf("://") - 3);
-	if (clean.indexOf("www") == 0)
-		clean = clean.right(clean.length() - 4);
+	QString clean = url.toString().left(url.toString().indexOf('?'));
+	clean = clean.replace("https", "http", Qt::CaseInsensitive);
+	clean = clean.replace("http://", "", Qt::CaseInsensitive);
+	clean = clean.replace("www.", "", Qt::CaseInsensitive);
+	clean = clean.left(clean.indexOf('?'));
 	if (clean.length() > 0 && clean.at(clean.length() - 1) == '/')
 		clean = clean.left(clean.length() - 1);
 
