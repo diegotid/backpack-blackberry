@@ -40,6 +40,8 @@ public:
     Q_INVOKABLE void setKeepAfterRead(int mode);
     Q_INVOKABLE int getKeepAfterRead();
     Q_INVOKABLE void setPocketDeleteMode(int mode);
+    Q_INVOKABLE bool getSettingsUnderstood();
+    Q_INVOKABLE void setSettingsUnderstood();
     Q_INVOKABLE int getPocketDeleteMode();
     Q_INVOKABLE void setIgnoreKeptShuffle(bool ignore);
     Q_INVOKABLE bool getIgnoreKeptShuffle();

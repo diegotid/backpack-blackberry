@@ -122,15 +122,20 @@ Page {
             }
         }
     }
-    
+        
     actions: [
         ActionItem {
             title: "Shuffle"
             ActionBar.placement: ActionBarPlacement.Signature
             imageSource: "asset:///images/buttons/shuffle.png"
-            onTriggered: {    
-                app.shuffleBookmark()
-                app.logEvent("Shuffle")
+            onTriggered: {
+                if (app.getSettingsUnderstood() || app.getKeepAfterRead()) {
+                    app.shuffleBookmark()
+                    app.logEvent("Shuffle")
+                } else {
+                    discardDialog.mode = "Shuffle"
+                    discardDialog.show()
+                }
             }
         },
         ActionItem {
@@ -138,11 +143,16 @@ Page {
             imageSource: "asset:///images/buttons/lounge.png"
             ActionBar.placement: ActionBarPlacement.OnBar
             onTriggered: {
-                browseDialog.readmode = "Lounge"
-                browseDialog.username = freeTitleBar.username
-                browseDialog.keepAfterRead = app.getKeepAfterRead()
-                browseDialog.ignoreFavourites = app.getIgnoreKeptLounge()
-                browseSheet.open()
+                if (app.getSettingsUnderstood() || app.getKeepAfterRead()) {
+                    browseDialog.readmode = "Lounge"
+                    browseDialog.username = freeTitleBar.username
+                    browseDialog.keepAfterRead = app.getKeepAfterRead()
+                    browseDialog.ignoreFavourites = app.getIgnoreKeptLounge()
+                    browseSheet.open()
+                } else {
+                    discardDialog.mode = "Lounge"
+                    discardDialog.show()
+                }
             }
         },
         ActionItem {
@@ -150,11 +160,16 @@ Page {
             imageSource: "asset:///images/buttons/quickest.png"
             ActionBar.placement: ActionBarPlacement.OnBar
             onTriggered: {
-                browseDialog.readmode = "Quickest"
-                browseDialog.username = freeTitleBar.username
-                browseDialog.keepAfterRead = app.getKeepAfterRead()
-                browseDialog.ignoreFavourites = app.getIgnoreKeptQuickest()
-                browseSheet.open()
+                if (app.getSettingsUnderstood() || app.getKeepAfterRead()) {
+                    browseDialog.readmode = "Quickest"
+                    browseDialog.username = freeTitleBar.username
+                    browseDialog.keepAfterRead = app.getKeepAfterRead()
+                    browseDialog.ignoreFavourites = app.getIgnoreKeptQuickest()
+                    browseSheet.open()
+                } else {
+                    discardDialog.mode = "Quickest"
+                    discardDialog.show()
+                }
             }
         },
         ActionItem {
@@ -220,6 +235,46 @@ Page {
                 id: browseDialog
                 objectName: "browseDialog"
                 onClose: browseSheet.close()
+            }
+        },
+        SystemDialog {
+            id: discardDialog
+            title: "Read settings"
+            body: "Under current settings non-favorited articles are removed after read to keep your Backpack organized"
+            customButton.label: "Settings"
+            confirmButton.label: "Understood"
+            property string mode
+            property string link
+            onFinished: {
+                if (result == SystemUiResult.ConfirmButtonSelection) {
+                    app.setSettingsUnderstood()
+                    switch (mode) {
+                        case "Shuffle":
+                            app.shuffleBookmark()
+                            app.logEvent(mode)
+                            break
+                        case "Browse":
+                            app.browseBookmark(link)
+                            app.logEvent(mode)
+                            break
+                        case "Lounge":
+                            browseDialog.readmode = "Lounge"
+                            browseDialog.username = freeTitleBar.username
+                            browseDialog.keepAfterRead = app.getKeepAfterRead()
+                            browseDialog.ignoreFavourites = app.getIgnoreKeptLounge()
+                            browseSheet.open()
+                            break
+                        case "Quickest":
+                            browseDialog.readmode = "Quickest"
+                            browseDialog.username = freeTitleBar.username
+                            browseDialog.keepAfterRead = app.getKeepAfterRead()
+                            browseDialog.ignoreFavourites = app.getIgnoreKeptQuickest()
+                            browseSheet.open()
+                            break
+                    }
+                } else if (result == SystemUiResult.CustomButtonSelection) {
+                    settingsSheet.open()
+                }
             }
         }
     ]
@@ -533,8 +588,14 @@ Page {
                 
                 onTriggered: {
                     var selectedItem = dataModel.data(indexPath)
-                    app.browseBookmark(selectedItem.url)
-                    app.logEvent("Browse")
+                    if (app.getSettingsUnderstood() || app.getKeepAfterRead()) {
+                        app.browseBookmark(selectedItem.url)
+                        app.logEvent("Browse")
+                    } else {
+                        discardDialog.mode = "Browse"
+                        discardDialog.link = selectedItem.url
+                        discardDialog.show()
+                    }
                 }
                 
                 function domain(url) {

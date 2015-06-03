@@ -202,9 +202,20 @@ void Backpack::createDatabase() {
 }
 
 void Backpack::setKeepAfterRead(int mode) {
+bool Backpack::getSettingsUnderstood() {
 
 	QSettings settings;
 	settings.setValue("keepMode", mode);
+    if (settings.value("settingsUnderstook").isNull())
+        settings.setValue("settingsUnderstook", false);
+
+    return settings.value("settingsUnderstook").toBool();
+}
+
+void Backpack::setSettingsUnderstood() {
+
+    QSettings settings;
+    settings.setValue("settingsUnderstook", true);
 }
 
 int Backpack::getKeepAfterRead() {
