@@ -37,11 +37,11 @@ class Backpack : public QObject {
 public:
     Backpack(bb::cascades::Application *app);
     Q_INVOKABLE void logEvent(QString mode);
-    Q_INVOKABLE void setKeepAfterRead(int mode);
-    Q_INVOKABLE int getKeepAfterRead();
-    Q_INVOKABLE void setPocketDeleteMode(int mode);
     Q_INVOKABLE bool getSettingsUnderstood();
     Q_INVOKABLE void setSettingsUnderstood();
+    Q_INVOKABLE void setKeepAfterRead(bool keep);
+    Q_INVOKABLE bool getKeepAfterRead();
+    Q_INVOKABLE void setPocketDeleteMode(bool pocketDelete);
     Q_INVOKABLE int getPocketDeleteMode();
     Q_INVOKABLE void setIgnoreKeptShuffle(bool ignore);
     Q_INVOKABLE bool getIgnoreKeptShuffle();
@@ -79,7 +79,7 @@ public:
     Q_INVOKABLE void refreshBookmarks(QString query);
     Q_INVOKABLE void fetchContent(QString url);
     void pocketPost(QUrl);
-    void pocketArchiveDelete(qlonglong pocketId, bool permanent);
+    void pocketArchiveDelete(qlonglong pocketId);
     void memoBookmark(QUrl url, QString memo);
     void keepBookmark(QUrl url, bool keep);
     void removeBookmark(QUrl url);

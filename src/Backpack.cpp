@@ -201,11 +201,9 @@ void Backpack::createDatabase() {
     data->execute("ALTER TABLE Bookmark ADD hash_url VARCHAR(255)"); // Added on 2.0.1 for Pocket integration
 }
 
-void Backpack::setKeepAfterRead(int mode) {
 bool Backpack::getSettingsUnderstood() {
 
-	QSettings settings;
-	settings.setValue("keepMode", mode);
+    QSettings settings;
     if (settings.value("settingsUnderstook").isNull())
         settings.setValue("settingsUnderstook", false);
 
@@ -218,19 +216,25 @@ void Backpack::setSettingsUnderstood() {
     settings.setValue("settingsUnderstook", true);
 }
 
-int Backpack::getKeepAfterRead() {
+void Backpack::setKeepAfterRead(bool keep) {
+
+	QSettings settings;
+	settings.setValue("keepMode", keep);
+}
+
+bool Backpack::getKeepAfterRead() {
 
 	QSettings settings;
 	if (settings.value("keepMode").isNull())
-		settings.setValue("keepMode", 0);
+		settings.setValue("keepMode", false);
 
-	return settings.value("keepMode").toInt();
+	return settings.value("keepMode").toBool();
 }
 
-void Backpack::setPocketDeleteMode(int mode) {
+void Backpack::setPocketDeleteMode(bool pocketDelete) {
 
 	QSettings settings;
-	settings.setValue("pocketDelMode", mode);
+	settings.setValue("pocketDelMode", pocketDelete);
 }
 
 int Backpack::getPocketDeleteMode() {
@@ -718,14 +722,14 @@ void Backpack::memoBookmark(QUrl url, QString memo) {
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
 		if (memo.length() > 0) {
-		    QVariantMap queryMap;
-		    queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(url));
-		    QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
-            QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
-            QVariantList indexPath = bookmarksByDate->findExact(bookmarkContent);
-            bookmarkContent["memo"] = memo;
-            bookmarksByURL->updateItem(indexPathByURL, bookmarkContent);
-            bookmarksByDate->updateItem(indexPath, bookmarkContent);
+	    QVariantMap queryMap;
+	    queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(url));
+	    QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
+	    QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
+	    QVariantList indexPath = bookmarksByDate->findExact(bookmarkContent);
+	    bookmarkContent["memo"] = memo;
+	    bookmarksByURL->updateItem(indexPathByURL, bookmarkContent);
+	    bookmarksByDate->updateItem(indexPath, bookmarkContent);
 		}
 	} else {
 		invokedForm->findChild<ActionItem*>("acceptButton")->setEnabled(false);
@@ -1056,8 +1060,7 @@ void Backpack::removeBookmark(QUrl url, bool deliberate) {
     bookmarksByURL->removeAt(indexPath);
     bookmarksByDate->removeAt(indexPath);
 
-    QSettings settings;
-    pocketArchiveDelete(Bookmark::getPocketId(data, url), deliberate && getPocketDeleteMode() > 0);
+    pocketArchiveDelete(Bookmark::getPocketId(data, url));
 
     uint urlHash = Bookmark::cleanUrlHash(url);
     if (loading.contains(urlHash)) {
@@ -1182,14 +1185,14 @@ void Backpack::pocketPost(QUrl url) {
     Q_UNUSED(res_toast_act);
 }
 
-void Backpack::pocketArchiveDelete(qlonglong pocketId, bool permanent) {
+void Backpack::pocketArchiveDelete(qlonglong pocketId) {
 
 	QSettings settings;
 	QVariantMap query;
 	query.insert("consumer_key", APIKEY);
 	query.insert("access_token", settings.value("pocketToken").toString());
 	QVariantMap action;
-	action["action"] = permanent ? "delete" : "archive";
+	action["action"] = getPocketDeleteMode() ? "delete" : "archive";
 	action["item_id"] = pocketId;
 	query.insert("actions", QVariantList() << action);
 

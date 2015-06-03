@@ -6,7 +6,7 @@ Page {
     
     signal close();
     
-    property int prevKeepAfterRead: app.getKeepAfterRead()
+    property bool prevKeepAfterRead: app.getKeepAfterRead()
     property bool prevPocketDelete: app.getPocketDeleteMode()
     property bool prevKeptShuffle: app.getIgnoreKeptShuffle()
     property bool prevKeptQuickest: app.getIgnoreKeptQuickest()
@@ -34,6 +34,7 @@ Page {
                 app.setIgnoreKeptQuickest(ignoreKeptQuickest.checked)
                 app.setIgnoreKeptLounge(ignoreKeptLounge.checked)
                 prevKeepAfterRead = keepAfterReadMode.selectedValue
+                prevPocketDelete = removeOnPocketMode.selectedValue
                 prevKeptShuffle = ignoreKeptShuffle.checked
                 prevKeptQuickest = ignoreKeptQuickest.checked
                 prevKeptLounge = ignoreKeptLounge.checked
@@ -61,12 +62,12 @@ Page {
                         Option {
                             text: "Only favorites"
                             value: 0
-                            selected: prevKeepAfterRead == 0
+                            selected: !prevKeepAfterRead
                         },
                         Option {
                             text: "Everything"
                             value: 1
-                            selected: prevKeepAfterRead == 1
+                            selected: prevKeepAfterRead
                         }
 	                ]
 	            }
@@ -88,11 +89,12 @@ Page {
                         Option {
                             text: "Archive"
                             value: 0
-                            selected: true
+                            selected: !prevPocketDelete
                         },
                         Option {
                             text: "Delete"
                             value: 1
+                            selected: prevPocketDelete
                         }
                     ]
                 }
@@ -130,7 +132,6 @@ Page {
                 topPadding: 10.0
                 leftPadding: 20.0
                 rightPadding: 20.0
-                bottomMargin: 10.0
 
                 Label {
                     text: "Quickest"
