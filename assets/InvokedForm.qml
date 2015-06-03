@@ -41,7 +41,7 @@ Page {
             id: acceptButton
             objectName: "acceptButton"
             title: "Save"
-            enabled: false
+            enabled: (memo.text != "" || (item && item.memo != ""))
             
             onTriggered: {
                 app.memoBookmark(invokedURL.text, memo.text)
@@ -201,8 +201,8 @@ Page {
                     
                     onTextChanging: {
                         if (focused) { // Don't do this when opened from the edit action
-                            acceptButton.enabled = (memo.text != "");
-                            dismissButton.title = (memo.text != "") ? "Cancel" : "Close";
+                            acceptButton.enabled = (memo.text != "" || (item && item.memo != ""));
+                            dismissButton.title = (memo.text != "" || (item && item.memo != "")) ? "Cancel" : "Close";
                         }
                     }
                 }
