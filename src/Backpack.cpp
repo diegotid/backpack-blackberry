@@ -721,7 +721,6 @@ void Backpack::memoBookmark(QUrl url, QString memo) {
 		invokedForm->findChild<TextArea*>("memo")->resetText();
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
-		if (memo.length() > 0) {
 	    QVariantMap queryMap;
 	    queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(url));
 	    QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
@@ -730,7 +729,6 @@ void Backpack::memoBookmark(QUrl url, QString memo) {
 	    bookmarkContent["memo"] = memo;
 	    bookmarksByURL->updateItem(indexPathByURL, bookmarkContent);
 	    bookmarksByDate->updateItem(indexPath, bookmarkContent);
-		}
 	} else {
 		invokedForm->findChild<ActionItem*>("acceptButton")->setEnabled(false);
         uint urlHash = Bookmark::cleanUrlHash(url);
