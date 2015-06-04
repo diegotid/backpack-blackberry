@@ -130,8 +130,7 @@ Page {
             imageSource: "asset:///images/buttons/shuffle.png"
             onTriggered: {
                 if (app.getSettingsUnderstood() || app.getKeepAfterRead()) {
-                    app.shuffleBookmark()
-                    app.logEvent("Shuffle")
+                    performShuffle()
                 } else {
                     discardDialog.mode = "Shuffle"
                     discardDialog.show()
@@ -144,11 +143,7 @@ Page {
             ActionBar.placement: ActionBarPlacement.OnBar
             onTriggered: {
                 if (app.getSettingsUnderstood() || app.getKeepAfterRead()) {
-                    browseDialog.readmode = "Lounge"
-                    browseDialog.username = freeTitleBar.username
-                    browseDialog.keepAfterRead = app.getKeepAfterRead()
-                    browseDialog.ignoreFavourites = app.getIgnoreKeptLounge()
-                    browseSheet.open()
+                    performLounge()
                 } else {
                     discardDialog.mode = "Lounge"
                     discardDialog.show()
@@ -161,11 +156,7 @@ Page {
             ActionBar.placement: ActionBarPlacement.OnBar
             onTriggered: {
                 if (app.getSettingsUnderstood() || app.getKeepAfterRead()) {
-                    browseDialog.readmode = "Quickest"
-                    browseDialog.username = freeTitleBar.username
-                    browseDialog.keepAfterRead = app.getKeepAfterRead()
-                    browseDialog.ignoreFavourites = app.getIgnoreKeptQuickest()
-                    browseSheet.open()
+                    performQuickest()
                 } else {
                     discardDialog.mode = "Quickest"
                     discardDialog.show()
@@ -219,6 +210,32 @@ Page {
         }
     }
     
+    function performShuffle() {
+        app.shuffleBookmark()
+        app.logEvent("Shuffle")
+    }
+    
+    function performBrowse(link) {
+        app.browseBookmark(link)
+        app.logEvent("Browse")
+    }
+    
+    function performLounge() {
+        browseDialog.readmode = "Lounge"
+        browseDialog.username = freeTitleBar.username
+        browseDialog.keepAfterRead = app.getKeepAfterRead()
+        browseDialog.ignoreFavourites = app.getIgnoreKeptLounge()
+        browseSheet.open()
+    }
+    
+    function performQuickest() {
+        browseDialog.readmode = "Quickest"
+        browseDialog.username = freeTitleBar.username
+        browseDialog.keepAfterRead = app.getKeepAfterRead()
+        browseDialog.ignoreFavourites = app.getIgnoreKeptQuickest()
+        browseSheet.open()
+    }
+    
     attachedObjects: [
         Sheet {
             id: bookmarkSheet
@@ -249,27 +266,17 @@ Page {
                 if (result == SystemUiResult.ConfirmButtonSelection) {
                     app.setSettingsUnderstood()
                     switch (mode) {
-                        case "Shuffle":
-                            app.shuffleBookmark()
-                            app.logEvent(mode)
-                            break
                         case "Browse":
-                            app.browseBookmark(link)
-                            app.logEvent(mode)
+                            performBrowse(link)
+                            break
+                        case "Shuffle":
+                            performShuffle()
                             break
                         case "Lounge":
-                            browseDialog.readmode = "Lounge"
-                            browseDialog.username = freeTitleBar.username
-                            browseDialog.keepAfterRead = app.getKeepAfterRead()
-                            browseDialog.ignoreFavourites = app.getIgnoreKeptLounge()
-                            browseSheet.open()
+                            performLounge()
                             break
                         case "Quickest":
-                            browseDialog.readmode = "Quickest"
-                            browseDialog.username = freeTitleBar.username
-                            browseDialog.keepAfterRead = app.getKeepAfterRead()
-                            browseDialog.ignoreFavourites = app.getIgnoreKeptQuickest()
-                            browseSheet.open()
+                            performQuickest()
                             break
                     }
                 } else if (result == SystemUiResult.CustomButtonSelection) {
@@ -589,8 +596,7 @@ Page {
                 onTriggered: {
                     var selectedItem = dataModel.data(indexPath)
                     if (app.getSettingsUnderstood() || app.getKeepAfterRead()) {
-                        app.browseBookmark(selectedItem.url)
-                        app.logEvent("Browse")
+                        performBrowse(selectedItem.url)
                     } else {
                         discardDialog.mode = "Browse"
                         discardDialog.link = selectedItem.url
