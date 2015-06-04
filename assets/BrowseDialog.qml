@@ -109,7 +109,7 @@ Page {
             
             ImageView {
                 id: articleImage
-                imageSource: (item.image && item.image.length > 1) ? "file://" + item.image : "asset:///images/backpack.png"
+                imageSource: (bookmark.image && bookmark.image.length > 1) ? "file://" + bookmark.image : "asset:///images/backpack.png"
                 scalingMethod: ScalingMethod.AspectFill
                 verticalAlignment: VerticalAlignment.Fill
                 horizontalAlignment: HorizontalAlignment.Fill
