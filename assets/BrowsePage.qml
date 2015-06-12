@@ -173,6 +173,7 @@ NavigationPane {
                         onSelectedOptionChanged: {
                             app.refreshBookmarks(query.text.trim())
                             browseListPage.updateEmptyLabel()
+                            filterExpand = false
                         }
                         options: [
                             Option {
