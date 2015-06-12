@@ -372,7 +372,7 @@ void Backpack::refreshBookmarks(QString query) {
     bookmarksByDate->clear();
     bookmarksByURL->insertList(list);
     bookmarksByDate->insertList(list);
-    bookmarks->setProperty("size", list.size());
+    mainPage->findChild<Page*>("browseListPage")->setProperty("listSize", list.size());
 
     updateActiveFrame(true);
 
@@ -676,6 +676,7 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
         bookmarksByURL->insert(newMap);
         bookmarksByDate->insert(newMap);
         mainPage->findChild<Sheet*>("bookmarkSheet")->open();
+        mainPage->findChild<Page*>("browseListPage")->setProperty("listSize", bookmarksByURL->size());
 
         if (bookmarksByURL->size() > 0) {
             updateActiveFrame(true);
@@ -1073,6 +1074,7 @@ void Backpack::removeBookmark(QUrl url, bool deliberate) {
 
     if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
         bookmarksByURL->remove(queryMap);
+        mainPage->findChild<Page*>("browseListPage")->setProperty("listSize", bookmarksByURL->size());
         if (bookmarksByURL->size() == 0) {
             updateActiveFrame(true);
             mainPage->setActiveTab(mainPage->findChild<Tab*>("putinTab"));
@@ -1116,6 +1118,8 @@ void Backpack::pocketCleanContent() {
     loading.clear();
     bookmarksByURL->clear();
     bookmarksByDate->clear();
+
+    mainPage->findChild<Page*>("browseListPage")->setProperty("listSize", 0);
 
     data->execute("DELETE FROM Bookmark");
 

@@ -65,6 +65,31 @@ NavigationPane {
         actionBarVisibility: ChromeVisibility.Overlay
         actionBarAutoHideBehavior: ActionBarAutoHideBehavior.HideOnScroll
         
+        property int listSize
+        onListSizeChanged: {
+            emptySearchHint.visible = (listSize == 0)
+        }
+        
+        function updateEmptyLabel() {    
+            var tale = query.text.toString().trim().length > 0 ? " found" : ""
+            switch (filterType.selectedOption.value) {
+                case 1:
+                    emptySearchHint.text = "No favorited articles" + tale
+                    break
+                case 2:
+                    emptySearchHint.text = "No articles" + tale
+                    break
+                case 3:
+                    emptySearchHint.text = "No videos" + tale
+                    break
+                case 4:
+                    emptySearchHint.text = "No images" + tale
+                    break
+                default:
+                    emptySearchHint.text = tale.toString().length > 0 ? "No articles found" : "Nothing in your Backpack"
+            }
+        }
+        
         keyListeners: [
             KeyListener {
                 onKeyReleased: {
@@ -113,7 +138,10 @@ NavigationPane {
                             verticalAlignment: VerticalAlignment.Center
                             input.submitKey: SubmitKey.Search
                             input.submitKeyFocusBehavior: SubmitKeyFocusBehavior.Lose
-                        onTextChanging: app.refreshBookmarks(query.text.trim())
+                            onTextChanging: {
+                                app.refreshBookmarks(query.text.trim())
+                                browseListPage.updateEmptyLabel()
+                            }
                             onFocusedChanged: {
                                 if (focused) {
                                     filterExpand = false
@@ -128,9 +156,10 @@ NavigationPane {
                             onClicked: {
                                 filterExpand = false
                                 searchForm.visible = false   
-                            query.text = ''
+                                query.text = ""
                                 filterType.selectedOption = filterType.options[0]
                                 app.refreshBookmarks()
+                                browseListPage.updateEmptyLabel()
                             }
                         }
                     }
@@ -143,7 +172,7 @@ NavigationPane {
                         objectName: "filterType"
                         onSelectedOptionChanged: {
                             app.refreshBookmarks(query.text.trim())
-                        updateEmptyLabel(bookmarks.size)
+                            browseListPage.updateEmptyLabel()
                         }
                         options: [
                             Option {
@@ -240,28 +269,6 @@ NavigationPane {
             }
         ]
         
-       
-    function updateEmptyLabel(size) {
-        emptyLabelContainer.visible = (size == 0)
-        var tale = query.text.toString().trim().length > 0 ? " found" : ""
-        switch (filterType.selectedOption.value) {
-            case 1:
-                emptyLabel.text = "No favorited items" + tale
-                break
-            case 2:
-                emptyLabel.text = "No articles" + tale
-                break
-            case 3:
-                emptyLabel.text = "No videos" + tale
-                break
-            case 4:
-                emptyLabel.text = "No images" + tale
-                break
-            default:
-                emptyLabel.text = "No items" + tale
-        }
-    }
-    
         attachedObjects: [
             ComponentDefinition {
                 id: readPageDefinition
@@ -341,9 +348,6 @@ NavigationPane {
                      source: "debug.xml"
                   }
 */                
-                property int size;
-                onSizeChanged: updateEmptyLabel(size)
-                
                     listItemComponents: [
                         
                         ListItemComponent {
