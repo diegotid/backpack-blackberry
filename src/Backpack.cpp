@@ -377,6 +377,7 @@ void Backpack::refreshBookmarks(QString query) {
     updateActiveFrame(true);
 
 	if (type == 0 && query.isNull() && list.size() == 0) {
+        if (mainPage->findChild<NavigationPane*>("articlesPane")->count() == 1) {
 		mainPage->setActiveTab(mainPage->findChild<Tab*>("putinTab"));
 	}
     mainPage->findChild<Label*>("emptyHint")->setVisible(type == 0 && query.isNull() && list.size() == 0);
@@ -1080,6 +1081,7 @@ void Backpack::removeBookmark(QUrl url, bool deliberate) {
             mainPage->setActiveTab(mainPage->findChild<Tab*>("putinTab"));
             mainPage->findChild<Label*>("emptyHint")->setVisible(true);
             mainPage->findChild<Tab*>("exploreTab")->setEnabled(false);
+            if (mainPage->findChild<NavigationPane*>("articlesPane")->count() == 1) {
         }
     }
 }
@@ -1123,6 +1125,7 @@ void Backpack::pocketCleanContent() {
 
     data->execute("DELETE FROM Bookmark");
 
+    if (mainPage->findChild<NavigationPane*>("articlesPane")->count() == 1) {
     mainPage->setActiveTab(mainPage->findChild<Tab*>("putinTab"));
     mainPage->findChild<Tab*>("exploreTab")->setEnabled(false);
 
