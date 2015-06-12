@@ -1063,7 +1063,10 @@ void Backpack::removeBookmark(QUrl url, bool deliberate) {
     bookmarksByURL->removeAt(indexPath);
     bookmarksByDate->removeAt(indexPath);
 
+    QSettings settings;
+    if (!settings.value("pocketUser").isNull()) {
     pocketArchiveDelete(Bookmark::getPocketId(data, url));
+    }
 
     uint urlHash = Bookmark::cleanUrlHash(url);
     if (loading.contains(urlHash)) {
