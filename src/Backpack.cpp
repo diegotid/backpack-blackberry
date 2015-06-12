@@ -376,17 +376,13 @@ void Backpack::refreshBookmarks(QString query) {
     updateActiveFrame(true);
 
 	if (type == 0 && query.isNull() && list.size() == 0) {
+        mainPage->findChild<Label*>("emptyHint")->setVisible(true);
         if (mainPage->findChild<NavigationPane*>("articlesPane")->count() == 1) {
-		mainPage->setActiveTab(mainPage->findChild<Tab*>("putinTab"));
+            mainPage->setActiveTab(mainPage->findChild<Tab*>("putinTab"));
+        }
+	} else {
+	    mainPage->findChild<Label*>("emptyHint")->setVisible(false);
 	}
-    mainPage->findChild<Label*>("emptyHint")->setVisible(type == 0 && query.isNull() && list.size() == 0);
-
-    Tab *exploreTab = mainPage->findChild<Tab*>("exploreTab");
-    bool prevExploreTab = exploreTab->isEnabled();
-    exploreTab->setEnabled(type > 0 || !query.isNull() || list.size() > 0);
-    if (!prevExploreTab && exploreTab->isEnabled()) {
-        mainPage->setActiveTab(exploreTab);
-    }
 }
 
 void Backpack::saveBackup() {
@@ -682,7 +678,6 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
         if (bookmarksByURL->size() > 0) {
             updateActiveFrame(true);
             mainPage->findChild<Label*>("emptyHint")->setVisible(false);
-            mainPage->findChild<Tab*>("exploreTab")->setEnabled(true);
             mainPage->setActiveTab(mainPage->findChild<Tab*>("exploreTab"));
         }
 	}
@@ -747,12 +742,12 @@ void Backpack::memoBookmark(QUrl url, QString memo) {
 
 void Backpack::browseBookmark(QString uri) {
 
-	InvokeManager invokeSender;
-	InvokeRequest request;
-	request.setTarget("sys.browser");
-	request.setAction("bb.action.OPEN");
-	request.setUri(uri);
-	invokeSender.invoke(request);
+        InvokeManager invokeSender;
+        InvokeRequest request;
+        request.setTarget("sys.browser");
+        request.setAction("bb.action.OPEN");
+        request.setUri(uri);
+        invokeSender.invoke(request);
     pocketDownload(uri);
 
 	QUrl url(uri);
@@ -1065,7 +1060,7 @@ void Backpack::removeBookmark(QUrl url, bool deliberate) {
 
     QSettings settings;
     if (!settings.value("pocketUser").isNull()) {
-    pocketArchiveDelete(Bookmark::getPocketId(data, url));
+        pocketArchiveDelete(Bookmark::getPocketId(data, url));
     }
 
     uint urlHash = Bookmark::cleanUrlHash(url);
@@ -1081,10 +1076,10 @@ void Backpack::removeBookmark(QUrl url, bool deliberate) {
         mainPage->findChild<Page*>("browseListPage")->setProperty("listSize", bookmarksByURL->size());
         if (bookmarksByURL->size() == 0) {
             updateActiveFrame(true);
-            mainPage->setActiveTab(mainPage->findChild<Tab*>("putinTab"));
             mainPage->findChild<Label*>("emptyHint")->setVisible(true);
-            mainPage->findChild<Tab*>("exploreTab")->setEnabled(false);
             if (mainPage->findChild<NavigationPane*>("articlesPane")->count() == 1) {
+                mainPage->setActiveTab(mainPage->findChild<Tab*>("putinTab"));
+            }
         }
     }
 }
@@ -1127,9 +1122,10 @@ void Backpack::pocketCleanContent() {
 
     data->execute("DELETE FROM Bookmark");
 
+    mainPage->findChild<Label*>("emptyHint")->setVisible(true);
     if (mainPage->findChild<NavigationPane*>("articlesPane")->count() == 1) {
-    mainPage->setActiveTab(mainPage->findChild<Tab*>("putinTab"));
-    mainPage->findChild<Tab*>("exploreTab")->setEnabled(false);
+        mainPage->setActiveTab(mainPage->findChild<Tab*>("putinTab"));
+    }
 
     updateActiveFrame(true);
 }
@@ -1310,7 +1306,7 @@ void Backpack::pocketHandlePostFinished() {
         }
         readPage->findChild<WebView*>("articleBody")->setProperty("body", response.value("article").toString());
 
-	} else if (reply->request().url().toString().indexOf("v3/add") > 0) {
+    } else if (reply->request().url().toString().indexOf("v3/add") > 0) {
 
 		if (reply->rawHeader("Status").isNull()
 				|| reply->rawHeader("Status").indexOf("200 OK") != 0
