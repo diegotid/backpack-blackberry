@@ -1015,7 +1015,7 @@ void Backpack::keepBookmark(QUrl url, bool keep) {
 
 	    QNetworkRequest request(QUrl(QString("https://") % HOST % "/v3/send"));
 	    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=UTF-8");
-	    reply = network->post(request, queryArray);
+	    network->post(request, queryArray);
 	}
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
@@ -1226,7 +1226,7 @@ void Backpack::pocketArchiveDelete(qlonglong pocketId) {
 
 	QNetworkRequest request(QUrl(QString("https://") % HOST % "/v3/send"));
 	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=UTF-8");
-	reply = network->post(request, queryArray);
+	network->post(request, queryArray);
 }
 
 void Backpack::pocketHandlePostFinished() {
