@@ -49,10 +49,6 @@ Page {
             }
         }
     }
-    
-    paneProperties: NavigationPaneProperties {
-        backButton: dismissButton
-    }
         
     function getDomain(url) {
         var domain = url.substring(url.indexOf("://") + (url.indexOf("://") < 0 ? 1 : 3));

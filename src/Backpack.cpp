@@ -7,6 +7,7 @@
 #include <bb/cascades/Application>
 #include <bb/cascades/AbstractPane>
 #include <bb/cascades/GroupDataModel>
+#include <bb/cascades/NavigationPane>
 #include <bb/cascades/ActivityIndicator>
 #include <bb/cascades/ActionItem>
 #include <bb/cascades/ImageView>
@@ -34,6 +35,7 @@ using namespace bb;
 using namespace std;
 
 #define HOST "getpocket.com"
+#define TEXT_HOST "text.getpocket.com"
 #define APIKEY "22109-9f0af838570499419e7b5886"
 #define ACKURL "http://bbornot2b.com/backpack/auth"
 #define FRAMEINTERVAL 10
@@ -749,6 +751,7 @@ void Backpack::browseBookmark(QString uri) {
 	request.setAction("bb.action.OPEN");
 	request.setUri(uri);
 	invokeSender.invoke(request);
+    pocketDownload(uri);
 
 	QUrl url = QUrl(uri);
     QVariantMap queryMap;
@@ -1163,6 +1166,24 @@ void Backpack::pocketRetrieve() {
     Q_UNUSED(res_toast_act);
 }
 
+void Backpack::pocketDownload(QString url) {
+
+    QUrl query;
+    query.addEncodedQueryItem("url", QUrl::toPercentEncoding(url));
+    query.addQueryItem("consumer_key", APIKEY);
+    query.addQueryItem("images", "1");
+    query.addQueryItem("videos", "0");
+    query.addQueryItem("refresh", "0");
+    query.addQueryItem("output", "json");
+
+    QNetworkRequest request(QUrl(QString("http://") % TEXT_HOST % "/v3beta/text"));
+    reply = network->post(request, query.encodedQuery());
+    bool res_posted = connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
+
+    Q_ASSERT(res_posted);
+    Q_UNUSED(res_posted);
+}
+
 void Backpack::pocketPost(QUrl url) {
 
 	QSettings settings;
@@ -1253,6 +1274,33 @@ void Backpack::pocketHandlePostFinished() {
 			pocketPost(QUrl(existing.at(i).toMap().value("url").toString()));
 		}
 		pocketRetrieve();
+
+    } else if (reply->request().url().toString().indexOf("v3beta/text") > 0) {
+
+        if (reply->rawHeader("Status").isNull()
+                || reply->rawHeader("Status").indexOf("200 OK") != 0
+                || reply->error() != QNetworkReply::NoError) {
+            qDebug() << "Pocket error: " << reply->rawHeader("X-Error");
+            return;
+        }
+        JsonDataAccess json;
+        QVariantMap response = json.loadFromBuffer(reply->readAll()).toMap();
+
+        Page *readPage = mainPage->findChild<Page*>("readPage");
+        readPage->titleBar()->setTitle(response.value("title").toString());
+        readPage->findChild<Label*>("headerHost")->setText(response.value("host").toString());
+        if (response.contains("datePublished")) {
+            QDate published = response.value("datePublished").toDate();
+            readPage->findChild<Label*>("headerDate")->setText(published.toString());
+        } else {
+            QVariantList existings = data->execute("SELECT time FROM Bookmark WHERE hash_url = ?", QVariantList() << Bookmark::cleanUrlHash(QUrl(response.value("resolvedUrl").toString()))).toList();
+            if (existings.length() > 0) {
+                QVariantMap bookmarkContent = existings.value(0).toMap();
+                QDateTime added = QDateTime::fromTime_t(bookmarkContent["time"].toInt());
+                readPage->findChild<Label*>("headerDate")->setText("Added " % added.toString());
+            }
+        }
+        readPage->findChild<WebView*>("articleBody")->setProperty("body", response.value("article").toString());
 
 	} else if (reply->request().url().toString().indexOf("v3/add") > 0) {
 

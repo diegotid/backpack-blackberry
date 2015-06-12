@@ -102,6 +102,7 @@ public Q_SLOTS:
 	void updateActiveFrame();
 	void freeLoadingPage(uint);
     Q_INVOKABLE void pocketRetrieve();
+    Q_INVOKABLE void pocketDownload(QString);
 
 private:
     TabbedPane *mainPage;
