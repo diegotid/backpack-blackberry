@@ -26,7 +26,7 @@
 #include <bb/data/JsonDataAccess>
 #include <bb/PpsObject>
 
-#include <bb/cascades/core/developmentsupport.h>
+// #include <bb/cascades/core/developmentsupport.h>
 
 using namespace bb::cascades;
 using namespace bb::system;
@@ -55,9 +55,9 @@ Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
 	if (!databaseExists()) createDatabase();
 
 	iManager = new InvokeManager(this);
-	bool res_toast_act = connect(iManager, SIGNAL(invoked(const bb::system::InvokeRequest&)), this, SLOT(handleInvoke(const bb::system::InvokeRequest&)));
-    Q_ASSERT(res_toast_act);
-    Q_UNUSED(res_toast_act);
+	bool res_invoke = connect(iManager, SIGNAL(invoked(const bb::system::InvokeRequest&)), this, SLOT(handleInvoke(const bb::system::InvokeRequest&)));
+    Q_ASSERT(res_invoke);
+    Q_UNUSED(res_invoke);
 
 	network = new QNetworkAccessManager(this);
 
@@ -188,9 +188,8 @@ bool Backpack::databaseExists() {
 
 void Backpack::createDatabase() {
 
-	data->execute("CREATE TABLE Bookmark (id INTEGER, "
+	data->execute("CREATE TABLE Bookmark (url VARCHAR(255), "
 										"title VARCHAR(255), "
-										"url VARCHAR(255), "
 										"favicon VARCHAR(255), "
 										"memo VARCHAR(255), "
 										"time DATETIME, "
@@ -496,11 +495,8 @@ void Backpack::restoreBackup(QString backupFilename) {
 		uint urlHash = Bookmark::cleanUrlHash(url);
         if (urlHash == 0)
             continue;
-		QVariantList existing = data->execute("SELECT id FROM Bookmark WHERE hash_url = ?", QVariantList() << urlHash).toList();
-		if (existing.size() == 0) {
-			QVariantMap currentId = data->execute("SELECT MAX(id) FROM Bookmark").toList().value(0).toMap();
-			int id = currentId.value("MAX(id)").isNull() ? 1 : currentId.value("MAX(id)").toInt() + 1;
-			data->execute("INSERT INTO Bookmark (id, url, hash_url, time, keep, memo) VALUES (?, ?, ?, ?, ?, ?)", QVariantList() << id << url.toString() << urlHash << backupData["time"].toDateTime() << backupData["keep"].toBool() << backupData["memo"].toString());
+        if (1 > data->execute("SELECT COUNT(*) number FROM Bookmark WHERE hash_url = ?", QVariantList() << urlHash).toList().value(0).toMap().value("number").toInt()) {
+			data->execute("INSERT INTO Bookmark (url, hash_url, time, keep, memo) VALUES (?, ?, ?, ?, ?)", QVariantList() << url.toString() << urlHash << backupData["time"].toDateTime() << backupData["keep"].toBool() << backupData["memo"].toString());
 		} else {
 			data->execute("UPDATE Bookmark SET time = ?, keep = ?, memo = ? WHERE hash_url = ?", QVariantList() << backupData["time"].toDateTime() << backupData["keep"].toBool() << backupData["memo"].toString() << urlHash);
 		}
@@ -627,18 +623,20 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 
     QVariantList bookmarks = data->execute("SELECT * FROM Bookmark WHERE hash_url = ?", QVariantList() << Bookmark::cleanUrlHash(request.uri())).toList();
 
+    TextArea *memoArea = invokedForm->findChild<TextArea*>("memo");
+
     if (bookmarks.size() > 0) {
         QVariantMap bookmarkContent = bookmarks.value(0).toMap();
         invokedForm->titleBar()->setTitle("Edit item");
         invokedForm->findChild<QObject*>("status")->setProperty("text", "Article is already in your Backpack");
         invokedForm->findChild<QObject*>("title")->setProperty("text", bookmarkContent["title"]);
-        invokedForm->findChild<QObject*>("memo")->setProperty("text", bookmarkContent["memo"]);
-        invokedForm->findChild<QObject*>("memo")->setProperty("enabled", false);
-        invokedForm->findChild<TextArea*>("memo")->setVisible(bookmarkContent["memo"].toString().trimmed().length() > 0);
-        invokedForm->findChild<Container*>("toggleFav")->setVisible(false);
         invokedForm->findChild<ImageView*>("invokedImage")->setImageSource(QString("file://").append(bookmarkContent["image"].toString()));
         invokedForm->findChild<ToggleButton*>("keepCheck")->setProperty("invokeChecked", bookmarkContent["keep"]);
         invokedForm->findChild<Container*>("activity")->setVisible(false);
+        invokedForm->findChild<Container*>("toggleFav")->setVisible(false);
+        memoArea->setEnabled(false);
+        memoArea->setText(bookmarkContent["memo"].toString());
+        memoArea->setVisible(bookmarkContent["memo"].toString().trimmed().length() > 0);
         if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
             mainPage->findChild<Sheet*>("bookmarkSheet")->open();
         }
@@ -663,8 +661,10 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 	invokedForm->findChild<QObject*>("activity")->setProperty("visible", true);
 	invokedForm->findChild<QObject*>("status")->setProperty("text", "Fetching page content...");
 	invokedForm->findChild<QObject*>("title")->setProperty("text", "");
-	invokedForm->findChild<QObject*>("memo")->setProperty("text", "");
-	invokedForm->findChild<TextArea*>("memo")->setText("");
+    invokedForm->findChild<Container*>("toggleFav")->setVisible(true);
+    memoArea->setEnabled(true);
+    memoArea->setVisible(true);
+    memoArea->setText("");
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
 
@@ -755,7 +755,7 @@ void Backpack::browseBookmark(QString uri) {
 	invokeSender.invoke(request);
     pocketDownload(uri);
 
-	QUrl url = QUrl(uri);
+	QUrl url(uri);
     QVariantMap queryMap;
     queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(url));
     QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
@@ -1103,11 +1103,10 @@ void Backpack::pocketConnect() {
 	query.addQueryItem("redirect_uri", ACKURL);
 
 	QNetworkRequest request(QUrl(QString("https://") % HOST % "/v3/oauth/request"));
-	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded; charset=UTF-8");
 	reply = network->post(request, query.encodedQuery());
-	bool res_toast_act = connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
-    Q_ASSERT(res_toast_act);
-    Q_UNUSED(res_toast_act);
+	bool res_posted = connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
+    Q_ASSERT(res_posted);
+    Q_UNUSED(res_posted);
 }
 
 void Backpack::pocketCleanContent() {
@@ -1139,11 +1138,10 @@ void Backpack::pocketCompleteAuth() {
 	query.addQueryItem("code", requestToken);
 
 	QNetworkRequest request(QUrl(QString("https://") % HOST % "/v3/oauth/authorize"));
-	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded; charset=UTF-8");
 	reply = network->post(request, query.encodedQuery());
-	bool res_toast_act = connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
-    Q_ASSERT(res_toast_act);
-    Q_UNUSED(res_toast_act);
+	bool res_posted = connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
+    Q_ASSERT(res_posted);
+    Q_UNUSED(res_posted);
 }
 
 void Backpack::pocketRetrieve() {
@@ -1168,9 +1166,9 @@ void Backpack::pocketRetrieve() {
 	QNetworkRequest request(QUrl(QString("https://") % HOST % "/v3/get"));
 	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=UTF-8");
 	reply = network->post(request, queryArray);
-	bool res_toast_act = connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
-    Q_ASSERT(res_toast_act);
-    Q_UNUSED(res_toast_act);
+	bool res_posted = connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
+    Q_ASSERT(res_posted);
+    Q_UNUSED(res_posted);
 }
 
 void Backpack::pocketDownload(QString url) {
@@ -1206,9 +1204,9 @@ void Backpack::pocketPost(QUrl url) {
 	QNetworkRequest request(QUrl(QString("https://") % HOST % "/v3/add"));
 	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=UTF-8");
 	reply = network->post(request, queryArray);
-	bool res_toast_act = connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
-    Q_ASSERT(res_toast_act);
-    Q_UNUSED(res_toast_act);
+	bool res_posted = connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
+    Q_ASSERT(res_posted);
+    Q_UNUSED(res_posted);
 }
 
 void Backpack::pocketArchiveDelete(qlonglong pocketId) {
@@ -1355,7 +1353,7 @@ void Backpack::pocketHandlePostFinished() {
 
 		for (int i = 0; i < retrieved.size(); i++) {
 			QVariantMap item = retrieved.value(i).toMap();
-			QUrl url = QUrl(item.value("resolved_url").toString());
+			QUrl url(item.value("resolved_url").toString());
 			uint urlHash = Bookmark::cleanUrlHash(url);
 			if (urlHash == 0) continue;
 			switch (item.value("status").toInt()) {
