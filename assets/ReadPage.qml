@@ -5,8 +5,13 @@ import bb.system 1.0
 Page {
     objectName: "readPage"
     
-    signal close()
-    
+    paneProperties: NavigationPaneProperties {
+        backButton: ActionItem {
+            onTriggered: {
+                articlesPane.pop()
+            }
+        }
+    }        
     actionBarVisibility: ChromeVisibility.Overlay
     actionBarAutoHideBehavior: ActionBarAutoHideBehavior.HideOnScroll
     

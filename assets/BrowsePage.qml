@@ -14,7 +14,8 @@ NavigationPane {
             readPage = readPageDefinition.createObject()
         }
         return readPage
-    }
+    }    
+    onPopTransitionEnded: readPage.destroy()
     
     function updateUsername(username) {
         freeTitleBar.username = username
@@ -53,16 +54,6 @@ NavigationPane {
         id: browseListPage
         objectName: "browseListPage"
         
-        paneProperties: NavigationPaneProperties {
-            backButton: ActionItem {
-                onTriggered: {
-                    articlesPane.pop()
-                    if (articlesPane.count() == 0) {
-                        exploreTab.setEnabled(false)
-                    }
-                }
-            }
-        }        
         actionBarVisibility: ChromeVisibility.Overlay
         actionBarAutoHideBehavior: ActionBarAutoHideBehavior.HideOnScroll
         
@@ -680,7 +671,7 @@ NavigationPane {
                     
                     Label {
                         id: emptySearchHint
-                        text: query.text.toString().trim().length > 0 ? "No articles found" : "Nothing in your Backpack"
+                        visible: false
                         horizontalAlignment: HorizontalAlignment.Center
                         textStyle.fontSize: FontSize.Large
                     }
