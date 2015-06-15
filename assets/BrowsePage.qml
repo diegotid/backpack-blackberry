@@ -20,11 +20,12 @@ NavigationPane {
         freeTitleBar.username = username
     }
 
-    function performBrowse(link) {
+    function performRead(link) {
         var articlePage = getReadPage()
+        articlePage.reset()
         articlesPane.push(articlePage)
-        app.browseBookmark(link)
-        app.logEvent("Browse")
+        app.readBookmark(link)
+        app.logEvent("Read")
     }
     
     function performShuffle() {
@@ -304,8 +305,8 @@ NavigationPane {
                     if (result == SystemUiResult.ConfirmButtonSelection) {
                         app.setSettingsUnderstood()
                         switch (mode) {
-                            case "Browse":
-                                performBrowse(link)
+                            case "Read":
+                                performRead(link)
                                 break
                             case "Shuffle":
                                 performShuffle()
@@ -430,7 +431,7 @@ NavigationPane {
                                         }
                                         ActionItem {
                                             title: ListItemData.keep == "true" ? "Unfavorite" : "Favorite"
-                                            imageSource: ListItemData.keep == "true" ? "asset:///images/menuicons/unzip.png" : "asset:///images/menuicons/zip.png"
+                                            imageSource: ListItemData.keep == "true" ? "asset:///images/menuicons/unfav.png" : "asset:///images/menuicons/zip.png"
                                             onTriggered: bookmark.ListItem.view.toggleKeep(ListItemData.url, ListItemData.keep != "true")
                                         }
                                         DeleteActionItem {
@@ -631,9 +632,9 @@ NavigationPane {
                     onTriggered: {
                         var selectedItem = dataModel.data(indexPath)
                         if (app.getSettingsUnderstood() || app.getKeepAfterRead()) {
-                            performBrowse(selectedItem.url)
+                            performRead(selectedItem.url)
                         } else {
-                            discardDialog.mode = "Browse"
+                            discardDialog.mode = "Read"
                             discardDialog.link = selectedItem.url
                             discardDialog.show()
                         }

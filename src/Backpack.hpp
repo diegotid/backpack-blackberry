@@ -49,6 +49,7 @@ public:
     Q_INVOKABLE bool getIgnoreKeptQuickest();
     Q_INVOKABLE void setIgnoreKeptLounge(bool ignore);
     Q_INVOKABLE bool getIgnoreKeptLounge();
+    Q_INVOKABLE void readBookmark(QString uri);
     Q_INVOKABLE void browseBookmark(QString uri);
     Q_INVOKABLE void shuffleBookmark();
     Q_INVOKABLE QVariant quickestBookmark();
@@ -78,6 +79,8 @@ public:
     Q_INVOKABLE void refreshBookmarks();
     Q_INVOKABLE void refreshBookmarks(QString query);
     Q_INVOKABLE void fetchContent(QString url);
+    Q_INVOKABLE void add(QString url);
+    Q_INVOKABLE void add(QUrl url);
     void pocketPost(QUrl);
     void pocketArchiveDelete(qlonglong pocketId);
     void memoBookmark(QUrl url, QString memo);

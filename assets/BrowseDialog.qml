@@ -197,7 +197,7 @@ Page {
                 horizontalAlignment: HorizontalAlignment.Fill
                 topMargin: ui.sdu(4)
                 onClicked: {
-                    app.browseBookmark(bookmark.url)
+                    app.readBookmark(bookmark.url)
                     app.logEvent(readmode)
                     browseDialog.close()
                 }
