@@ -36,6 +36,16 @@ Container {
         horizontalAlignment: HorizontalAlignment.Fill
         opacity: 0.75
     }
+    
+    ImageView {
+        imageSource: "asset:///images/shadow.png"
+        scalingMethod: ScalingMethod.AspectFill
+        verticalAlignment: VerticalAlignment.Fill
+        horizontalAlignment: HorizontalAlignment.Fill
+        opacity: 0.75
+        rotationZ: 180
+        maxHeight: ui.sdu(5.7)
+    }
 
     Container {
         layout: StackLayout {}
@@ -46,7 +56,7 @@ Container {
             layout: StackLayout {
                 orientation: LayoutOrientation.LeftToRight
             }
-            topPadding: 10
+            topPadding: 7
             rightPadding: 10
             bottomPadding: 10
             leftPadding: 10

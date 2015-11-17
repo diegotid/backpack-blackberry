@@ -104,7 +104,7 @@ NavigationPane {
                     FreeTitleBar {
                         id: freeTitleBar
                         visible: !searchForm.visible
-                        verticalAlignment: VerticalAlignment.Center
+                        verticalAlignment: VerticalAlignment.Fill
                         horizontalAlignment: HorizontalAlignment.Fill
                     }
                     Container {
