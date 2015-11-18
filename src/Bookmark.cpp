@@ -270,17 +270,19 @@ void Bookmark::downloadFavicon(QNetworkReply *reply) {
 
 	QFile *iconFile = new QFile(QDir::home().absoluteFilePath(QString("icon.") % this->url.host() % QString(".png")));
 	iconFile->remove();
-	iconFile->open(QIODevice::ReadWrite);
+
+	if (iconFile->open(QIODevice::ReadWrite)) {
 	iconFile->write(reply->readAll());
 	iconFile->flush();
-	iconFile->close();
-	iconFile->deleteLater();
 
 	QFileInfo iconInfo(*iconFile);
 	this->favicon = iconInfo.absoluteFilePath();
 	data->execute("UPDATE Bookmark SET favicon = ? WHERE hash_url = ?", QVariantList() << this->favicon << this->hashUrl);
 
 	((Backpack*)this->parent())->updateFavicon(this->url, QUrl(this->favicon));
+	}
+	iconFile->close();
+	iconFile->deleteLater();
 
 	fetchingIcon = false;
 
@@ -297,22 +299,31 @@ void Bookmark::downloadImage(QNetworkReply *reply) {
 	extension = extension.right(extension.length() - extension.lastIndexOf("."));
 	if (extension.indexOf('?') > 0)
 		extension = extension.left(extension.indexOf('?'));
+    if (extension.indexOf('#') > 0)
+        extension = extension.left(extension.indexOf('#'));
+
 	QFile *imageFile = new QFile(QDir::home().absoluteFilePath(QString("img.") % QString::number(this->hashUrl) % extension));
 	imageFile->remove();
-	imageFile->open(QIODevice::ReadWrite);
+
+	if (imageFile->open(QIODevice::ReadWrite)) {
 	imageFile->write(reply->readAll());
 	imageFile->flush();
-	imageFile->close();
-	imageFile->deleteLater();
-
 	QFileInfo imageInfo(*imageFile);
 	this->image = imageInfo.absoluteFilePath();
 	data->execute("UPDATE Bookmark SET image = ? WHERE hash_url = ?", QVariantList() << this->image << this->hashUrl);
 
 	((Backpack*)this->parent())->updateImage(this->url, QUrl(this->image));
 
-    fetchingImage = false;
+	    QImage originalImage(this->image);
+	    if (originalImage.width() > 2048) {
+	        QImage smallerImage = originalImage.scaledToWidth(2048, Qt::FastTransformation);
+	        smallerImage.save(this->image);
+	    }
+	}
+	imageFile->close();
+	imageFile->deleteLater();
 
+    fetchingImage = false;
     if (!fetchingContent && !fetchingIcon) {
         network->deleteLater();
         emit downloadComplete(this->hashUrl);

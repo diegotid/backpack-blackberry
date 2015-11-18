@@ -85,10 +85,11 @@ Page {
                 id: backupsList
                 objectName: "backupsList"
 
+/*
                 dataModel: XmlDataModel {
                     source: "debug.xml"
                 }
-
+*/
                 listItemComponents: [
                                            
                     ListItemComponent {
