@@ -140,10 +140,14 @@ Page {
         }
         
         Container {
-            topPadding: ui.sdu(4)
-            leftPadding: ui.sdu(4)
-            rightPadding: ui.sdu(4)
-            bottomPadding: ui.sdu(5)
+            verticalAlignment: VerticalAlignment.Bottom
+            horizontalAlignment: HorizontalAlignment.Fill
+            
+            Container {
+                topPadding: ui.sdu(3)
+                leftPadding: ui.sdu(3)
+                rightPadding: ui.sdu(3)
+                bottomPadding: ui.sdu(3)
             verticalAlignment: VerticalAlignment.Bottom
             horizontalAlignment: HorizontalAlignment.Fill
             

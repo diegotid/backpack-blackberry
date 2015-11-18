@@ -424,7 +424,6 @@ NavigationPane {
                                     bottomPadding: 4
                                     Label {
                                         text: formatDate(ListItemData)
-//                                    textStyle.color: ui.palette.primary
                                         function formatDate(strDate) {
                                             if (strDate.substring(4,5) == "-") {
                                                 var today = new Date();
