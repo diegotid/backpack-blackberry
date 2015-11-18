@@ -48,7 +48,7 @@ const int Backpack::IMAGES = 4;
 
 Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
 
-	dbFile.setFileName(QDir::home().absoluteFilePath("backpack.db"));
+    dbFile.setFileName(QDir::home().absoluteFilePath("backpack.db"));
 	dbFile.open(QIODevice::ReadWrite);
 	data = new SqlDataAccess(dbFile.fileName(), "Backpack", this);
 
@@ -175,11 +175,34 @@ QString Backpack::getAppVersion() {
 }
 
 void Backpack::logEvent(QString mode) {
+QString Backpack::getOfflineDir() {
 
     Flurry::Analytics::LogEvent(mode);
+    if (currentDir == ARTICLES_DIR) {
+        currentDir = ".";
+        return ARTICLES_DIR;
+    } else {
+        return currentDir;
+    }
 }
 
+uint Backpack::getOfflineDirSize() {
+
+    uint size = 0;
+
+    QDir downloadDir;
+    downloadDir.setCurrent(QDir::homePath());
+    downloadDir.setCurrent("..");
+    if (downloadDir.setCurrent(QString("%1/%2").arg(ARTICLES_DIR).arg(APP_SUBDIR))) {
+        QFileInfoList downloadedFiles = downloadDir.entryInfoList(QDir::Files);
+        for (QFileInfoList::iterator df = downloadedFiles.begin(); df != downloadedFiles.end(); df++) {
+            size += df->size();
+        }
+    }
+
 bool Backpack::databaseExists() {
+    return size;
+}
 
 	data->execute("SELECT COUNT(pocket_id) FROM Bookmark");
 
@@ -189,12 +212,12 @@ bool Backpack::databaseExists() {
 void Backpack::createDatabase() {
 
 	data->execute("CREATE TABLE Bookmark (url VARCHAR(255), "
-										"title VARCHAR(255), "
-										"favicon VARCHAR(255), "
-										"memo VARCHAR(255), "
-										"time DATETIME, "
-										"size INTEGER, "
-										"keep BOOL)");
+	            "title VARCHAR(255), "
+	            "favicon VARCHAR(255), "
+	            "memo VARCHAR(255), "
+	            "time DATETIME, "
+	            "size INTEGER, "
+	            "keep BOOL)");
 
 	data->execute("ALTER TABLE Bookmark ADD image VARCHAR(255)"); // Added on 2.0 for Pocket integration
 	data->execute("ALTER TABLE Bookmark ADD pocket_id INTEGER"); // Added on 2.0 for Pocket integration
@@ -662,12 +685,13 @@ void Backpack::add(QString url) {
 
 void Backpack::add(QUrl url) {
 
-    if (1 <= data->execute("SELECT * FROM Bookmark WHERE hash_url = ?", QVariantList() << Bookmark::cleanUrlHash(url)).toList().size()) {
+    uint urlHash = Bookmark::cleanUrlHash(url);
+
+    if (1 <= data->execute("SELECT * FROM Bookmark WHERE hash_url = ?", QVariantList() << urlHash).toList().size()) {
         return;
     }
     logEvent("Add");
 
-    uint urlHash = Bookmark::cleanUrlHash(url);
     loading[urlHash] = new Bookmark(url, data, this);
     loading[urlHash]->fetchContent();
     bool res_loading_end = connect(loading[urlHash], SIGNAL(downloadComplete(uint)), this, SLOT(freeLoadingPage(uint)));
@@ -689,11 +713,23 @@ void Backpack::add(QUrl url) {
         bookmarksByURL->insert(newMap);
         bookmarksByDate->insert(newMap);
         mainPage->findChild<Page*>("browseListPage")->setProperty("listSize", bookmarksByURL->size());
+        mainPage->findChild<Page*>("settingsSheet")->setProperty("backpackCount", bookmarksByURL->size());
 
         if (bookmarksByURL->size() > 0) {
             updateActiveFrame(true);
             mainPage->findChild<Label*>("emptyHint")->setVisible(false);
             mainPage->setActiveTab(mainPage->findChild<Tab*>("exploreTab"));
+        }
+
+        if (!toBeRemovedFiles.empty()) {
+            QFileInfoList::iterator df = toBeRemovedFiles.begin();
+            while (df != toBeRemovedFiles.end()) {
+                if (df->fileName().indexOf(QString::number(urlHash)) >= 0) {
+                    df = toBeRemovedFiles.erase(df);
+                } else {
+                    df++;
+                }
+            }
         }
 	}
 }
@@ -765,13 +801,29 @@ void Backpack::browseBookmark(QString uri) {
 
 void Backpack::readBookmark(QString uri) {
 
-    pocketDownload(uri);
-
 	QUrl url(uri);
     QVariantMap queryMap;
     queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(url));
     QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
     QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
+
+    QDir downloadDir;
+    downloadDir.setCurrent(QDir::homePath());
+    downloadDir.setCurrent("..");
+    if (!downloadDir.setCurrent(QString("%1/%2").arg(ARTICLES_DIR).arg(APP_SUBDIR))) {
+        pocketDownload(uri);
+    } else {
+        QFile *jsonFile = new QFile(QString("%1.json").arg(queryMap["hash_url"].toString()));
+        if (jsonFile->open(QIODevice::ReadOnly)) {
+            JsonDataAccess json;
+            loadOffline(json.loadFromBuffer(jsonFile->readAll()).toMap());
+            jsonFile->close();
+            jsonFile->deleteLater();
+        } else {
+            pocketDownload(uri);
+        }
+    }
+
 	if (!getKeepAfterRead() && !bookmarkContent["keep"].toBool()) {
 		removeBookmark(url);
 	}
@@ -793,22 +845,7 @@ void Backpack::shuffleBookmark() {
 
     srand((unsigned)time(0));
     int randomNumber = rand() % ids.size();
-    QUrl url = ids.value(randomNumber).toMap().value("url").toUrl();
-
-    QVariantMap queryMap;
-    queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(url));
-    QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
-    QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
-    if (!getKeepAfterRead() && !bookmarkContent["keep"].toBool()) {
-        removeBookmark(url);
-    }
-
-    InvokeManager invokeSender;
-    InvokeRequest request;
-    request.setTarget("sys.browser");
-    request.setAction("bb.action.OPEN");
-    request.setUri(url);
-    invokeSender.invoke(request);
+    readBookmark(ids.value(randomNumber).toMap().value("url").toString());
 }
 
 QVariant Backpack::quickestBookmark() {
@@ -930,21 +967,29 @@ void Backpack::handleBookmarkComplete(QUrl page, int size) {
 
 void Backpack::updateImage(QUrl page, QUrl image) {
 
-    Label *urlLabel = invokedForm->findChild<Label*>("invokedURL");
+    updateImage(Bookmark::cleanUrlHash(page), image);
+}
 
-    if (page.toString() == urlLabel->text()) {
-        invokedForm->findChild<ImageView*>("invokedImage")->setImageSource(QString("file://").append(image.toString()));
+void Backpack::updateImage(uint hashUrl, QUrl image) {
+
+    Label *urlLabel = invokedForm->findChild<Label*>("invokedURL");
+    ImageView *imageView = invokedForm->findChild<ImageView*>("invokedImage");
+
+    if (hashUrl == Bookmark::cleanUrlHash(QUrl(urlLabel->text())) && imageView->imageSource().toString().contains("images/backpack.png")) {
+        imageView->setImageSource(QString("file://").append(image.toString()));
     }
 
 	if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
         QVariantMap queryMap;
-        queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(page));
+        queryMap["hash_url"] = QString::number(hashUrl);
         QVariantList indexPathByURL = bookmarksByURL->find(queryMap);
         QVariantMap bookmarkContent = bookmarksByURL->data(indexPathByURL).toMap();
         QVariantList indexPath = bookmarksByDate->findExact(bookmarkContent);
-        bookmarkContent["image"] = image.toString();
-        bookmarksByURL->updateItem(indexPathByURL, bookmarkContent);
-        bookmarksByDate->updateItem(indexPath, bookmarkContent);
+        if (bookmarkContent["image"].toString().length() <= 1) {
+            bookmarkContent["image"] = image.toString();
+            bookmarksByURL->updateItem(indexPathByURL, bookmarkContent);
+            bookmarksByDate->updateItem(indexPath, bookmarkContent);
+        }
 	}
 }
 
@@ -1052,20 +1097,10 @@ void Backpack::keepBookmark(QUrl url, bool keep) {
 
 void Backpack::removeBookmark(QString url) {
 
-	removeBookmark(QUrl(url), false);
-}
-
-void Backpack::removeBookmark(QString url, bool deliberate) {
-
-	removeBookmark(QUrl(url), deliberate);
+	removeBookmark(QUrl(url));
 }
 
 void Backpack::removeBookmark(QUrl url) {
-
-	removeBookmark(url, false);
-}
-
-void Backpack::removeBookmark(QUrl url, bool deliberate) {
 
     QVariantMap queryMap;
     queryMap["hash_url"] = QString::number(Bookmark::cleanUrlHash(url));
@@ -1088,9 +1123,21 @@ void Backpack::removeBookmark(QUrl url, bool deliberate) {
         Bookmark::remove(data, url);
     }
 
+    if (getOfflineMode()) {
+        QDir downloadDir;
+        downloadDir.setCurrent(QDir::homePath());
+        downloadDir.setCurrent("..");
+        if (downloadDir.setCurrent(QString("%1/%2").arg(ARTICLES_DIR).arg(APP_SUBDIR))) {
+            QStringList hashFilter;
+            hashFilter << QString("%1*").arg(urlHash);
+            toBeRemovedFiles << downloadDir.entryInfoList(hashFilter);
+        }
+    }
+
     if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
         bookmarksByURL->remove(queryMap);
         mainPage->findChild<Page*>("browseListPage")->setProperty("listSize", bookmarksByURL->size());
+        mainPage->findChild<Page*>("settingsSheet")->setProperty("backpackCount", bookmarksByURL->size());
         if (bookmarksByURL->size() == 0) {
             updateActiveFrame(true);
             mainPage->findChild<Label*>("emptyHint")->setVisible(true);
@@ -1098,6 +1145,7 @@ void Backpack::removeBookmark(QUrl url, bool deliberate) {
                 mainPage->setActiveTab(mainPage->findChild<Tab*>("putinTab"));
             }
         }
+        activeFrame->update(true);
     }
 }
 
@@ -1111,6 +1159,46 @@ void Backpack::launchSearchToPutin(QString query) {
 	invokeSender.invoke(request);
 }
 
+void Backpack::loadOffline(QVariantMap content) {
+
+    Page *readPage = mainPage->findChild<Page*>("readPage");
+    readPage->titleBar()->setTitle(content.value("title").toString());
+    readPage->findChild<Label*>("headerHost")->setText(content.value("host").toString());
+
+    bool isFavourite = false;
+    QString articleDates;
+    if (content.contains("datePublished")) {
+        QDate published = content.value("datePublished").toDate();
+        articleDates.append(published.toString());
+    }
+
+    uint hashUrl = Bookmark::cleanUrlHash(QUrl(content.value("resolvedUrl").toString()));
+
+    QVariantList existings = data->execute("SELECT time, keep FROM Bookmark WHERE hash_url = ?", QVariantList() << hashUrl).toList();
+    if (existings.length() > 0) {
+        QVariantMap bookmarkContent = existings.value(0).toMap();
+        isFavourite = bookmarkContent["keep"].toBool();
+        QDate added = bookmarkContent["time"].toDate();
+        articleDates.append((articleDates.length() > 0 ? " (added " : "Added ") % added.toString() % (articleDates.length() > 0 ? ")" : ""));
+    }
+
+    if (content.contains("article") && !content["article"].isNull()) {
+        // Online content
+        readPage->findChild<WebView*>("articleBody")->setProperty("body", content["article"]);
+    } else {
+        // Offline content
+        QFile *bodyFile = new QFile(QString("%1.html").arg(hashUrl));
+        if (bodyFile->exists()) {
+            checkOfflineImages(content);
+            readPage->findChild<WebView*>("articleBody")->setProperty("url", QString("file:////accounts/1000/%1/%2/%3").arg(ARTICLES_DIR).arg(APP_SUBDIR).arg(bodyFile->fileName()));
+        }
+    }
+    readPage->setProperty("isFavourite", isFavourite);
+    readPage->findChild<Label*>("headerDate")->setText(articleDates);
+    readPage->setProperty("hash", hashUrl);
+    readPage->setProperty("link", content.value("resolvedUrl").toString());
+}
+
 void Backpack::pocketConnect() {
 
 	QUrl query;
@@ -1118,13 +1206,14 @@ void Backpack::pocketConnect() {
 	query.addQueryItem("redirect_uri", ACKURL);
 
 	QNetworkRequest request(QUrl(QString("https://") % HOST % "/v3/oauth/request"));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
 	reply = network->post(request, query.encodedQuery());
 	bool res_posted = connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
     Q_ASSERT(res_posted);
     Q_UNUSED(res_posted);
 }
 
-void Backpack::pocketCleanContent() {
+void Backpack::emptyBackapck() {
 
     QList<uint> hashses = loading.keys();
 
@@ -1136,6 +1225,7 @@ void Backpack::pocketCleanContent() {
     bookmarksByDate->clear();
 
     mainPage->findChild<Page*>("browseListPage")->setProperty("listSize", 0);
+    mainPage->findChild<Page*>("settingsSheet")->setProperty("backpackCount", 0);
 
     data->execute("DELETE FROM Bookmark");
 
@@ -1145,6 +1235,25 @@ void Backpack::pocketCleanContent() {
     }
 
     updateActiveFrame(true);
+
+    downloading.empty();
+    downloadingImages.empty();
+    if (imgReply != NULL && imgReply->isRunning()) imgReply->abort();
+    if (betaReply != NULL && betaReply->isRunning()) betaReply->abort();
+
+    downloadingSize = 0;
+    downloadingProgress = 0;
+    mainPage->setProperty("progress", 0);
+
+    QDir downloadDir;
+    downloadDir.setCurrent(QDir::homePath());
+    downloadDir.setCurrent("..");
+    if (downloadDir.setCurrent(QString("%1/%2").arg(ARTICLES_DIR).arg(APP_SUBDIR))) {
+        QFileInfoList downloadedFiles = downloadDir.entryInfoList(QDir::Files);
+        for (QFileInfoList::iterator df = downloadedFiles.begin(); df != downloadedFiles.end(); df++) {
+            downloadDir.remove(df->fileName());
+        }
+    }
 }
 
 void Backpack::pocketCompleteAuth() {
@@ -1154,6 +1263,7 @@ void Backpack::pocketCompleteAuth() {
 	query.addQueryItem("code", requestToken);
 
 	QNetworkRequest request(QUrl(QString("https://") % HOST % "/v3/oauth/authorize"));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
 	reply = network->post(request, query.encodedQuery());
 	bool res_posted = connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
     Q_ASSERT(res_posted);
@@ -1162,18 +1272,28 @@ void Backpack::pocketCompleteAuth() {
 
 void Backpack::pocketRetrieve() {
 
+    pocketRetrieve(false);
+}
+
+void Backpack::pocketRetrieve(bool info) {
+
 	QSettings settings;
 	QVariantMap query;
 	query.insert("consumer_key", APIKEY);
 	query.insert("access_token", settings.value("pocketToken").toString());
 
-	if (!settings.value("pocketSynced").isNull()) {
-	    QDateTime debugSynced;
-	    debugSynced.setTime_t(settings.value("pocketSynced").toUInt());
-	    query.insert("since", debugSynced.toTime_t());
-	}
+	offlineCompleting = info;
 
-	mainPage->findChild<ActivityIndicator*>("syncingActivity")->setRunning(true);
+	if (info) {
+	    query.insert("detailType", "complete");
+	} else {
+	    mainPage->findChild<ActivityIndicator*>("syncingActivity")->setRunning(true);
+	    if (!settings.value("pocketSynced").isNull()) {
+	        QDateTime debugSynced;
+	        debugSynced.setTime_t(settings.value("pocketSynced").toUInt());
+	        query.insert("since", debugSynced.toTime_t());
+	    }
+	}
 
 	QByteArray queryArray;
 	JsonDataAccess json;
@@ -1181,10 +1301,28 @@ void Backpack::pocketRetrieve() {
 
 	QNetworkRequest request(QUrl(QString("https://") % HOST % "/v3/get"));
 	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=UTF-8");
-	reply = network->post(request, queryArray);
-	bool res_posted = connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
+
+	bool res_posted;
+	if (info) {
+        infoReply = network->post(request, queryArray);
+        res_posted = connect(infoReply, SIGNAL(finished()), this, SLOT(pocketHandleInfoPostFinished()));
+	} else {
+	    reply = network->post(request, queryArray);
+	    res_posted = connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
+	}
     Q_ASSERT(res_posted);
     Q_UNUSED(res_posted);
+}
+
+void Backpack::pocketProgressiveDownload(QString url) {
+
+    if (downloading.isEmpty()) {
+        initializeDownloadProgress();
+        pocketDownload(url);
+    }
+    downloading.append(url);
+    downloadingSize++;
+    mainPage->setProperty("progress", (float)downloadingProgress/(float)downloadingSize);
 }
 
 void Backpack::pocketDownload(QString url) {
@@ -1192,17 +1330,31 @@ void Backpack::pocketDownload(QString url) {
     QUrl query;
     query.addEncodedQueryItem("url", QUrl::toPercentEncoding(url));
     query.addQueryItem("consumer_key", APIKEY);
-    query.addQueryItem("images", "1");
-    query.addQueryItem("videos", "0");
-    query.addQueryItem("refresh", "0");
+    query.addQueryItem("images", (getOfflineMode() && getOfflineImages()) ? "0" : "1");
+    query.addQueryItem("videos", "1");
+    query.addQueryItem("refresh", "1");
     query.addQueryItem("output", "json");
 
-    QNetworkRequest request(QUrl(QString("http://") % TEXT_HOST % "/v3beta/text"));
-    reply = network->post(request, query.encodedQuery());
-    bool res_posted = connect(reply, SIGNAL(finished()), this, SLOT(pocketHandlePostFinished()));
-
+    QNetworkRequest request(QUrl(QString("http://") % TEXT_HOST % "/v3beta/text?hash=" % QString::number(Bookmark::cleanUrlHash(QUrl(url)))));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+    betaReply = network->post(request, query.encodedQuery());
+    bool res_posted = connect(betaReply, SIGNAL(finished()), this, SLOT(pocketHandleBetaPostFinished()));
     Q_ASSERT(res_posted);
     Q_UNUSED(res_posted);
+}
+
+void Backpack::initializeDownloadProgress() {
+
+    QDir downloadDir;
+    downloadDir.setCurrent(QDir::homePath());
+    downloadDir.setCurrent("..");
+    if (!downloadDir.setCurrent(QString("%1/%2").arg(ARTICLES_DIR).arg(APP_SUBDIR))) {
+        downloadingSize = 0;
+        downloadingProgress = 0;
+    } else {
+        downloadDir.setNameFilters(QStringList() << "*.json");
+        downloadingProgress = downloadingSize = downloadDir.entryInfoList(QDir::Files).count();
+    }
 }
 
 void Backpack::pocketPost(QUrl url) {
@@ -1247,138 +1399,117 @@ void Backpack::pocketArchiveDelete(qlonglong pocketId) {
 
 void Backpack::pocketHandlePostFinished() {
 
-	if (!reply->isFinished())
-		return;
+    if (!reply->isFinished()) {
+        return;
+    }
 
-	if (reply->request().url().toString().indexOf("v3/oauth/request") > 0) {
+    if (reply->request().url().toString().indexOf("v3/oauth/request") > 0) {
 
-		if (reply->rawHeader("Status").isNull() || reply->rawHeader("Status").indexOf("200 OK") != 0) {
-			mainPage->findChild<Page*>("pocketPage")->setProperty("error", "Error on connecting to server");
-			return;
-		}
-		requestToken = reply->readAll();
-		requestToken = requestToken.right(requestToken.length() - requestToken.indexOf("code=") - 5);
+        if (reply->rawHeader("Status").isNull() || reply->rawHeader("Status").indexOf("200 OK") != 0) {
+            mainPage->findChild<Page*>("pocketPage")->setProperty("error", "Error on connecting to server");
+            return;
+        }
+        requestToken = reply->readAll();
+        requestToken = requestToken.right(requestToken.length() - requestToken.indexOf("code=") - 5);
 
-		QString uri("https://");
-		uri.append(HOST);
-		uri.append("/auth/authorize?");
-		uri.append(QString("request_token=") % requestToken);
-		uri.append(QString("&redirect_uri=") % ACKURL);
+        QString uri("https://");
+        uri.append(HOST);
+        uri.append("/auth/authorize?");
+        uri.append(QString("request_token=") % requestToken);
+        uri.append(QString("&redirect_uri=") % ACKURL);
 
-		InvokeManager invokeSender;
-		InvokeRequest request;
-		request.setTarget("sys.browser");
-		request.setAction("bb.action.OPEN");
-		request.setUri(uri);
-		invokeSender.invoke(request);
+        InvokeManager invokeSender;
+        InvokeRequest request;
+        request.setTarget("sys.browser");
+        request.setAction("bb.action.OPEN");
+        request.setUri(uri);
+        invokeSender.invoke(request);
 
-	} else if (reply->request().url().toString().indexOf("v3/oauth/authorize") > 0) {
+    } else if (reply->request().url().toString().indexOf("v3/oauth/authorize") > 0) {
 
-		if (reply->rawHeader("Status").isNull() || reply->rawHeader("Status").indexOf("200 OK") != 0) {
-			mainPage->findChild<Page*>("pocketPage")->setProperty("error", "Error on authorizing Backpack");
-			return;
-		}
-		QByteArray response = reply->readAll();
-		QString username = response.right(response.length() - response.lastIndexOf('=') - 1).replace("%40", "@");
-		mainPage->setProperty("username", username);
-		mainPage->findChild<Page*>("pocketPage")->setProperty("username", username);
+        if (reply->rawHeader("Status").isNull() || reply->rawHeader("Status").indexOf("200 OK") != 0) {
+            mainPage->findChild<Page*>("pocketPage")->setProperty("error", "Error on authorizing Backpack");
+            return;
+        }
 
-		response = response.left(response.indexOf('&'));
-		QString accessToken = response.right(response.length() - response.lastIndexOf('=') - 1);
+        QByteArray response = reply->readAll();
+        QString username = response.right(response.length() - response.lastIndexOf('=') - 1).replace("%40", "@");
+        mainPage->setProperty("username", username);
 
-		QSettings settings;
-		settings.setValue("pocketUser", username);
-		settings.setValue("pocketToken", accessToken);
+        response = response.left(response.indexOf('&'));
+        QString accessToken = response.right(response.length() - response.lastIndexOf('=') - 1);
 
-		QVariantList existing = data->execute("SELECT url FROM Bookmark").toList();
-		for (int i = 0; i < existing.size(); i++) {
-			pocketPost(QUrl(existing.at(i).toMap().value("url").toString()));
-		}
-		pocketRetrieve();
+        QSettings settings;
+        settings.setValue("pocketUser", username);
+        settings.setValue("pocketToken", accessToken);
+        if (settings.value("offline").isNull()) {
+            settings.setValue("offline", false);
+        }
+        mainPage->findChild<Page*>("pocketPage")->setProperty("username", username);
 
-    } else if (reply->request().url().toString().indexOf("v3beta/text") > 0) {
+        QVariantList existing = data->execute("SELECT url, keep FROM Bookmark").toList();
+
+        pocketRetrieve(settings.value("offline").toBool());
+
+        QVariantMap bookmark;
+        for (int i = 0; i < existing.size(); i++) {
+            bookmark = existing.at(i).toMap();
+            pocketPost(QUrl(bookmark.value("url").toString()));
+            if (bookmark.value("keep").toBool()) {
+                favLegacy << bookmark.value("url").toString();
+            }
+        }
+
+    } else if (reply->request().url().toString().indexOf("v3/add") > 0) {
 
         if (reply->rawHeader("Status").isNull()
                 || reply->rawHeader("Status").indexOf("200 OK") != 0
                 || reply->error() != QNetworkReply::NoError) {
-            qDebug() << "Pocket error: " << reply->rawHeader("X-Error") << ", status: " << reply->rawHeader("Status");
+            mainPage->findChild<Page*>("pocketPage")->setProperty("error", "Error on adding new item. It will be automatically synced when possible");
             return;
         }
         JsonDataAccess json;
-        QVariantMap response = json.loadFromBuffer(reply->readAll()).toMap();
+        QVariantMap response = json.loadFromBuffer(reply->readAll()).toMap().value("item").toMap();
 
-        Page *readPage = mainPage->findChild<Page*>("readPage");
-        readPage->titleBar()->setTitle(response.value("title").toString());
-        readPage->findChild<Label*>("headerHost")->setText(response.value("host").toString());
+        qlonglong pocketId = response["item_id"].toLongLong();
+        QString pocketUrl = response["normal_url"].toString();
 
-        bool isFavourite = false;
-        QString articleDates;
-        if (response.contains("datePublished")) {
-            QDate published = response.value("datePublished").toDate();
-            articleDates.append(published.toString());
+        data->execute("UPDATE Bookmark SET pocket_id = ? WHERE hash_url = ?", QVariantList() << pocketId << Bookmark::cleanUrlHash(QUrl(pocketUrl)));
+
+    } else if (reply->request().url().toString().indexOf("v3/get") > 0) {
+
+        if (reply->rawHeader("Status").isNull() || reply->rawHeader("Status").indexOf("200 OK") != 0) {
+            mainPage->findChild<Page*>("pocketPage")->setProperty("error", "Error on retrieving contents");
+            QList<QObject*> pocketSignals = mainPage->findChildren<QObject*>("pocketErrorSignal");
+            for (int i = 0; i < pocketSignals.length(); i++) {
+                pocketSignals.at(i)->setProperty("visible", true);
+            }
+            return;
         }
-        QVariantList existings = data->execute("SELECT time, keep FROM Bookmark WHERE hash_url = ?", QVariantList() << Bookmark::cleanUrlHash(QUrl(response.value("resolvedUrl").toString()))).toList();
-        if (existings.length() > 0) {
-            QVariantMap bookmarkContent = existings.value(0).toMap();
-            isFavourite = bookmarkContent["keep"].toBool();
-            QDate added = bookmarkContent["time"].toDate();
-            articleDates.append((articleDates.length() > 0 ? " (added " : "Added ") % added.toString() % (articleDates.length() > 0 ? ")" : ""));
-        }
-        readPage->setProperty("isFavourite", isFavourite);
-        readPage->findChild<Label*>("headerDate")->setText(articleDates);
-        readPage->findChild<WebView*>("articleBody")->setProperty("body", response.value("article").toString());
-        readPage->setProperty("link", response.value("resolvedUrl").toString());
 
-    } else if (reply->request().url().toString().indexOf("v3/add") > 0) {
+        JsonDataAccess json;
+        QByteArray temp = reply->readAll();
+        QVariantMap response = json.loadFromBuffer(temp).toMap();
 
-		if (reply->rawHeader("Status").isNull()
-				|| reply->rawHeader("Status").indexOf("200 OK") != 0
-				|| reply->error() != QNetworkReply::NoError) {
-			mainPage->findChild<Page*>("pocketPage")->setProperty("error", "Error on adding new item. It will be automatically synced when possible");
-			return;
-		}
-		JsonDataAccess json;
-		QVariantMap response = json.loadFromBuffer(reply->readAll()).toMap().value("item").toMap();
+        QVariantList retrieved = response["list"].toMap().values();
+        QString lastSynced = response["since"].toString();
 
-		qlonglong pocketId = response.value("item_id").toLongLong();
-		QString pocketUrl = response.value("normal_url").toString();
+        QSettings settings;
+        settings.setValue("pocketSynced", lastSynced);
 
-		data->execute("UPDATE Bookmark SET pocket_id = ? WHERE hash_url = ?", QVariantList() << pocketId << Bookmark::cleanUrlHash(QUrl(pocketUrl)));
-
-	} else if (reply->request().url().toString().indexOf("v3/get") > 0) {
-
-		if (reply->rawHeader("Status").isNull() || reply->rawHeader("Status").indexOf("200 OK") != 0) {
-			mainPage->findChild<Page*>("pocketPage")->setProperty("error", "Error on retrieving contents");
-			QList<QObject*> pocketSignals = mainPage->findChildren<QObject*>("pocketErrorSignal");
-			for (int i = 0; i < pocketSignals.length(); i++) {
-				pocketSignals.at(i)->setProperty("visible", true);
-			}
-			return;
-		}
-
-		JsonDataAccess json;
-		QByteArray temp = reply->readAll();
-		QVariantMap response = json.loadFromBuffer(temp).toMap();
-
-		QVariantList retrieved = response.value("list").toMap().values();
-		QString lastSynced = response.value("since").toString();
-
-		QSettings settings;
-		settings.setValue("pocketSynced", lastSynced);
-
-		QDateTime debugSynced;
-		debugSynced.setTime_t(lastSynced.toUInt());
+        QDateTime debugSynced;
+        debugSynced.setTime_t(lastSynced.toUInt());
 
         QVariantList toInsert;
         QVariantList toUpdate;
         QVariantList toDelete;
 
-		for (int i = 0; i < retrieved.size(); i++) {
-			QVariantMap item = retrieved.value(i).toMap();
-			QUrl url(item.value("resolved_url").toString());
-			uint urlHash = Bookmark::cleanUrlHash(url);
-			if (urlHash == 0) continue;
-			switch (item.value("status").toInt()) {
+        for (int i = 0; i < retrieved.size(); i++) {
+            QVariantMap item = retrieved.value(i).toMap();
+            QUrl url(item.value("resolved_url").toString());
+            uint urlHash = Bookmark::cleanUrlHash(url);
+            if (urlHash == 0) continue;
+            switch (item.value("status").toInt()) {
                 case 1:
                 case 2:
                     toDelete << QVariant::fromValue(QVariantList() << urlHash);
@@ -1388,31 +1519,224 @@ void Backpack::pocketHandlePostFinished() {
                     break;
                 default:
                     qlonglong pocketId = item.value("item_id").toLongLong();
-                    int size = 10000 * item.value("word_count").toInt() / 180; // Average 180 words per minute on a monitor; Assumed 10000 bytes per minute
+                    int size = 10000 * item.value("word_count").toInt() / WORDS_MINUTE;
                     QString title = item.value("resolved_title").toString();
-                    bool favorited = item.value("favorite").toBool();
+                    bool favorited = item.value("favorite").toBool()
+                            || favLegacy.contains(item.value("resolved_url").toString());
                     QDateTime pocketAdded = QDateTime::fromTime_t(item.value("time_added").toInt());
                     if (1 > data->execute("SELECT COUNT(*) number FROM Bookmark WHERE hash_url = ?", QVariantList() << urlHash).toList().value(0).toMap().value("number").toInt()) {
                         toInsert << QVariant::fromValue(QVariantList() << url.toString() << urlHash << title << size << favorited << pocketId << pocketAdded);
+                        if (getOfflineMode() && (!getOfflineWiFi() || onWiFi())) {
+                            pocketProgressiveDownload(url.toString());
+                        } else if (getOfflineMode() && !onWiFi()) {
+                            startPendingTimer();
+                        }
                     } else {
                         toUpdate << QVariant::fromValue(QVariantList() << pocketId << size << favorited << pocketAdded << urlHash);
                     }
                     break;
-			}
-		}
+            }
+        }
         data->executeBatch("INSERT INTO Bookmark (url, hash_url, title, size, keep, pocket_id, time) VALUES (?, ?, ?, ?, ?, ?, ?)", toInsert);
         data->executeBatch("UPDATE Bookmark SET pocket_id = ?, size = ?, keep = ?, time = ? WHERE hash_url = ?", toUpdate);
         data->executeBatch("DELETE FROM Bookmark WHERE hash_url = ?", toDelete);
 
-		mainPage->findChild<Container*>("syncingIndicator")->setVisible(false);
-		QList<QObject*> pocketSignals = mainPage->findChildren<QObject*>("pocketConnSignal");
-		for (int i = 0; i < pocketSignals.length(); i++) {
-			pocketSignals.at(i)->setProperty("visible", true);
-		}
+        for (int i = 0; i < favLegacy.count(); i++) {
+            keepBookmark(favLegacy.at(i), true);
+        }
+        favLegacy.empty();
 
-		refreshBookmarks();
-	    updateActiveFrame(true);
-	}
+        mainPage->findChild<Container*>("syncingIndicator")->setVisible(false);
+        QList<QObject*> pocketSignals = mainPage->findChildren<QObject*>("pocketConnSignal");
+        for (int i = 0; i < pocketSignals.length(); i++) {
+            pocketSignals.at(i)->setProperty("visible", true);
+        }
+
+        refreshBookmarks();
+        updateActiveFrame(true);
+    }
+}
+
+void Backpack::pocketHandleInfoPostFinished() {
+
+    if (!infoReply->isFinished()) {
+        return;
+    }
+
+    if (infoReply->request().url().toString().indexOf("v3/get") > 0) {
+
+        if (infoReply->rawHeader("Status").isNull() || infoReply->rawHeader("Status").indexOf("200 OK") != 0) {
+            return;
+        }
+
+        JsonDataAccess json;
+        QByteArray temp = infoReply->readAll();
+        QVariantMap response = json.loadFromBuffer(temp).toMap();
+
+        headingSize = 0;
+        headingImagesSize = 0;
+        headingImages.empty();
+        QVariantList retrieved = response["list"].toMap().values();
+
+        QVariantList images;
+        for (QVariantList::iterator item = retrieved.begin(); item != retrieved.end(); item++) {
+            headingSize += (*item).toMap().value("word_count").toInt() * BYTES_WORD;
+            images = (*item).toMap().value("images").toMap().values();
+            for (QVariantList::iterator image = images.begin(); image != images.end(); image++) {
+                headingImages << (*image).toMap().value("src").toString();
+            }
+        }
+
+        if (headingImages.count() < MAX_IMAGES) {
+            imageInfoPost();
+        } else {
+            headingImagesSize = IMAGES_SIZE * 1024 * headingImages.count();
+            mainPage->findChild<Page*>("pocketPage")->setProperty("images", headingImagesSize);
+            mainPage->findChild<Page*>("pocketPage")->setProperty("fulldownload", headingSize + headingImagesSize);
+        }
+    }
+}
+
+void Backpack::imageInfoPost() {
+
+    if (headingImages.isEmpty()) {
+        mainPage->findChild<Page*>("pocketPage")->setProperty("images", headingImagesSize);
+        mainPage->findChild<Page*>("pocketPage")->setProperty("fulldownload", headingSize + headingImagesSize);
+        return;
+    }
+
+    QString resolvedUrl = headingImages.first().toString();
+    headingImages.removeFirst();
+
+    bool res_posted;
+    infoReply = network->head(QNetworkRequest(QUrl(resolvedUrl)));
+    res_posted = connect(infoReply, SIGNAL(finished()), this, SLOT(handleHeadFinished()));
+    Q_ASSERT(res_posted);
+    Q_UNUSED(res_posted);
+}
+
+void Backpack::handleHeadFinished() {
+
+    if (!infoReply->isFinished()) {
+        return;
+    }
+
+    QUrl redirect = infoReply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
+    if (redirect.isValid()) {
+        if (redirect.isRelative()) {
+            redirect.setScheme(reply->url().scheme());
+            redirect.setHost(reply->url().host());
+        }
+        network->head(QNetworkRequest(redirect));
+    } else {
+        headingImagesSize += infoReply->header(QNetworkRequest::ContentLengthHeader).toUInt();
+        imageInfoPost();
+    }
+}
+
+void Backpack::pocketHandleBetaPostFinished() {
+
+    if (!betaReply->isFinished())
+        return;
+
+    QString requestUrl = betaReply->request().url().toString();
+
+    if (requestUrl.indexOf("v3beta/text") > 0) {
+
+        if (betaReply->rawHeader("Status").isNull()
+                || betaReply->rawHeader("Status").indexOf("200 OK") != 0
+                || betaReply->error() != QNetworkReply::NoError) {
+            return;
+        }
+        JsonDataAccess json;
+        QVariantMap response = json.loadFromBuffer(betaReply->readAll()).toMap();
+
+        bool finished = true;
+
+        if (getOfflineMode()) {
+
+            uint hashUrl = requestUrl.right(requestUrl.length() - requestUrl.indexOf('=') - 1).toUInt();
+
+            QString article = response["article"].toString();
+            QString body = QString("<html><head>%1</head><body><h1>%2</h1>%3</body></html>")
+                                    .arg(HTML_STYLE)
+                                    .arg(response["title"].toString())
+                                    .arg(article);
+            response["hash"] = hashUrl;
+            response.remove("article");
+
+            QVariantMap image;
+            QVariantList images = response["images"].toMap().values();
+            if (getOfflineImages()) {
+                for (int i = 0; i < images.size(); i++) {
+                    image = images.at(i).toMap();
+                    QString ext = image["src"].toString();
+                    ext = ext.right(ext.length() - ext.lastIndexOf('.') - 1);
+                    body.replace(QString("<!--IMG_%1-->").arg(i + 1), QString("<img src=\"%1-%2.%3\"/>").arg(hashUrl).arg(i + 1).arg(ext));
+                    image["hash"] = hashUrl;
+                    downloadingImages.append(image);
+                    downloadingSize++;
+                    mainPage->setProperty("progress", (float)downloadingProgress/(float)downloadingSize);
+                }
+            }
+
+            QDir downloadDir;
+            downloadDir.setCurrent(QDir::homePath());
+            downloadDir.setCurrent("..");
+            if (!downloadDir.setCurrent(QString("%1/%2").arg(ARTICLES_DIR).arg(APP_SUBDIR))) {
+                downloadDir.setCurrent(ARTICLES_DIR);
+                downloadDir.mkdir(APP_SUBDIR);
+                downloadDir.setCurrent(APP_SUBDIR);
+            }
+
+            QFile *jsonFile = new QFile(QString("%1.json").arg(hashUrl));
+            jsonFile->remove();
+            jsonFile->open(QIODevice::ReadWrite);
+            json.save((QVariant)response, jsonFile);
+            jsonFile->flush();
+            jsonFile->close();
+            jsonFile->deleteLater();
+
+            QFile *htmlFile = new QFile(QString("%1.html").arg(hashUrl));
+            htmlFile->remove();
+            htmlFile->open(QIODevice::ReadWrite);
+            htmlFile->write(body.toAscii());
+            htmlFile->flush();
+            htmlFile->close();
+            htmlFile->deleteLater();
+
+            if (!downloading.isEmpty()) {
+                downloading.removeFirst();
+                downloadingProgress++;
+                mainPage->setProperty("progress", (float)downloadingProgress/(float)downloadingSize);
+            }
+
+            if (!downloading.isEmpty()) {
+                finished = false;
+                pocketDownload(downloading.first().toString());
+            }
+
+            if (getOfflineImages() && !images.empty() && downloadingImages.size() == images.size()) {
+                finished = false;
+                QNetworkRequest offlineImage(QUrl(images.first().toMap().value("src").toString()));
+                imgReply = network->get(offlineImage);
+            }
+        }
+
+        if (mainPage->findChild<NavigationPane*>("articlesPane")->count() > 1) {
+            Page *readPage = mainPage->findChild<Page*>("readPage");
+            if (readPage && readPage->property("hash").isNull()) {
+                loadOffline(response);
+            }
+        }
+
+        if (finished && downloadingImages.isEmpty()) {
+            downloadingSize = 0;
+            downloadingProgress = 0;
+            mainPage->setProperty("progress", 1);
+            mainPage->findChild<Page*>("aboutSheet")->setProperty("taken", getOfflineDirSize());
+        }
+    }
 }
 
 bool Backpack::pocketGetSynconstartup() {
@@ -1463,7 +1787,38 @@ void Backpack::pocketDisconnect() {
 	data->execute("UPDATE Bookmark SET pocket_id = NULL");
 }
 
+bool Backpack::onWiFi() {
+
+    foreach (QNetworkInterface interface, QNetworkInterface::allInterfaces()) {
+        if (interface.flags().testFlag(QNetworkInterface::IsUp)
+                && interface.name().compare(QString("bcm0")) == 0
+                && interface.addressEntries().count() > 1) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 Backpack::~Backpack() {
+
+    QSettings settings;
+    if (offlineCompleting && settings.contains("pocketUser")) {
+        settings.remove("pocketUser");
+        settings.remove("pocketTocken");
+        settings.remove("pocketSynced");
+        settings.remove("pocketInterval");
+        data->execute("UPDATE Bookmark SET pocket_id = NULL");
+    }
+
+    QDir downloadDir;
+    downloadDir.setCurrent(QDir::homePath());
+    downloadDir.setCurrent("..");
+    if (downloadDir.setCurrent(QString("%1/%2").arg(ARTICLES_DIR).arg(APP_SUBDIR))) {
+        for (QFileInfoList::iterator df = toBeRemovedFiles.begin(); df != toBeRemovedFiles.end(); df++) {
+            downloadDir.remove(df->fileName());
+        }
+    }
 
 	data->connection().close();
 	dbFile.close();
