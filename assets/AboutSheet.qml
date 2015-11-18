@@ -69,8 +69,7 @@ Page {
 			Container {
 
                 Label {
-                text: "Backpack 3.0"
-                textStyle.fontWeight: FontWeight.Bold
+                    text: "Backpack 3.1"
                     textStyle.fontSize: FontSize.Large
                 }
 
@@ -147,9 +146,8 @@ Page {
                 Label {
                     multiline: true
                     text: "New in this version:"
-                    + "\n- New design of user interface"
-                    + "\n- New reading preamble screen"
-                    + "\n- Support for 10.3 Passport, Classic and Leap"
+                    + "\n- Offline mode"
+                    + "\n- Lots of improvements"
                 }
                 
                 Container {
