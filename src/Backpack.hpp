@@ -37,6 +37,8 @@ class Backpack : public QObject {
 public:
     Backpack(bb::cascades::Application *app);
     Q_INVOKABLE void logEvent(QString mode);
+    Q_INVOKABLE bool isPremium();
+    Q_INVOKABLE void setPremium();
     Q_INVOKABLE bool getSettingsUnderstood();
     Q_INVOKABLE void setSettingsUnderstood();
     Q_INVOKABLE void setKeepAfterRead(bool keep);

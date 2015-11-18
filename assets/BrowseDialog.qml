@@ -50,17 +50,24 @@ Page {
         title: readmode + " reading"
         
         dismissAction: ActionItem {
-            title: "Cancel"            
+            title: "Close"            
             onTriggered: {
                 readmode = "Backpack"
+                offset = 0
                 browseDialog.close()
             }
         }
         
         acceptAction: ActionItem {
-            title: "Next"
+            title: "Skip"
             id: nextButton
-            onTriggered: jumpToNext()
+            onTriggered: {
+                if (app.isPremium()) {
+                    jumpToNext()
+                } else {
+                    browseDialog.parent.parent.parent.startPurchase()
+                }
+            }
         }
     }
     

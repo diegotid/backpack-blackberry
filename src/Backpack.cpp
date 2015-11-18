@@ -212,12 +212,37 @@ bool Backpack::databaseExists() {
 void Backpack::createDatabase() {
 
 	data->execute("CREATE TABLE Bookmark (url VARCHAR(255), "
+    bool legacy = false;
 	            "title VARCHAR(255), "
 	            "favicon VARCHAR(255), "
 	            "memo VARCHAR(255), "
 	            "time DATETIME, "
 	            "size INTEGER, "
 	            "keep BOOL)");
+	} else {
+	    legacy = true;
+        legacy = false;
+    } else {
+        legacy = false;
+
+    QSettings settings;
+    if (settings.value("premium").isNull())
+        settings.setValue("premium", legacy);
+bool Backpack::isPremium() {
+
+    QSettings settings;
+    if (settings.value("premium").isNull())
+        settings.setValue("premium", false);
+
+    return settings.value("premium").toBool();
+}
+
+void Backpack::setPremium() {
+
+    QSettings settings;
+    settings.setValue("premium", true);
+}
+
 
 	data->execute("ALTER TABLE Bookmark ADD image VARCHAR(255)"); // Added on 2.0 for Pocket integration
 	data->execute("ALTER TABLE Bookmark ADD pocket_id INTEGER"); // Added on 2.0 for Pocket integration

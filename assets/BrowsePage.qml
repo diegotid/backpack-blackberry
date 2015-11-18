@@ -1,11 +1,61 @@
 
 import bb.cascades 1.4
+import bb.platform 1.2
 import bb.system 1.0
 
 NavigationPane {
     id: articlesPane
     objectName: "articlesPane"
     
+    attachedObjects: [
+        PaymentManager {
+            id: payment
+            windowGroupId: Application.mainWindow.groupId
+            onPurchaseFinished: {
+                if (reply.errorCode == 0) {
+                    app.setPremium()
+                    premiumDialog.body = "Purchase completed!"
+                                            + "\n\nFeatures unlocked:"
+                                            + "\n- Article search"
+                                            + "\n- Reading specific articles"
+                                            + "\n- Article skipping on Lounge & Quickest"
+                    premiumDialog.cancelButton.label = "Check it!"
+                    premiumDialog.confirmButton.label = undefined
+                    premiumDialog.show()
+                } else {
+                    premiumDialog.body = "Purchase didn't complete: " + reply.errorText
+                    premiumDialog.cancelButton.label = "Try later"
+                    premiumDialog.confirmButton.label = "Try again now"
+                    premiumDialog.show()
+                }
+            }
+            onPriceFinished: {
+                premiumDialog.body += ": " + reply.price
+                premiumDialog.show()
+            }
+        }
+    ]
+/*    
+    onCreationCompleted: {
+        payment.setConnectionMode(0)
+    }
+*/  
+    function startPurchase() {
+        premiumDialog.body = "The following premium features are only available on the full version of Backpack:"
+                                + "\n- Article search"
+                                + "\n- Reading specific articles"
+                                + "\n- Article skipping on Lounge & Quickest"
+                                + "\n\nOne-time single payment"
+        premiumDialog.cancelButton.label = "Maybe later"
+        premiumDialog.confirmButton.label = "Get it now!"
+        premiumDialog.show()
+        payment.requestPrice("", "SKU59983351")
+    }
+    
+    function confirmPurchase() {
+        payment.requestPurchase("", "SKU59983351")
+    }
+
     property bool filterExpand: false
 
     property Page readPage
@@ -85,12 +135,14 @@ NavigationPane {
         keyListeners: [
             KeyListener {
                 onKeyReleased: {
+                    if (app.isPremium()) {
                     searchForm.visible = true
                     if (!query.focused) {
                         query.text = query.text + event.unicode
                         query.requestFocus()
                     }
                 }
+            }   
             }   
         ]
         
@@ -257,7 +309,11 @@ NavigationPane {
                 imageSource: "asset:///images/menuicons/ic_search.png"
                 ActionBar.placement: ActionBarPlacement.OnBar
                 onTriggered: {    
+                    if (app.isPremium()) {
                     searchForm.visible = true
+                    } else {
+                        startPurchase()
+                    }
                 }
             }
         ]
@@ -311,6 +367,15 @@ NavigationPane {
                         }
                     } else if (result == SystemUiResult.CustomButtonSelection) {
                         settingsSheet.open()
+                    }
+                }
+            },
+            SystemDialog {
+                id: premiumDialog
+                title: "Get Backpack full version"
+                onFinished: {
+                    if (result == SystemUiResult.ConfirmButtonSelection) {
+                        confirmPurchase()
                     }
                 }
             }
@@ -621,6 +686,7 @@ NavigationPane {
                     ]
                     
                     onTriggered: {
+                        if (app.isPremium()) {
                         var selectedItem = dataModel.data(indexPath)
                         if (app.getSettingsUnderstood() || app.getKeepAfterRead()) {
                             performRead(selectedItem.url)
@@ -628,6 +694,9 @@ NavigationPane {
                             discardDialog.mode = "Read"
                             discardDialog.link = selectedItem.url
                             discardDialog.show()
+                        }
+                        } else {
+                            startPurchase()
                         }
                     }
                     
