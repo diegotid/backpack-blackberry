@@ -2,7 +2,7 @@
 import bb.cascades 1.4
 
 Page {
-    
+
     actionBarVisibility: ChromeVisibility.Overlay
     actionBarAutoHideBehavior: ActionBarAutoHideBehavior.HideOnScroll
 
@@ -19,6 +19,10 @@ Page {
         freeTitleBar.username = username
     }
     
+    function updateProgress(progress) {
+        freeTitleBar.progress = progress
+    }
+    
     attachedObjects: [
         Sheet {
             id: pocketSheet
@@ -30,7 +34,8 @@ Page {
     ]
     
     function pocketState() {
-        pocketPage.state = freeTitleBar.username.length > 0 ? "on" : "why"
+        pocketPage.username = freeTitleBar.username
+        pocketPage.state = "why"
         pocketSheet.open()
     }
     
@@ -40,7 +45,7 @@ Page {
             imageSource: "asset:///images/menuicons/pocket.png"
             ActionBar.placement: ActionBarPlacement.Signature
             onTriggered: {
-                pocketPage.state = (username == "") ? "sync" : "on"
+                pocketPage.state = "sync"
                 pocketSheet.open()
             }
         },

@@ -67,8 +67,18 @@ NavigationPane {
     }    
     onPopTransitionEnded: readPage.destroy()
     
+    function preparePopTransition() {
+        if (readPage && browseDialog.offset > 0) {
+            browseSheet.open()
+        }
+    }
+    
     function updateUsername(username) {
         freeTitleBar.username = username
+    }
+    
+    function updateProgress(progress) {
+        freeTitleBar.progress = progress
     }
 
     function performRead(link) {
@@ -80,6 +90,9 @@ NavigationPane {
     }
     
     function performShuffle() {
+        var articlePage = getReadPage()
+        articlePage.reset()
+        articlesPane.push(articlePage)
         app.shuffleBookmark()
         app.logEvent("Shuffle")
     }
@@ -103,15 +116,13 @@ NavigationPane {
     Page {
         id: browseListPage
         objectName: "browseListPage"
-        
+
         actionBarVisibility: ChromeVisibility.Overlay
         actionBarAutoHideBehavior: ActionBarAutoHideBehavior.HideOnScroll
         
         property int listSize
-        onListSizeChanged: {
-            emptySearchHint.visible = (listSize == 0)
-        }
-        
+        onListSizeChanged: updateEmptyLabel()
+
         function updateEmptyLabel() {    
             var tale = query.text.toString().trim().length > 0 ? " found" : ""
             switch (filterType.selectedOption.value) {
@@ -136,13 +147,13 @@ NavigationPane {
             KeyListener {
                 onKeyReleased: {
                     if (app.isPremium()) {
-                    searchForm.visible = true
-                    if (!query.focused) {
-                        query.text = query.text + event.unicode
-                        query.requestFocus()
+                        searchForm.visible = true
+                        if (!query.focused) {
+                            query.text = query.text + event.unicode
+                            query.requestFocus()
+                        }
                     }
                 }
-            }   
             }   
         ]
         
@@ -184,7 +195,6 @@ NavigationPane {
                             input.submitKeyFocusBehavior: SubmitKeyFocusBehavior.Lose
                             onTextChanging: {
                                 app.refreshBookmarks(query.text.trim())
-                                browseListPage.updateEmptyLabel()
                             }
                             onFocusedChanged: {
                                 if (focused) {
@@ -203,7 +213,6 @@ NavigationPane {
                                 query.text = ""
                                 filterType.selectedOption = filterType.options[0]
                                 app.refreshBookmarks()
-                                browseListPage.updateEmptyLabel()
                             }
                         }
                     }
@@ -216,7 +225,6 @@ NavigationPane {
                         objectName: "filterType"
                         onSelectedOptionChanged: {
                             app.refreshBookmarks(query.text.trim())
-                            browseListPage.updateEmptyLabel()
                             filterExpand = false
                         }
                         options: [
@@ -265,6 +273,7 @@ NavigationPane {
                         discardDialog.show()
                     }
                 }
+                enabled: browseListPage.listSize > 0
             },
             ActionItem {
                 title: "Lounge"
@@ -278,6 +287,7 @@ NavigationPane {
                         discardDialog.show()
                     }
                 }
+                enabled: browseListPage.listSize > 0
             },
             ActionItem {
                 title: "Quickest"
@@ -291,26 +301,30 @@ NavigationPane {
                         discardDialog.show()
                     }
                 }
+                enabled: browseListPage.listSize > 0
             },
             ActionItem {
                 title: "Newest"
                 imageSource: "asset:///images/menuicons/ic_to_top.png"
                 ActionBar.placement: ActionBarPlacement.OnBar
                 onTriggered: bookmarks.scrollToPosition(ScrollPosition.Beginning, ScrollAnimation.Smooth)
+                enabled: browseListPage.listSize > 0
             },
             ActionItem {
                 title: "Oldest"
                 imageSource: "asset:///images/menuicons/ic_to_bottom.png"
                 ActionBar.placement: ActionBarPlacement.OnBar
                 onTriggered: bookmarks.scrollToPosition(ScrollPosition.End, ScrollAnimation.Smooth)
+                enabled: browseListPage.listSize > 0
             },
             ActionItem {
                 title: "Search"
                 imageSource: "asset:///images/menuicons/ic_search.png"
                 ActionBar.placement: ActionBarPlacement.OnBar
+                enabled: browseListPage.listSize > 0
                 onTriggered: {    
                     if (app.isPremium()) {
-                    searchForm.visible = true
+                        searchForm.visible = true
                     } else {
                         startPurchase()
                     }
@@ -342,7 +356,7 @@ NavigationPane {
             },
             SystemDialog {
                 id: discardDialog
-                title: "Read settings"
+                title: "Persistence options"
                 body: "Under current settings non-favorited articles are removed after read to keep your Backpack organized"
                 customButton.label: "Settings"
                 confirmButton.label: "Understood"
@@ -403,8 +417,8 @@ NavigationPane {
                     scrollRole: ScrollRole.Main
                     
 /*                dataModel: XmlDataModel {
-                     source: "debug.xml"
-                  }
+                        source: "debug.xml"
+                    }
 */                
                     listItemComponents: [
                         
@@ -492,23 +506,21 @@ NavigationPane {
                                         DeleteActionItem {
                                             onTriggered: {
                                                 bookmark.ListItem.view.dataModel.remove(ListItemData)
-                                                if (bookmark.ListItem.view.dataModel.isEmpty()) {
-                                                    bookmark.ListItem.view.setContentTabsEnabled(false);
-                                                }
+                                                bookmark.ListItem.view.updateListSize()
                                                 deletedBookmark.deletedItem = ListItemData
                                                 deletedBookmark.show()
                                             }                                   
                                             attachedObjects: [
                                                 SystemToast {
                                                     id: deletedBookmark
-                                                    body: deletedItem ? "Bookmark deleted: " + deletedItem.title : ""
+                                                    body: deletedItem ? "Article deleted: " + deletedItem.title : ""
                                                     button.label: "Undo"
                                                     button.enabled: true 
                                                     property variant deletedItem
                                                     onFinished: {
                                                         if (result == SystemUiResult.ButtonSelection) {
                                                             bookmark.ListItem.view.dataModel.insert(deletedItem)
-                                                            bookmark.ListItem.view.setContentTabsEnabled(true);
+                                                            bookmark.ListItem.view.updateListSize()
                                                         } else {
                                                             bookmark.ListItem.view.deleteBookmark(deletedItem)
                                                         }
@@ -547,7 +559,9 @@ NavigationPane {
                                         maxHeight: rowHandler.layoutFrame.height
                                         
                                         ImageView {
-                                            imageSource: ListItemData.image && ListItemData.image.toString().length > 1 ? "file://" + ListItemData.image : "asset:///images/backpack.png" // length > 1 is for '.'  meaning no image available 
+                                            imageSource: (ListItemData.image && ListItemData.image.toString().length > 1)
+                                                ? "file://" + ListItemData.image // length > 1 is for '.'  meaning no image available
+                                                : (ListItemData.first_img ? "file://" + ListItemData.first_img : "asset:///images/backpack.png") 
                                             scalingMethod: ScalingMethod.AspectFill
                                             verticalAlignment: VerticalAlignment.Fill
                                             horizontalAlignment: HorizontalAlignment.Fill
@@ -686,14 +700,16 @@ NavigationPane {
                     
                     onTriggered: {
                         if (app.isPremium()) {
-                        var selectedItem = dataModel.data(indexPath)
-                        if (app.getSettingsUnderstood() || app.getKeepAfterRead()) {
-                            performRead(selectedItem.url)
-                        } else {
-                            discardDialog.mode = "Read"
-                            discardDialog.link = selectedItem.url
-                            discardDialog.show()
-                        }
+                            var selectedItem = dataModel.data(indexPath)
+                            if (selectedItem.keep == "true"
+                            || app.getSettingsUnderstood()
+                            || app.getKeepAfterRead()) {
+                                performRead(selectedItem.url)
+                            } else {
+                                discardDialog.mode = "Read"
+                                discardDialog.link = selectedItem.url
+                                discardDialog.show()
+                            }
                         } else {
                             startPurchase()
                         }
@@ -717,7 +733,7 @@ NavigationPane {
                     }
                     
                     function deleteBookmark(ListItemData) {
-                        app.removeBookmark(ListItemData.url, true);
+                        app.removeBookmark(ListItemData.url);
                     }
                     
                     function toggleKeep(url, keep) {
@@ -728,8 +744,8 @@ NavigationPane {
                         app.fetchContent(url)
                     }
                     
-                    function setContentTabsEnabled(enabled) {
-                        browseListPage.parent.setEnabled(enabled);
+                    function updateListSize(diff) {
+                        browseListPage.listSize = bookmarks.dataModel.childCount([])
                     }
                 }
                 
@@ -739,7 +755,7 @@ NavigationPane {
                     
                     Label {
                         id: emptySearchHint
-                        visible: false
+                        visible: browseListPage.listSize == 0
                         horizontalAlignment: HorizontalAlignment.Center
                         textStyle.fontSize: FontSize.Large
                     }

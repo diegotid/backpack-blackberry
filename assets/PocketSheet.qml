@@ -1,6 +1,7 @@
 
 import bb.cascades 1.4
 import bb.system 1.0
+import bb 1.3
 
 Page {
     id: pocket
@@ -8,33 +9,108 @@ Page {
     
     signal close();
     
+    property string username
+    
     property string state
 //    property string state: "on"
 //    property string state: "off"
 //    property string state: "why"
-//    property string state: "sync"
-
+//    property string state: "sync"   
+ 
     onStateChanged: {
-        if (state == "sync") {
+        offline = app.getOfflineMode()
+        offimages = app.getOfflineImages()
+        offwifi = app.getOfflineWiFi()
+        onwifi = app.onWiFi()
+        if (state != "off" && username.length > 0) {
+            state = "on"
+        } else if (state == "sync") {
             app.pocketConnect()
         }
         closeButton.title = (state == "on" || state == "off") ? "Close" : "Cancel"
-    }
-
-    property string username
-    onUsernameChanged: {
-        state = "on"
+        completeButton.enabled = true
+        updateCompleteButton()
     }
     
+    property double space: storageInfo.availableFileSystemSpace(app.getOfflineDir())
+
+    property bool offline
+    onOfflineChanged: updateCompleteButton()
+    
+    property bool offimages
+    onOffimagesChanged: updateFigures()
+    
+    property bool offwifi
+    onOffwifiChanged: {
+        updateCompleteButton()
+        wifiState.text = "You are not connected to a Wi-Fi network. " + (offwifi ? "Offline content will be downloaded when a Wi-Fi connection is available" : "Please consider your mobile data plan before downloading")
+    }
+    
+    function updateCompleteButton() {
+        if (offline && !completeButton.finished) {
+            completeButton.text = "Complete and check download size"
+        } else if (completeButton.finished) {
+            completeButton.text = (offwifi && !onwifi) ? "Sync and download later" : "Sync and start download"
+        } else {
+            completeButton.text = "I'm done! Complete and sync"
+        }
+    }
+
+    property bool onwifi
+    property int images
+    property int download
+    property int fulldownload
+    onFulldownloadChanged: updateFigures()
+    
+    function updateFigures() {
+        download = fulldownload - (offimages ? 0 : images)
+        if (download > 0) {
+            downloadEstimated.text = "Estimated download size is " + getUISpace(download)
+            if (download / space < 0.85) {
+                completeButton.enabled = true
+            }
+            downloadCalculating.running = false
+        }
+        storageState.visible = download > 0
+    }
+    
+    function getUISpace(given) {
+        if (given < 1024 * 1024 / 10) {
+            return (given / 1024).toFixed(1) + "KB"
+        }
+        given = given / 1024 / 1024
+        if (given > 1024) {
+            return (given / 1024).toFixed(1) + "GB"
+        } else {
+            return given.toFixed(1) + "MB"
+        }
+    }
+    
+    function cancelSync(title) {        
+        if (title == "Cancel") {
+            app.pocketDisconnect()
+            images = 0
+            fulldownload = 0
+            username = ""
+            downloadEstimated.text = ""
+            completeButton.finished = false
+            completeButton.text = offline ? "Complete and check download size" : "I'm done! Complete and sync"
+        } else {
+            mainPage.activeTab = exploreTab
+            if (state == "off") {
+                username = ""
+            }
+        }
+        state = ""
+        pocket.close()
+    }
+
     titleBar: TitleBar {
         title: "Pocket sync"
         dismissAction: ActionItem {
             id: closeButton
             title: "Cancel"
-            onTriggered: {
-                state = ""
-                pocket.close()
-            }   
+            onTriggered: cancelSync(title)   
         }
     }
     
@@ -60,6 +136,9 @@ Page {
             button.label: "Close"
             button.enabled: true 
             onFinished: pocket.close()
+        },
+        FileSystemInfo {
+            id: storageInfo
         }
     ]
     
@@ -77,19 +156,17 @@ Page {
 	            
 	        Container {
 	            topPadding: ui.du(2)
-	            rightPadding: 30
 	            bottomPadding: 0
-	            leftPadding: 30
+                rightPadding: ui.sdu(4)
+                leftPadding: ui.sdu(4)
 	            horizontalAlignment: HorizontalAlignment.Fill
-	
-	            Container {
+                
+                Container {
 	                visible: state == "why"
 	                horizontalAlignment: HorizontalAlignment.Fill
 	                bottomMargin: 30
 	                
 	                Container {
-	                    leftPadding: 10
-	                    rightPadding: 10
 	                    
 	                    Label {
 	                        multiline: true
@@ -129,46 +206,154 @@ Page {
 	            }
                 
                 Container {
+                    id: syncState
                     visible: state == "sync"
                     horizontalAlignment: HorizontalAlignment.Fill
                     bottomMargin: 30
                     
                     Container {
-                        leftPadding: 10
-                        rightPadding: 10
+                        bottomPadding: 30
                         
                         Label {
                             multiline: true
-                            text: "You are being redirected to Pocket on your browser to log in with your account and authorize Backpack to sync"
+                            visible: !offline || !completeButton.finished
+                            text: username.length > 0 ? "Logged in as " + username + " to sync Pocket with offline mode off" : "You are being redirected to Pocket on your browser to log in with your account and authorize Backpack to sync"
+                        }
+                        
+                        Label {
+                            multiline: true
+                            visible: offline
+                            text: "Your offline mode is on" + (username.length > 0 ? (" as " + username) : (". Once logged in " + (onwifi || !offwifi ? "you will be ready for downloading your Pocket articles" : "your Pocket articles will download when connected to a Wi-Fi network")))
                         }
                     }            
                     
                     Container {
-                        topPadding: 60
+                        visible: offline && downloadEstimated.text.length > 0
+                        horizontalAlignment: HorizontalAlignment.Fill
+                        topPadding: 10
+                        
+                        Container {
+                            layout: DockLayout {}
+                            horizontalAlignment: HorizontalAlignment.Fill
+                            
+                            Label {
+                                id: downloadEstimated
+                            }
+                            
+                            ActivityIndicator {
+                                id: downloadCalculating
+                                horizontalAlignment: HorizontalAlignment.Right
+                            }
+                        }
+                        
+                        Container {
+                            visible: download > 0
+                            topPadding: ui.sdu(3)
+                            bottomPadding: 0
+                            horizontalAlignment: HorizontalAlignment.Fill
+                            
+                            ProgressIndicator {
+                                id: spaceOccupied
+                                value: download / space
+                                visible: value < 0.85
+                            }
+                            
+                            Container {
+                                visible: download / space >= 0.85
+                                background: Color.DarkRed
+                                bottomPadding: ui.sdu(2)
+                                horizontalAlignment: HorizontalAlignment.Fill
+                                maxHeight: 6
+                                Label {
+                                    text: "Simulating a red progress indicator bar"
+                                }
+                            }
+                        }
+                        
+                        Label {
+                            id: storageState
+                            multiline: true
+                            visible: false
+                            textStyle.fontSize: FontSize.XSmall
+                            text: "Available space in your device is " + getUISpace(space)
+                                + (onwifi ? " and you're connected to a Wi-Fi network" : "")
+                                + (offimages ? (images > 999999 ? ". With no offline images, download size would be " + getUISpace(fulldownload - images) : "") : ", so you could also download images taking up " + getUISpace(fulldownload))
+                        }
+                        
+                        Label {
+                            id: storageFull
+                            multiline: true
+                            visible: download / space >= 0.85
+                            textStyle.fontSize: FontSize.XSmall
+                            text: download >= space ? "You don't have enough space in your device for syncing Pocket on offline mode" : "Syncing Pocket on offline mode would take up nearly all your device's free space"
+                        }
+                        
+                        Label {
+                            id: wifiState
+                            multiline: true
+                            visible: !onwifi && !storageFull.visible
+                            text: "You are not connected to a Wi-Fi network. " + (offwifi ? "Offline content will be downloaded when a Wi-Fi connection is available" : "Please consider your mobile data plan before downloading")
+                            textStyle.fontSize: FontSize.XSmall
+                        }
+                        
+                        Container {
+                            topPadding: 30
+                            visible: storageState.visible || wifiState.visible
+                            horizontalAlignment: HorizontalAlignment.Fill
+
+                            Button {
+                                text: "Check settings"
+                                horizontalAlignment: HorizontalAlignment.Fill
+                                onClicked: settingsSheet.open()
+                            }
+                        }
+                    }
+                    
+                    Container {
+                        topPadding: 30
                         horizontalAlignment: HorizontalAlignment.Fill
                         
                         Button {
+                            id: completeButton
                             text: "I'm done! Complete and sync"
+                            property bool finished: false
                             horizontalAlignment: HorizontalAlignment.Fill
                             onClicked: {
-                                app.pocketCompleteAuth()
-                                state = "on"
-                                syncingIndicator.visible = true
-                                cleanButton.enabled = true
-                                logoutButton.enabled = true
+                                if (finished) {
+                                    app.pocketRetrieve()
+                                } else {
+                                    app.pocketCompleteAuth()
+                                }
+                                if (offline && !finished) {
+                                    text = (offwifi && !onwifi) ? "Sync and download later" : "Sync and start download"
+                                    downloadEstimated.text = "Checking download size..."
+                                    downloadCalculating.running = true
+                                    finished = true
+                                    enabled = false
+                                } else {
+                                    state = "on"
+                                    images = 0
+                                    fulldownload = 0
+                                    finished = false
+                                    cleanButton.enabled = true
+                                    logoutButton.enabled = true                                    
+                                    syncingIndicator.visible = true
+                                    text = offline ? "Complete and check download size" : "I'm done! Complete and sync"
+                                    downloadCalculating.running = false
+                                    downloadEstimated.text = ""
+                                }
                             }
                         }
                     }            
                 }
                 
                 Container {
-                    visible: state == "on"
+                    id: onState
+                    visible: state == "on" && !syncState.visible
                     horizontalAlignment: HorizontalAlignment.Fill
                     bottomMargin: 30
                     
                     Container {
-                        leftPadding: 5
-                        rightPadding: 10
                         horizontalAlignment: HorizontalAlignment.Fill
                         
                         Container {
@@ -218,8 +403,6 @@ Page {
 
                         Container {
                             layout: DockLayout {}
-                            leftPadding: 5
-                            bottomPadding: 10
                             horizontalAlignment: HorizontalAlignment.Fill
 
                             Label {
@@ -300,10 +483,8 @@ Page {
                     bottomMargin: 30
                     
                     Container {
-                        leftPadding: 10
-                        rightPadding: 10
-                        
                         horizontalAlignment: HorizontalAlignment.Fill
+                        
                         Label {
                             text: "You've just been disconnected as <b>" + username + "</b>"
                             textFormat: TextFormat.Html
@@ -336,7 +517,7 @@ Page {
                                     body: "Are you sure you want to delete " + username + "'s content? (Pocket will still keep it)"
                                     onFinished: {
                                         if (result == SystemUiResult.ConfirmButtonSelection) {
-                                            app.pocketCleanContent()
+                                            app.emptyBackapck()
                                             cleanButton.enabled = false
                                         } else {
                                             cleanDialog.close()
@@ -361,7 +542,10 @@ Page {
                             text: "Sync again"
                             horizontalAlignment: HorizontalAlignment.Fill
                             onClicked: {
-                                state = "sync"
+                                if (state == "off") {
+                                    username = ""
+                                }
+                               state = "sync"
                             }
                         }
                     }            

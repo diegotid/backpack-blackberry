@@ -65,8 +65,16 @@ QUrl ActiveFrame::update(bool force) {
 
 	coverContainer->findChild<Label*>("bookmarkURL")->setText(previous.value("url").toString());
 	coverContainer->findChild<Label*>("bookmarkTitle")->setText(previous.value("title").toString());
-	coverContainer->findChild<ImageView*>("bookmarkPic")->setImageSource(previous.value("image").toString());
 	coverContainer->findChild<ImageView*>("bookmarkIcon")->setImageSource(previous.value("favicon").toString());
+    QString bookmarkPic = previous.value("image").toString();
+    if (bookmarkPic.length() > 1) {
+        coverContainer->findChild<ImageView*>("bookmarkPic")->setImageSource(bookmarkPic);
+    } else {
+        QVariantList offimages = sql->execute("SELECT first_img FROM Bookmark WHERE hash_url = ?", QVariantList() << previous.value("hash_url").toString()).toList();
+        if (offimages.size() > 0) {
+            coverContainer->findChild<ImageView*>("bookmarkPic")->setImageSource(offimages.at(0).toMap()["first_img"].toString());
+        }
+    }
 
 	previous = item;
 

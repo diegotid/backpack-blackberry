@@ -7,15 +7,14 @@ Page {
     
     paneProperties: NavigationPaneProperties {
         backButton: ActionItem {
-            onTriggered: {
-                articlesPane.pop()
-            }
+            onTriggered: articlesPane.pop()
         }
     }        
     actionBarVisibility: ChromeVisibility.Overlay
     actionBarAutoHideBehavior: ActionBarAutoHideBehavior.HideOnScroll
     
     property string link
+    property string hash
     property bool isFavourite: false
 
     onLinkChanged: putBackAction.enabled = link.length > 0 && !isFavourite && !app.getKeepAfterRead()
@@ -62,7 +61,9 @@ Page {
                 app.add(link)
                 isFavourite = !isFavourite
                 app.keepBookmark(link, isFavourite)
-                if (isFavourite) stayToast.show()
+                if (isFavourite && !app.getKeepAfterRead()) {
+                    stayToast.show()
+                }
                 putBackAction.enabled = false
             }
         },
@@ -74,8 +75,8 @@ Page {
             enabled: link.length > 0 && !isFavourite && !app.getKeepAfterRead()
             onTriggered: {
                 app.add(link)
-                stayToast.show()
                 putBackAction.enabled = false
+                if (!app.getKeepAfterRead()) stayToast.show()
             }
         },
         ActionItem {
@@ -156,20 +157,25 @@ Page {
     }
 
     Container {
-        background: Color.create("#eed4ab")
+        background: Color.create("#f3e1c4")
+
+        attachedObjects: LayoutUpdateHandler {
+            id: pageHandler
+        }
         
         ScrollView {
             scrollViewProperties {
                 scrollMode: ScrollMode.Vertical
             }
-            
+            horizontalAlignment: HorizontalAlignment.Fill
+
             WebView {
                 id: articleBody
                 objectName: "articleBody"
-                property string body
+                property string style: app.getReadStyle()
                 property string initial: "<html><head>" + style + "</head><body></body></html>" 
-                property string style: "<style type='text/css'>p, img { float: left; clear: both; width: 100% } body { background-color: #eed4ab }</style>"
                 html: initial
+                property string body
                 onBodyChanged: html = "<html><head>" + style + "</head><body>" + (body.length > 0 ? "<h1>" + titleBar.title + "</h1>" : "") + body + "</body>"
                 function reset() { body = "" }
             }

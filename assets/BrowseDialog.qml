@@ -3,11 +3,13 @@ import bb.cascades 1.4
 import bb.system 1.0
 
 Page {
+    id: browseDialog
+        
     signal close()
     
     property variant bookmark
     property variant next
-    property int offset
+    property int offset: 0
     property int minSize: 10000
     
     property string readmode: "Backpack"
@@ -111,123 +113,6 @@ Page {
         }
         
         Container {
-            layout: AbsoluteLayout {}
-            verticalAlignment: VerticalAlignment.Bottom
-            
-            ImageView {
-                id: articleImage
-                imageSource: (bookmark.image && bookmark.image.length > 1) ? "file://" + bookmark.image : "asset:///images/backpack.png"
-                scalingMethod: ScalingMethod.AspectFill
-                verticalAlignment: VerticalAlignment.Fill
-                horizontalAlignment: HorizontalAlignment.Fill
-                minWidth: pageHandler.layoutFrame.width
-                preferredHeight: pageHandler.layoutFrame.height
-                opacity: 0.5
-                
-                attachedObjects: LayoutUpdateHandler {
-                    id: imageHandler
-                }
-            }
-            
-            ImageView {
-                imageSource: "asset:///images/shadow.png"
-                scalingMethod: ScalingMethod.AspectFill
-                verticalAlignment: VerticalAlignment.Fill
-                horizontalAlignment: HorizontalAlignment.Fill
-                minWidth: imageHandler.layoutFrame.width
-                minHeight: imageHandler.layoutFrame.height
-            }
-        }
-        
-        Container {
-            verticalAlignment: VerticalAlignment.Bottom
-            horizontalAlignment: HorizontalAlignment.Fill
-            
-            Container {
-                topPadding: ui.sdu(3)
-                leftPadding: ui.sdu(3)
-                rightPadding: ui.sdu(3)
-                bottomPadding: ui.sdu(3)
-            verticalAlignment: VerticalAlignment.Bottom
-            horizontalAlignment: HorizontalAlignment.Fill
-            
-            Container {
-                layout: DockLayout {}
-                horizontalAlignment: HorizontalAlignment.Fill
-
-                Label {
-                    id: articleSize
-//                    text: "16 mins"
-                    textStyle.color: ui.palette.primary
-                    textStyle.fontSize: FontSize.Large
-                }			
-            }
-                                        
-            Label {
-                id: articleTitle
-                multiline: true
-//                text: "Título del artículo que ocupe muchas líneas y pelee espacio con el tiempo de lectura. Título del artículo que ocupe muchas líneas y pelee espacio con el tiempo de lectura. Título del artículo que ocupe muchas líneas y pelee espacio con el tiempo de lectura. "
-//                text: "Título del artículo que ocupe poco"
-                textStyle.color: Color.White
-                textStyle.fontSize: FontSize.Large
-                topMargin: ui.sdu(3)
-            }
-            
-            Container {
-                layout: StackLayout {
-                    orientation: LayoutOrientation.LeftToRight
-                }
-                topMargin: ui.sdu(3)
-                
-                ImageView {
-                    id: articleIcon
-//                    imageSource: "asset:///images/favicon.png"
-                    verticalAlignment: VerticalAlignment.Center
-                    minWidth: 26
-                    minHeight: 26
-                }
-                
-                Label {
-                    id: articleUrl
-                    // text: "http://www.bbornot2b.com/"
-                    textStyle.fontSize: FontSize.XSmall
-                    verticalAlignment: VerticalAlignment.Center
-                }
-            }
-            
-            Label {
-                visible: text
-                id: articleMemo
-                multiline: true
-                textStyle.fontSize: FontSize.XSmall
-//                text: "Te meto aquí un comentario muy largo que he escrito anterioemente y que quiereo que salga cuando esté leyendo también"
-            }
-            
-            Button {
-                text: "Read"
-                horizontalAlignment: HorizontalAlignment.Fill
-                topMargin: ui.sdu(4)
-                onClicked: {
-                    app.readBookmark(bookmark.url)
-                    app.logEvent(readmode)
-                    browseDialog.close()
-                }
-            }
-            
-            Container {
-                Label {
-                    text: (ignoreFavourites || !keepAfterRead ? "Current settings: " : "")
-                    + (ignoreFavourites ? "No favorites" : "")
-                    + (ignoreFavourites && !keepAfterRead ? ", " : "")
-                    + (keepAfterRead ? "" : (username.length > 0 ? "Archiving" : "Discarding") + " read articles")
-                    multiline: true
-                    textStyle.color: Color.LightGray
-                    textStyle.fontSize: FontSize.XSmall
-                }
-            }
-        }
-        
-        Container {
             verticalAlignment: VerticalAlignment.Top
             horizontalAlignment: HorizontalAlignment.Right
             topPadding: ui.sdu(4.3)
@@ -282,6 +167,121 @@ Page {
                         bookmark.keep = "false"
                         favIndicator.imageSource = "asset:///images/nonkept.png";
                         unfavorite.show()
+                    }
+                }
+            }
+        }
+        
+        Container {
+            layout: AbsoluteLayout {}
+            verticalAlignment: VerticalAlignment.Bottom
+            
+            ImageView {
+                id: articleImage
+                imageSource: (bookmark.image && bookmark.image.length > 1) ? "file://" + bookmark.image : "asset:///images/backpack.png"
+                scalingMethod: ScalingMethod.AspectFill
+                verticalAlignment: VerticalAlignment.Fill
+                horizontalAlignment: HorizontalAlignment.Fill
+                minWidth: pageHandler.layoutFrame.width
+                preferredHeight: pageHandler.layoutFrame.height
+                opacity: 0.5
+                
+                attachedObjects: LayoutUpdateHandler {
+                    id: imageHandler
+                }
+            }
+            
+            ImageView {
+                imageSource: "asset:///images/shadow.png"
+                scalingMethod: ScalingMethod.AspectFill
+                verticalAlignment: VerticalAlignment.Fill
+                horizontalAlignment: HorizontalAlignment.Fill
+                minWidth: imageHandler.layoutFrame.width
+                minHeight: imageHandler.layoutFrame.height
+            }
+        }
+        
+        Container {
+            verticalAlignment: VerticalAlignment.Bottom
+            horizontalAlignment: HorizontalAlignment.Fill
+            
+            Container {
+                topPadding: ui.sdu(3)
+                leftPadding: ui.sdu(3)
+                rightPadding: ui.sdu(3)
+                bottomPadding: ui.sdu(3)
+                verticalAlignment: VerticalAlignment.Bottom
+                horizontalAlignment: HorizontalAlignment.Fill
+                
+                Container {
+                    layout: DockLayout {}
+                    horizontalAlignment: HorizontalAlignment.Fill
+                    
+                    Label {
+                        id: articleSize
+                        textStyle.color: ui.palette.primary
+                        textStyle.fontSize: FontSize.Large
+                    }			
+                }
+                
+                Label {
+                    id: articleTitle
+                    multiline: true
+                    textStyle.color: Color.White
+                    textStyle.fontSize: FontSize.Large
+                    topMargin: ui.sdu(3)
+                }
+                
+                Container {
+                    topMargin: ui.sdu(3)
+                    layout: StackLayout {
+                        orientation: LayoutOrientation.LeftToRight
+                    }
+                    
+                    ImageView {
+                        id: articleIcon
+                        verticalAlignment: VerticalAlignment.Center
+                        minWidth: 26
+                        minHeight: 26
+                    }
+                    
+                    Label {
+                        id: articleUrl
+                        textStyle.fontSize: FontSize.XSmall
+                        verticalAlignment: VerticalAlignment.Center
+                    }
+                }
+                
+                Label {
+                    visible: text
+                    id: articleMemo
+                    multiline: true
+                    textStyle.fontSize: FontSize.XSmall
+                }
+                
+                Button {
+                    text: "Read"
+                    horizontalAlignment: HorizontalAlignment.Fill
+                    topMargin: ui.sdu(4)
+                    onClicked: {
+                        var articlePage = getReadPage()
+                        articlePage.reset()
+                        articlesPane.push(articlePage)
+                        app.readBookmark(bookmark.url)
+                        app.logEvent(readmode)
+                        browseDialog.close()
+                    }
+                }
+                
+                Container {
+                    Label {
+                        text: (ignoreFavourites || !keepAfterRead ? "Current settings: " : "")
+                        + (ignoreFavourites ? "Non-favorites first" : "")
+                        + (ignoreFavourites && !keepAfterRead ? ", " : "")
+                        + (keepAfterRead ? "" : (username.length > 0 ? "Archiving" : "Discarding") + " read articles")
+                        multiline: true
+                        textStyle.color: Color.LightGray
+                        textStyle.fontSize: FontSize.XSmall
                     }
                 }
             }

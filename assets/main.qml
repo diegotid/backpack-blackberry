@@ -10,6 +10,12 @@ TabbedPane {
         putinPage.updateUsername(username)
     }
     
+    property real progress
+    onProgressChanged: {
+        browsePage.updateProgress(progress)
+        putinPage.updateProgress(progress)
+    }
+    
     attachedObjects: [
         Sheet {
             id: settingsSheet

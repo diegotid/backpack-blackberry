@@ -9,6 +9,7 @@
 #include <bb/cascades/GroupDataModel>
 #include <bb/cascades/NavigationPane>
 #include <bb/cascades/ActivityIndicator>
+#include <bb/cascades/ProgressIndicator>
 #include <bb/cascades/ActionItem>
 #include <bb/cascades/ImageView>
 #include <bb/cascades/ListView>
@@ -40,6 +41,17 @@ using namespace std;
 #define ACKURL "http://bbornot2b.com/backpack/auth"
 #define FRAMEINTERVAL 10
 
+#define WORDS_MINUTE 180    // Average 180 words per minute on a monitor; Assumed 10000 bytes per minute
+#define BYTES_WORD 10       // Average 10 bytes per word
+#define IMAGES_SIZE 50      // Average web image size 50KB
+#define MAX_IMAGES 150      // Maximum number of images to calculate offline download
+
+#define ARTICLES_DIR "shared/downloads"
+#define BACKUP_DIR "shared/documents"
+#define APP_SUBDIR "Backpack"
+
+#define HTML_STYLE "<style type='text/css'>p { float: left; clear: both; width: 100%; font-size: 2em; } img { float: left; clear: both; width: 100%; padding: 5px 0px; } h1 { font-size: 3em; } body { background-color: #f3e1c4; padding: 30px; }</style>"
+
 const int Backpack::ALL = 0;
 const int Backpack::FAVORITES = 1;
 const int Backpack::ARTICLES = 2;
@@ -52,7 +64,7 @@ Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
 	dbFile.open(QIODevice::ReadWrite);
 	data = new SqlDataAccess(dbFile.fileName(), "Backpack", this);
 
-	if (!databaseExists()) createDatabase();
+	createSettings();
 
 	iManager = new InvokeManager(this);
 	bool res_invoke = connect(iManager, SIGNAL(invoked(const bb::system::InvokeRequest&)), this, SLOT(handleInvoke(const bb::system::InvokeRequest&)));
@@ -60,12 +72,32 @@ Backpack::Backpack(bb::cascades::Application *app) : QObject(app) {
     Q_UNUSED(res_invoke);
 
 	network = new QNetworkAccessManager(this);
+	bool get_fin = connect(network, SIGNAL(finished(QNetworkReply*)), this, SLOT(handleGet(QNetworkReply*)));
+	Q_ASSERT(get_fin);
+	Q_UNUSED(get_fin);
 
     pocketUpdateTimer = new QTimer();
     pocketUpdateTimer->setSingleShot(false);
     bool updaterConnected = connect(pocketUpdateTimer, SIGNAL(timeout()), this, SLOT(pocketRetrieve()));
     Q_ASSERT(updaterConnected);
     Q_UNUSED(updaterConnected);
+
+    downloadPending = false;
+
+    downloadPendingTimer = new QTimer();
+    downloadPendingTimer->setSingleShot(false);
+    bool resumerConnected = connect(downloadPendingTimer, SIGNAL(timeout()), this, SLOT(resumeOfflineDownload()));
+    Q_ASSERT(resumerConnected);
+    Q_UNUSED(resumerConnected);
+
+    currentDir = ARTICLES_DIR;
+
+    downloadingSize = 0;
+    downloadingProgress = 0;
+    offlineCompleting = false;
+
+    imgReply = NULL;
+    betaReply = NULL;
 
 	if (iManager->startupMode() == ApplicationStartupMode::InvokeApplication) {
 
@@ -174,10 +206,8 @@ QString Backpack::getAppVersion() {
 	return thisApp.version();
 }
 
-void Backpack::logEvent(QString mode) {
 QString Backpack::getOfflineDir() {
 
-    Flurry::Analytics::LogEvent(mode);
     if (currentDir == ARTICLES_DIR) {
         currentDir = ".";
         return ARTICLES_DIR;
@@ -200,19 +230,27 @@ uint Backpack::getOfflineDirSize() {
         }
     }
 
-bool Backpack::databaseExists() {
     return size;
 }
 
-	data->execute("SELECT COUNT(pocket_id) FROM Bookmark");
+QString Backpack::getReadStyle() {
 
-	return !data->hasError();
+    return HTML_STYLE;
 }
 
-void Backpack::createDatabase() {
+void Backpack::logEvent(QString mode) {
 
-	data->execute("CREATE TABLE Bookmark (url VARCHAR(255), "
+    Flurry::Analytics::LogEvent(mode);
+}
+
+void Backpack::createSettings() {
+
     bool legacy = false;
+
+	data->execute("SELECT COUNT(url) FROM Bookmark");
+	if (data->hasError()) {
+	    data->execute("CREATE TABLE Bookmark ("
+	            "url VARCHAR(255), "
 	            "title VARCHAR(255), "
 	            "favicon VARCHAR(255), "
 	            "memo VARCHAR(255), "
@@ -221,13 +259,33 @@ void Backpack::createDatabase() {
 	            "keep BOOL)");
 	} else {
 	    legacy = true;
+	}
+
+    data->execute("SELECT COUNT(pocket_id) FROM Bookmark"); // Added on 2.0 for Pocket integration
+    if (data->hasError()) {
         legacy = false;
+        data->execute("ALTER TABLE Bookmark ADD image VARCHAR(255)");
+        data->execute("ALTER TABLE Bookmark ADD pocket_id INTEGER");
+        data->execute("ALTER TABLE Bookmark ADD type INTEGER");
+    }
+
+    data->execute("SELECT COUNT(hash_url) FROM Bookmark"); // Added on 2.0.1 for Pocket integration
+    if (data->hasError()) {
+        data->execute("ALTER TABLE Bookmark ADD hash_url VARCHAR(255)");
+    }
+
+    data->execute("SELECT COUNT(first_img) FROM Bookmark"); // Added on 3.1 for backing up images
+    if (data->hasError()) {
+        data->execute("ALTER TABLE Bookmark ADD first_img VARCHAR(255)");
     } else {
         legacy = false;
+    }
 
     QSettings settings;
     if (settings.value("premium").isNull())
         settings.setValue("premium", legacy);
+}
+
 bool Backpack::isPremium() {
 
     QSettings settings;
@@ -243,11 +301,109 @@ void Backpack::setPremium() {
     settings.setValue("premium", true);
 }
 
+bool Backpack::getOfflineMode() {
 
-	data->execute("ALTER TABLE Bookmark ADD image VARCHAR(255)"); // Added on 2.0 for Pocket integration
-	data->execute("ALTER TABLE Bookmark ADD pocket_id INTEGER"); // Added on 2.0 for Pocket integration
-	data->execute("ALTER TABLE Bookmark ADD type INTEGER"); // Added on 2.0 for Pocket integration
-    data->execute("ALTER TABLE Bookmark ADD hash_url VARCHAR(255)"); // Added on 2.0.1 for Pocket integration
+    QSettings settings;
+    if (settings.value("offline").isNull())
+        settings.setValue("offline", true);
+
+    return settings.value("offline").toBool();
+}
+
+void Backpack::setOfflineMode(bool active) {
+
+    QSettings settings;
+    settings.setValue("offline", active);
+
+    Page *pocketSheet = mainPage->findChild<Page*>("pocketPage");
+    if (pocketSheet) {
+        pocketSheet->setProperty("offline", active);
+    }
+
+    if (active) {
+        refreshBookmarks();
+    } else {
+        downloading.empty();
+        downloadingImages.empty();
+        if (imgReply != NULL && imgReply->isRunning()) imgReply->abort();
+        if (betaReply != NULL && betaReply->isRunning()) betaReply->abort();
+        downloadingSize = 0;
+        downloadingProgress = 0;
+        mainPage->setProperty("progress", 0);
+
+        QDir downloadDir;
+        downloadDir.setCurrent(QDir::homePath());
+        downloadDir.setCurrent("..");
+        if (downloadDir.setCurrent(QString("%1/%2").arg(ARTICLES_DIR).arg(APP_SUBDIR))) {
+            QFileInfoList downloadedFiles = downloadDir.entryInfoList(QDir::Files);
+            for (QFileInfoList::iterator df = downloadedFiles.begin(); df != downloadedFiles.end(); df++) {
+                downloadDir.remove(df->fileName());
+            }
+        }
+    }
+}
+
+bool Backpack::getOfflineImages() {
+
+    QSettings settings;
+    if (settings.value("offimages").isNull())
+        settings.setValue("offimages", true);
+
+    return settings.value("offimages").toBool();
+}
+
+void Backpack::setOfflineImages(bool available) {
+
+    QSettings settings;
+    settings.setValue("offimages", available);
+
+    Page *pocketSheet = mainPage->findChild<Page*>("pocketPage");
+    if (pocketSheet) {
+        pocketSheet->setProperty("offimages", available);
+    }
+
+    if (!available) {
+        int rest = downloadingImages.count();
+        downloadingImages.empty();
+        if (imgReply != NULL && imgReply->isRunning()) imgReply->abort();
+        downloadingSize = downloadingSize - rest;
+        downloadingProgress = downloadingProgress - rest;
+        mainPage->setProperty("progress", (float)downloadingProgress/(float)downloadingSize);
+
+        QDir downloadDir;
+        downloadDir.setCurrent(QDir::homePath());
+        downloadDir.setCurrent("..");
+        if (downloadDir.setCurrent(QString("%1/%2").arg(ARTICLES_DIR).arg(APP_SUBDIR))) {
+            QFileInfoList downloadedFiles = downloadDir.entryInfoList(QDir::Files);
+            for (QFileInfoList::iterator df = downloadedFiles.begin(); df != downloadedFiles.end(); df++) {
+                QString ext = df->fileName();
+                ext = ext.right(ext.length() - ext.lastIndexOf('.'));
+                if (ext.toLower() != ".html" && ext.toLower() != ".json") {
+                    downloadDir.remove(df->fileName());
+                }
+            }
+        }
+    }
+}
+
+bool Backpack::getOfflineWiFi() {
+
+    QSettings settings;
+    if (settings.value("offwifi").isNull())
+        settings.setValue("offwifi", false);
+
+    return settings.value("offwifi").toBool();
+}
+
+void Backpack::setOfflineWiFi(bool onlyWiFi) {
+
+    QSettings settings;
+    settings.setValue("offwifi", onlyWiFi);
+
+    Page *pocketSheet = mainPage->findChild<Page*>("pocketPage");
+    if (pocketSheet) {
+        pocketSheet->setProperty("offwifi", onlyWiFi);
+    }
 }
 
 bool Backpack::getSettingsUnderstood() {
@@ -358,6 +514,22 @@ void Backpack::handleDownloadFailed(QUrl url) {
 	}
 }
 
+void Backpack::startPendingTimer() {
+
+    downloadPending = true;
+    downloadPendingTimer->setInterval(1000 * 60);
+    downloadPendingTimer->start();
+}
+
+void Backpack::resumeOfflineDownload() {
+
+    if (downloadPending && onWiFi()) {
+        refreshBookmarks();
+        downloadPending = false;
+        downloadPendingTimer->stop();
+    }
+}
+
 void Backpack::refreshBookmarks() {
 
     refreshBookmarks(NULL);
@@ -390,6 +562,11 @@ void Backpack::refreshBookmarks(QString query) {
 			list = data->execute("SELECT * FROM Bookmark WHERE type = ? AND (title LIKE ? OR memo LIKE ?)", QVariantList() << type << queryString << queryString).toList();
 	}
 
+    QDir downloadDir;
+    downloadDir.setCurrent(QDir::homePath());
+    downloadDir.setCurrent("..");
+    bool dirExists = downloadDir.setCurrent(QString("%1/%2").arg(ARTICLES_DIR).arg(APP_SUBDIR));
+
 	QVariantList alreadyAdded;
 	QVariantList staticList;
 	for (int i = 0; i < list.size(); i++) {
@@ -398,14 +575,28 @@ void Backpack::refreshBookmarks(QString query) {
 		|| alreadyAdded.contains(bmMap["url"])) {
 		    continue;
 		}
+		uint urlHash = Bookmark::cleanUrlHash(QUrl(bmMap["url"].toString()));
         if (bmMap["title"].toString().length() == 0) {
             bmMap["title"] = QString("...");
-            uint urlHash = Bookmark::cleanUrlHash(QUrl(bmMap["url"].toString()));
             loading[urlHash] = new Bookmark(QUrl(bmMap["url"].toString()), data, this);
             loading[urlHash]->fetchContent();
             bool res_loading_end = connect(loading[urlHash], SIGNAL(downloadComplete(uint)), this, SLOT(freeLoadingPage(uint)));
             Q_ASSERT(res_loading_end);
             Q_UNUSED(res_loading_end);
+        }
+        if (getOfflineMode() && (!getOfflineWiFi() || onWiFi())) {
+            QFile *jsonFile = new QFile(QString("%1.json").arg(urlHash));
+            if (getOfflineImages() && jsonFile->open(QIODevice::ReadOnly)) {
+                JsonDataAccess json;
+                QVariantMap content = json.loadFromBuffer(jsonFile->readAll()).toMap();
+                checkOfflineImages(content);
+                jsonFile->close();
+            } else {
+                pocketProgressiveDownload(bmMap["url"].toString());
+            }
+            jsonFile->deleteLater();
+        } else if (getOfflineMode() && !onWiFi()) {
+            startPendingTimer();
         }
         if (bmMap["size"].toInt() == 0) bmMap["size"] = QString("");
 		bmMap["date"] = bmMap["time"].toDate().toString("yyyy-MM-dd");
@@ -420,6 +611,7 @@ void Backpack::refreshBookmarks(QString query) {
     bookmarksByURL->insertList(list);
     bookmarksByDate->insertList(list);
     mainPage->findChild<Page*>("browseListPage")->setProperty("listSize", list.size());
+    mainPage->findChild<Page*>("settingsSheet")->setProperty("backpackCount", list.size());
 
     updateActiveFrame(true);
 
@@ -433,14 +625,79 @@ void Backpack::refreshBookmarks(QString query) {
 	}
 }
 
+void Backpack::checkOfflineImages(QVariantMap content) {
+
+    uint urlHash = content["hash"].toUInt();
+
+    QFile *bodyFile = new QFile(QString("%1.html").arg(urlHash));
+    bodyFile->open(QIODevice::ReadOnly);
+    QTextStream source(bodyFile);
+    QString body = source.readAll();
+
+    bool checked = false;
+    bool changed = false;
+
+    if (content.contains("images")) {
+        QVariantMap images = content.value("images").toMap();
+        for (QVariantMap::iterator item = images.begin(); item != images.end(); item++) {
+            int ord = item.key().toInt();
+            QVariantMap image = item.value().toMap();
+            QString imageFileName = image.value("src").toString();
+            if (imageFileName.lastIndexOf('.') > imageFileName.lastIndexOf('/')) {
+                QString ext(imageFileName.right(imageFileName.length() - imageFileName.lastIndexOf('.') - 1));
+                if (ext.indexOf('?') > 0) {
+                    ext = ext.left(ext.indexOf('?'));
+                }
+                imageFileName = QString("%1-%2.%3").arg(urlHash).arg(ord).arg(ext);
+            } else {
+                imageFileName = QString("%1-%2").arg(urlHash).arg(ord);
+            }
+            QFile imageFile(imageFileName);
+            if (!imageFile.exists()) {
+                image["hash"] = urlHash;
+                if (downloadingSize == 0) {
+                    initializeDownloadProgress();
+                }
+                downloadingSize++;
+                mainPage->setProperty("progress", (float)downloadingProgress/(float)downloadingSize);
+                if (getOfflineImages() && downloadingImages.isEmpty()) {
+                    QNetworkRequest offlineImage(QUrl(image.value("src").toString()));
+                    imgReply = network->get(offlineImage);
+                }
+                downloadingImages.append(image);
+            }
+            if (!checked) {
+                if (getOfflineImages() && body.contains(image.value("src").toString())) {
+                    body.replace(image.value("src").toString(), imageFileName);
+                    changed = true;
+                } else if (!getOfflineImages() && body.contains(imageFileName)) {
+                    body.replace(imageFileName, image.value("src").toString());
+                    changed = true;
+                } else {
+                    checked = true;
+                }
+            }
+        }
+        if (changed) {
+            bodyFile->close();
+            bodyFile->open(QIODevice::WriteOnly | QIODevice::Truncate);
+            bodyFile->write(body.toAscii());
+            bodyFile->flush();
+        }
+        bodyFile->close();
+        bodyFile->deleteLater();
+    }
+}
+
 void Backpack::saveBackup() {
 
 	QDir appDir;
-	if (appDir.currentPath().indexOf("shared/documents/Backpack") < 0
-			&& !appDir.setCurrent("shared/documents/Backpack")) {
-		appDir.setCurrent("shared/documents");
-		appDir.mkdir("Backpack");
-		appDir.setCurrent("Backpack");
+    appDir.setCurrent(QDir::homePath());
+    appDir.setCurrent("..");
+	if (!appDir.setCurrent(QString("%1/%2").arg(BACKUP_DIR).arg(APP_SUBDIR))) {
+		appDir.setCurrent(BACKUP_DIR);
+		appDir.mkdir(APP_SUBDIR);
+		appDir.setCurrent(APP_SUBDIR);
 	}
 	QFile file(QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz") % ".xml");
 
@@ -467,8 +724,9 @@ void Backpack::showBackups() {
 	ListView *backupsList = backupSheet->findChild<ListView*>("backupsList");
 
 	QDir appDir;
-	if (appDir.currentPath().indexOf("shared/documents/Backpack") < 0
-			&& !appDir.setCurrent("shared/documents/Backpack")) {
+    appDir.setCurrent(QDir::homePath());
+    appDir.setCurrent("..");
+    if (!appDir.setCurrent(QString("%1/%2").arg(BACKUP_DIR).arg(APP_SUBDIR))) {
 		return;
 	}
 
@@ -497,7 +755,9 @@ void Backpack::showBackups() {
 void Backpack::shareBackup(QString backupFilename) {
 
 	QDir appDir;
-	appDir.setCurrent("shared/documents/Backpack");
+    appDir.setCurrent(QDir::homePath());
+    appDir.setCurrent("..");
+	appDir.setCurrent(QString("%1/%2").arg(BACKUP_DIR).arg(APP_SUBDIR));
 
 	InvokeManager invokeSender;
 	InvokeRequest sending;
@@ -520,8 +780,11 @@ void Backpack::shareBackup(QString backupFilename) {
 void Backpack::restoreBackup(QString backupFilename) {
 
 	QSettings settings;
+
 	QDir appDir;
-	appDir.setCurrent("shared/documents/Backpack");
+    appDir.setCurrent(QDir::homePath());
+    appDir.setCurrent("..");
+	appDir.setCurrent(QString("%1/%2").arg(BACKUP_DIR).arg(APP_SUBDIR));
 
 	XmlDataAccess backup;
 	QVariantList bookmarksList;
@@ -574,11 +837,12 @@ void Backpack::restoreBackup(QString backupFilename) {
 void Backpack::importBackupFile(QString backupFilePath) {
 
 	QDir appDir;
-	if (appDir.currentPath().indexOf("shared/documents/Backpack") < 0
-			&& !appDir.setCurrent("shared/documents/Backpack")) {
-		appDir.setCurrent("shared/documents");
-		appDir.mkdir("Backpack");
-		appDir.setCurrent("Backpack");
+    appDir.setCurrent(QDir::homePath());
+    appDir.setCurrent("..");
+	if (!appDir.setCurrent(QString("%1/%2").arg(BACKUP_DIR).arg(APP_SUBDIR))) {
+		appDir.setCurrent(BACKUP_DIR);
+		appDir.mkdir(APP_SUBDIR);
+		appDir.setCurrent(APP_SUBDIR);
 	}
 	QFileInfo backupFile(backupFilePath);
 	QFile::copy(backupFilePath, backupFile.fileName());
@@ -588,7 +852,9 @@ void Backpack::importBackupFile(QString backupFilePath) {
 void Backpack::deleteBackup(QString backupFilename) {
 
 	QDir appDir;
-	appDir.setCurrent("shared/documents/Backpack");
+    appDir.setCurrent(QDir::homePath());
+    appDir.setCurrent("..");
+	appDir.setCurrent(QString("%1/%2").arg(BACKUP_DIR).arg(APP_SUBDIR));
 	appDir.rename(backupFilename, backupFilename % ".tmp");
 	showBackups();
 
@@ -625,7 +891,9 @@ void Backpack::deleteBackupFeedback(bb::system::SystemUiResult::Type value) {
 	if (value == SystemUiResult::ButtonSelection) {
 
         QDir appDir;
-        appDir.setCurrent("shared/documents/Backpack");
+        appDir.setCurrent(QDir::homePath());
+        appDir.setCurrent("..");
+        appDir.setCurrent(QString("%1/%2").arg(BACKUP_DIR).arg(APP_SUBDIR));
         QStringList filesList = appDir.entryList();
 
         for (int i = 0; i < filesList.size(); i++) {
@@ -643,7 +911,9 @@ void Backpack::deleteBackupConfirmation() {
     timeout->deleteLater();
 
 	QDir appDir;
-	appDir.setCurrent("shared/documents/Backpack");
+    appDir.setCurrent(QDir::homePath());
+    appDir.setCurrent("..");
+	appDir.setCurrent(QString("%1/%2").arg(BACKUP_DIR).arg(APP_SUBDIR));
 	QStringList filesList = appDir.entryList();
 
 	for (int i = 0; i < filesList.size(); i++) {
@@ -660,6 +930,81 @@ void Backpack::freeLoadingPage(uint urlHash) {
     loading.remove(urlHash);
 }
 
+void Backpack::handleGet(QNetworkReply *thisReply) {
+
+    if (thisReply->url().toString().indexOf(HOST) > 0 || downloadingImages.isEmpty()) {
+        return;
+    }
+
+    QDir downloadDir;
+    downloadDir.setCurrent(QDir::homePath());
+    downloadDir.setCurrent("..");
+    if (!downloadDir.setCurrent(QString("%1/%2").arg(ARTICLES_DIR).arg(APP_SUBDIR))) {
+        downloadDir.setCurrent(ARTICLES_DIR);
+        downloadDir.mkdir(APP_SUBDIR);
+        downloadDir.setCurrent(APP_SUBDIR);
+    }
+
+    QVariantMap image = downloadingImages.first().toMap();
+
+    QString imageFileName = thisReply->url().toString();
+    if (imageFileName.lastIndexOf('.') > imageFileName.lastIndexOf('/')) {
+        QString ext(imageFileName.right(imageFileName.length() - imageFileName.lastIndexOf('.') - 1));
+        if (ext.indexOf('?') > 0)
+            ext = ext.left(ext.indexOf('?'));
+        if (ext.indexOf('#') > 0)
+            ext = ext.left(ext.indexOf('#'));
+        imageFileName = QString("%1-%2.%3").arg(image["hash"].toString()).arg(image["image_id"].toString()).arg(ext);
+    } else {
+        imageFileName = QString("%1-%2").arg(image["hash"].toString()).arg(image["image_id"].toString());
+    }
+    QFile *imageFile = new QFile(imageFileName);
+    imageFile->remove();
+
+    if (imageFile->open(QIODevice::ReadWrite)) {
+
+        imageFile->write(thisReply->readAll());
+        imageFile->flush();
+
+        imageFileName = QFileInfo(*imageFile).absoluteFilePath();
+
+        if (image["image_id"].toInt() == 1) {
+            data->execute("UPDATE Bookmark SET first_img = ? WHERE hash_url = ?", QVariantList() << QFileInfo(*imageFile).absoluteFilePath() << image["hash"].toString());
+            updateImage(image["hash"].toUInt(), imageFileName);
+        }
+
+        Page *readPage = mainPage->findChild<Page*>("readPage");
+        if (readPage && readPage->property("hash").toUInt() == image["hash"].toUInt()) {
+            WebView *article = readPage->findChild<WebView*>("articleBody");
+            if (article && article->url().isValid()) { // Avoids 404
+                article->reload();
+            }
+        }
+
+        QImage originalImage(imageFileName);
+        if (originalImage.width() > 2048) {
+            QImage smallerImage = originalImage.scaledToWidth(2048, Qt::FastTransformation);
+            smallerImage.save(imageFileName);
+        }
+    }
+    imageFile->close();
+    imageFile->deleteLater();
+
+    downloadingImages.removeFirst();
+    downloadingProgress++;
+    mainPage->setProperty("progress", (float)downloadingProgress/(float)downloadingSize);
+
+    if (getOfflineImages() && !downloadingImages.empty()) {
+        QNetworkRequest offlineImage(QUrl(downloadingImages.first().toMap().value("src").toString()));
+        imgReply = network->get(offlineImage);
+    } else if (downloading.isEmpty()) {
+        downloadingSize = 0;
+        downloadingProgress = 0;
+        mainPage->setProperty("progress", 1);
+        mainPage->findChild<Page*>("aboutSheet")->setProperty("taken", getOfflineDirSize());
+    }
+}
+
 void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 
     if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
@@ -670,7 +1015,8 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
 
     TextArea *memoArea = invokedForm->findChild<TextArea*>("memo");
 
-    QVariantList bookmarks = data->execute("SELECT * FROM Bookmark WHERE hash_url = ?", QVariantList() << Bookmark::cleanUrlHash(request.uri())).toList();
+    uint urlHash = Bookmark::cleanUrlHash(request.uri());
+    QVariantList bookmarks = data->execute("SELECT * FROM Bookmark WHERE hash_url = ?", QVariantList() << urlHash).toList();
 
     if (bookmarks.size() > 0) {
         QVariantMap bookmarkContent = bookmarks.value(0).toMap();
@@ -688,6 +1034,21 @@ void Backpack::handleInvoke(const bb::system::InvokeRequest& request) {
             mainPage->findChild<Sheet*>("bookmarkSheet")->open();
         }
         return;
+    }
+
+    if (iManager->startupMode() == ApplicationStartupMode::LaunchApplication) {
+        QDir downloadDir;
+        downloadDir.setCurrent(QDir::homePath());
+        downloadDir.setCurrent("..");
+        bool dirExists = downloadDir.setCurrent(QString("%1/%2").arg(ARTICLES_DIR).arg(APP_SUBDIR));
+
+        if (getOfflineMode() && (!dirExists || !QFile::exists(QString("%1.json").arg(urlHash)))) {
+            if (!getOfflineWiFi() || onWiFi()) {
+                pocketProgressiveDownload(request.uri().toString());
+            } else {
+                startPendingTimer();
+            }
+        }
     }
 
     invokedForm->findChild<ImageView*>("invokedImage")->setImageSource(QString("asset:///images/backpack.png"));
