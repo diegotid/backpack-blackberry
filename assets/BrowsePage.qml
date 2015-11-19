@@ -329,6 +329,15 @@ NavigationPane {
                         startPurchase()
                     }
                 }
+            },
+            ActionItem {
+                title: "Sync Pocket now"
+                imageSource: "asset:///images/menuicons/ic_reload.png"
+                ActionBar.placement: ActionBarPlacement.OnBar
+                enabled: freeTitleBar.username.length > 0
+                onTriggered: {
+                    app.pocketRetrieve()
+                }
             }
         ]
         

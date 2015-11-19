@@ -56,14 +56,16 @@ TabbedPane {
             ActionItem {
                 title: "About"
                 imageSource: "asset:///images/menuicons/ic_info.png"
-                onTriggered: aboutSheet.open();
+                onTriggered: {
+                    aboutSheet.open()
+                }
             },
             ActionItem {
                 title: "Backup"
                 imageSource: "asset:///images/menuicons/ic_save.png"
                 onTriggered: {
-                	backupSheet.open();
-                	app.showBackups();
+                	backupSheet.open()
+                	app.showBackups()
                 }
             },
             ActionItem {
