@@ -35,11 +35,11 @@ NavigationPane {
             }
         }
     ]
-
+/*
     onCreationCompleted: {
         payment.setConnectionMode(0)
     }
-  
+*/  
     function startPurchase() {
         premiumDialog.body = "The following premium features are only available on the full version of Backpack:"
                                 + "\n- Article search"
