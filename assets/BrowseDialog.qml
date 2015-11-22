@@ -1,5 +1,5 @@
 
-import bb.cascades 1.4
+import bb.cascades 1.2
 import bb.system 1.0
 
 Page {
@@ -115,12 +115,12 @@ Page {
         Container {
             verticalAlignment: VerticalAlignment.Top
             horizontalAlignment: HorizontalAlignment.Right
-            topPadding: ui.sdu(4.3)
-            rightPadding: ui.sdu(4.3)
+            topPadding: 43
+            rightPadding: 43
             
             ImageView {
                 id: favIndicator
-                imageSource: (bookmark.keep == "true") ? "asset:///images/keep.png" : "asset:///images/nonkept.png"
+                imageSource: (bookmark && bookmark.keep == "true") ? "asset:///images/keep.png" : "asset:///images/nonkept.png"
             }
             
             attachedObjects: [
@@ -178,7 +178,7 @@ Page {
             
             ImageView {
                 id: articleImage
-                imageSource: (bookmark.image && bookmark.image.length > 1) ? "file://" + bookmark.image : "asset:///images/backpack.png"
+                imageSource: (bookmark && bookmark.image && bookmark.image.length > 1) ? "file://" + bookmark.image : "asset:///images/backpack.png"
                 scalingMethod: ScalingMethod.AspectFill
                 verticalAlignment: VerticalAlignment.Fill
                 horizontalAlignment: HorizontalAlignment.Fill
@@ -206,10 +206,10 @@ Page {
             horizontalAlignment: HorizontalAlignment.Fill
             
             Container {
-                topPadding: ui.sdu(3)
-                leftPadding: ui.sdu(3)
-                rightPadding: ui.sdu(3)
-                bottomPadding: ui.sdu(3)
+                topPadding: 30
+                leftPadding: 30
+                rightPadding: 30
+                bottomPadding: 30
                 verticalAlignment: VerticalAlignment.Bottom
                 horizontalAlignment: HorizontalAlignment.Fill
                 
@@ -219,8 +219,8 @@ Page {
                     
                     Label {
                         id: articleSize
-                        textStyle.color: ui.palette.primary
                         textStyle.fontSize: FontSize.Large
+                        textStyle.color: Color.create("#DDAA57")
                     }			
                 }
                 
@@ -229,11 +229,11 @@ Page {
                     multiline: true
                     textStyle.color: Color.White
                     textStyle.fontSize: FontSize.Large
-                    topMargin: ui.sdu(3)
+                    topMargin: 30
                 }
                 
                 Container {
-                    topMargin: ui.sdu(3)
+                    topMargin: 30
                     layout: StackLayout {
                         orientation: LayoutOrientation.LeftToRight
                     }
@@ -262,7 +262,7 @@ Page {
                 Button {
                     text: "Read"
                     horizontalAlignment: HorizontalAlignment.Fill
-                    topMargin: ui.sdu(4)
+                    topMargin: 40
                     onClicked: {
                         var articlePage = getReadPage()
                         articlePage.reset()

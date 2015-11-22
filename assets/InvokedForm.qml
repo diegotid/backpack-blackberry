@@ -1,5 +1,5 @@
 
-import bb.cascades 1.4
+import bb.cascades 1.2
 
 Page {
     id: invokedForm
@@ -73,7 +73,7 @@ Page {
             ImageView {
                 id: invokedImage
                 objectName: "invokedImage"
-                imageSource: (item.image && item.image.length > 1) ? "file://" + item.image : "asset:///images/backpack.png"
+                imageSource: (item && item.image && item.image.length > 1) ? "file://" + item.image : "asset:///images/backpack.png"
                 scalingMethod: ScalingMethod.AspectFill
                 verticalAlignment: VerticalAlignment.Fill
                 horizontalAlignment: HorizontalAlignment.Fill
@@ -106,10 +106,10 @@ Page {
             Label {
                 id: status
                 objectName: "status"
-                textStyle.color: ui.palette.primary
                 textStyle.fontSize: FontSize.Large
+                textStyle.color: Color.create("#DDAA57")
                 translationX: 8
-//                text: "Comment this for release"
+                //                text: "Comment this for release"
             }			
             
             Container { // Activity & title

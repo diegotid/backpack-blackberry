@@ -1,5 +1,5 @@
 
-import bb.cascades 1.4
+import bb.cascades 1.2
 
 TabbedPane {
     id: mainPage

@@ -92,6 +92,7 @@ public:
     Q_INVOKABLE QString getReadStyle();
     Q_INVOKABLE QString getOfflineDir();
     Q_INVOKABLE uint getOfflineDirSize();
+    Q_INVOKABLE void launchRating();
     void loadOffline(QVariantMap);
     void checkOfflineImages(QVariantMap);
     void pocketPost(QUrl);

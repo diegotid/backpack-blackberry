@@ -10,6 +10,8 @@ using namespace bb::cascades;
 
 Q_DECL_EXPORT int main(int argc, char **argv)
 {
+    qputenv("CASCADES_THEME", "dark");
+
     Application app(argc, argv);
 
     Flurry::Analytics::StartSession("PG37BZ5VV7GP2ZC2VRZC");

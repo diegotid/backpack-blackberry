@@ -1,5 +1,5 @@
 
-import bb.cascades 1.4
+import bb.cascades 1.2
 import bb.system 1.0
 
 Page {
@@ -52,7 +52,6 @@ Page {
             title: "Favorite"
             id: toggleFavourite
             imageSource: "asset:///images/menuicons/zip.png"
-            ActionBar.placement: ActionBarPlacement.Signature
             function reset() {
                 toggleFavourite.title = "Favorite"
                 toggleFavourite.imageSource = "asset:///images/menuicons/zip.png"
@@ -104,15 +103,14 @@ Page {
         scrollBehavior: TitleBarScrollBehavior.NonSticky
         title: "Loading article..."
         kind: TitleBarKind.FreeForm
-        visibility: ChromeVisibility.Compact
         function reset() {
             articleTitle = "Loading article..."
         }
         kindProperties: FreeFormTitleBarKindProperties {
             Container {
                 layout: DockLayout {}
-                rightPadding: ui.sdu(2)
-                leftPadding: ui.sdu(1)
+                rightPadding: 20
+                leftPadding: 10
                 Label {
                     id: articleTitle
                     text: titleBar.title

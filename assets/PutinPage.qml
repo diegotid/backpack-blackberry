@@ -1,5 +1,5 @@
 
-import bb.cascades 1.4
+import bb.cascades 1.2
 
 Page {
 
@@ -43,7 +43,7 @@ Page {
         ActionItem {
             title: "Pocket sync"
             imageSource: "asset:///images/menuicons/pocket.png"
-            ActionBar.placement: ActionBarPlacement.Signature
+            ActionBar.placement: ActionBarPlacement.OnBar
             onTriggered: {
                 pocketPage.state = "sync"
                 pocketSheet.open()
@@ -115,8 +115,8 @@ Page {
                 hintText: "Search something to put..."
                 input.submitKey: SubmitKey.Search
                 input.onSubmitted: app.launchSearchToPutin(text)
-                topMargin: ui.du(3)
-                bottomMargin: ui.du(3)
+                topMargin: 30
+                bottomMargin: 30
             }
             
             Label {

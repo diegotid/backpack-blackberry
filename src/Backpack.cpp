@@ -195,6 +195,7 @@ void Backpack::updateActiveFrame() {
 void Backpack::updateActiveFrame(bool force) {
 
     QUrl toFetch = activeFrame->update(force);
+
     if (toFetch.toString().trimmed().length() > 0) {
         fetchContent(toFetch.toString().trimmed());
     }
@@ -2184,6 +2185,16 @@ bool Backpack::onWiFi() {
     }
 
     return false;
+}
+
+void Backpack::launchRating() {
+
+    InvokeManager invokeSender;
+    InvokeRequest request;
+    request.setTarget("sys.appworld");
+    request.setAction("bb.action.OPEN");
+    request.setUri("http://appworld.blackberry.com/webstore/content/20399673");
+    invokeSender.invoke(request);
 }
 
 Backpack::~Backpack() {

@@ -1,5 +1,5 @@
 
-import bb.cascades 1.4
+import bb.cascades 1.2
     
 Container {
     layout: DockLayout {}
@@ -44,7 +44,7 @@ Container {
         horizontalAlignment: HorizontalAlignment.Fill
         opacity: 0.75
         rotationZ: 180
-        maxHeight: ui.sdu(5.7)
+        maxHeight: 57
     }
 
     Container {
@@ -81,21 +81,13 @@ Container {
                 textStyle.color: Color.White
                 textStyle.fontSize: FontSize.XSmall
                 leftMargin: 10
-                onTextChanged: {
-                    var domain = text.substring(text.indexOf("://") + (text.indexOf("://") < 0 ? 1 : 3));
-                    if (domain.indexOf('/') < domain.indexOf('.')) {
-                        bookmarkURL.setText(domain)
-                    } else {
-                        bookmarkURL.setText(domain.substring(0, domain.indexOf('/')))
-                    }
-                }
             }
         }
 
         Container {
             rightPadding: 10
             leftPadding: 10
-            bottomPadding: ui.sdu(2)
+            bottomPadding: 20
             layout: DockLayout {}
             layoutProperties: StackLayoutProperties {
                 spaceQuota: 1

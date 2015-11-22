@@ -1,7 +1,7 @@
 
-import bb.cascades 1.4
+import bb.cascades 1.2
 import bb.system 1.0
-import bb 1.3
+import bb 1.0
 
 Page {
     id: pocket
@@ -155,10 +155,10 @@ Page {
 	        }
 	            
 	        Container {
-	            topPadding: ui.du(2)
+	            topPadding: 20
 	            bottomPadding: 0
-                rightPadding: ui.sdu(4)
-                leftPadding: ui.sdu(4)
+                rightPadding: 40
+                leftPadding: 40
 	            horizontalAlignment: HorizontalAlignment.Fill
                 
                 Container {
@@ -248,7 +248,7 @@ Page {
                         
                         Container {
                             visible: download > 0
-                            topPadding: ui.sdu(3)
+                            topPadding: 30
                             bottomPadding: 0
                             horizontalAlignment: HorizontalAlignment.Fill
                             
@@ -261,7 +261,7 @@ Page {
                             Container {
                                 visible: download / space >= 0.85
                                 background: Color.DarkRed
-                                bottomPadding: ui.sdu(2)
+                                bottomPadding: 20
                                 horizontalAlignment: HorizontalAlignment.Fill
                                 maxHeight: 6
                                 Label {

@@ -1,5 +1,5 @@
 
-import bb.cascades 1.4
+import bb.cascades 1.2
 import bb.platform 1.2
 import bb.system 1.0
 
@@ -183,8 +183,7 @@ NavigationPane {
                         Button {
                             id: filterButton
                             imageSource: "asset:///images/menuicons/ic_overflow_tab.png"
-                            preferredWidth: ui.sdu(1)
-                            appearance: ControlAppearance.Plain
+                            preferredWidth: 10
                             onClicked: filterExpand = !filterExpand
                         }
                         TextField {
@@ -204,9 +203,8 @@ NavigationPane {
                         }
                         Button {
                             text: "Cancel"
-                            appearance: ControlAppearance.Plain
                             horizontalAlignment: HorizontalAlignment.Right
-                            preferredWidth: ui.sdu(20)
+                            preferredWidth: 200
                             onClicked: {
                                 filterExpand = false
                                 searchForm.visible = false   
@@ -263,8 +261,8 @@ NavigationPane {
         actions: [
             ActionItem {
                 title: "Shuffle"
-                ActionBar.placement: ActionBarPlacement.Signature
                 imageSource: "asset:///images/buttons/shuffle.png"
+                ActionBar.placement: ActionBarPlacement.OnBar
                 onTriggered: {
                     if (app.getSettingsUnderstood() || app.getKeepAfterRead()) {
                         performShuffle()
@@ -463,10 +461,10 @@ NavigationPane {
                                     }                        
                                     Label {
                                         text: "Time to read:"
-                                        textStyle.color: ui.palette.primary
                                         textStyle.fontSize: FontSize.XXSmall
                                         horizontalAlignment: HorizontalAlignment.Right
                                         verticalAlignment: VerticalAlignment.Bottom
+                                        textStyle.color: Color.create("#DDAA57")
                                     }
                                 }
                                 
@@ -474,8 +472,8 @@ NavigationPane {
                                     topMargin: 0
                                     preferredHeight: 1
                                     preferredWidth: Qt.pageHandler.layoutFrame.width
-                                    background: ui.palette.primary
                                     opacity: 0.5
+                                    background: Color.create("#DDAA57")
                                 }               
                             }                             
                         },
@@ -563,8 +561,8 @@ NavigationPane {
                                     
                                     Container {
                                         layout: DockLayout {}
-                                        minWidth: ui.sdu(12)
-                                        maxWidth: ui.sdu(12) 
+                                        minWidth: 120
+                                        maxWidth: 120 
                                         maxHeight: rowHandler.layoutFrame.height
                                         
                                         ImageView {
@@ -611,20 +609,20 @@ NavigationPane {
                                                 id: bookmarkTitle
                                                 text: ListItemData.title
                                                 textStyle.fontSize: FontSize.XLarge
-                                                maxWidth: rowHandler.layoutFrame.width - (ListItemData.keep == "true" ? ui.sdu(8) : 0)
+                                                maxWidth: rowHandler.layoutFrame.width - (ListItemData.keep == "true" ? 80 : 0)
                                                 translationX: -7
                                             }
                                         }
                                         
                                         Container {
                                             layout: DockLayout {}
-                                            minWidth: Qt.pageHandler.layoutFrame.width - ui.sdu(14)
+                                            minWidth: Qt.pageHandler.layoutFrame.width - 140
                                             
                                             Container {
                                                 layout: StackLayout {
                                                     orientation: LayoutOrientation.LeftToRight
                                                 }
-                                                maxWidth: rowHandler.layoutFrame.width - timeHandler.layoutFrame.width - ui.sdu(3)
+                                                maxWidth: rowHandler.layoutFrame.width - timeHandler.layoutFrame.width - 30
                                                 
                                                 Container {
                                                     id: iconContainer
@@ -652,7 +650,7 @@ NavigationPane {
                                             
                                             Label {
                                                 visible: ListItemData.type != 3 && ListItemData.type != 4
-                                                textStyle.color: ui.palette.primary
+                                                textStyle.color: Color.create("#DDAA57")
                                                 textStyle.fontSize: FontSize.Medium
                                                 horizontalAlignment: HorizontalAlignment.Right
                                                 text: formatTime(ListItemData.size)

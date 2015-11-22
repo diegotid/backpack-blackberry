@@ -1,5 +1,5 @@
 
-import bb.cascades 1.3
+import bb.cascades 1.2
 
 Container {
     layout: DockLayout {}
@@ -50,8 +50,8 @@ Container {
         }
         
         Container {
-            topPadding: ui.sdu(0.6)
-            leftPadding: ui.sdu(0.6)
+            topPadding: 6
+            leftPadding: 6
             Label {
                 id: downloadingText
                 text: "Downloading... " + parseInt(downloadingProgress.value * 100) + "%"

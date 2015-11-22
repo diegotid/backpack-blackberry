@@ -1,5 +1,5 @@
 
-import bb.cascades 1.4
+import bb.cascades 1.2
 import bb.cascades.pickers 1.0
 
 Page {
@@ -49,14 +49,14 @@ Page {
                 text: "Import from file"
                 horizontalAlignment: HorizontalAlignment.Left
                 onClicked: importFilePicker.open()
-                maxWidth: ui.sdu(36)
+                maxWidth: 360
             }
 
             Button {
                 text: "New backup"
                 horizontalAlignment: HorizontalAlignment.Right
                 onClicked: app.saveBackup();
-                maxWidth: ui.sdu(36)
+                maxWidth: 360
             }
         }
         

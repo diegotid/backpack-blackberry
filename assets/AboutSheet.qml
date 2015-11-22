@@ -1,7 +1,7 @@
 
-import bb.cascades 1.3
+import bb.cascades 1.2
 import bb.system 1.0
-import bb 1.3
+import bb 1.0
 
 Page {
     id: about
@@ -10,7 +10,7 @@ Page {
     signal close();
     
     property double taken: app.getOfflineDirSize()
-    property double device: storageInfo.physicalCapacity()
+    property double device: storageInfo.fileSystemCapacity(app.getOfflineDir())
     property double space: storageInfo.availableFileSystemSpace(app.getOfflineDir())
     
     onTakenChanged: updateFigures()
@@ -53,10 +53,10 @@ Page {
         
         Container {
             layout: DockLayout {}
-            topPadding: ui.sdu(4)
-            rightPadding: ui.sdu(4)
-            bottomPadding: ui.sdu(4)
-            leftPadding: ui.sdu(4)
+            topPadding: 40
+            rightPadding: 40
+            bottomPadding: 40
+            leftPadding: 40
             horizontalAlignment: HorizontalAlignment.Fill
             
             ImageView {
@@ -74,7 +74,7 @@ Page {
                 }
 
                 Container {
-                    topMargin: ui.sdu(4)
+                    topMargin: 40
 
                     Label {
                         text: "Storage"
@@ -84,8 +84,8 @@ Page {
                     ProgressIndicator {
                         id: takenIndicator
                         value: taken / (space + taken)
-                        topMargin: ui.sdu(2)
-                        bottomMargin: ui.sdu(1)
+                        topMargin: 20
+                        bottomMargin: 10
                     }
                     
                     Container {
@@ -151,22 +151,13 @@ Page {
                 }
                 
                 Container {
-                    topPadding: ui.sdu(2)
+                    topPadding: 20
                     horizontalAlignment: HorizontalAlignment.Fill
                     
                     Button {
                         text: "Rate it!"
                         horizontalAlignment: HorizontalAlignment.Fill
-                        attachedObjects: [
-                            Invocation {
-                                id: invoke
-                                query: InvokeQuery {
-                                    mimeType: "application/x-bb-appworld"
-                                    uri: "appworld://content/20399673"
-                                }
-                            }
-                        ]
-                        onClicked: invoke.trigger("bb.action.OPEN")
+                        onClicked: app.launchRating()
                     }
                 }
             }            
