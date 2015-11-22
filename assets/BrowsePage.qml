@@ -1,5 +1,5 @@
 
-import bb.cascades 1.4
+import bb.cascades 1.3
 import bb.platform 1.2
 import bb.system 1.0
 
@@ -35,11 +35,11 @@ NavigationPane {
             }
         }
     ]
-/*    
+
     onCreationCompleted: {
         payment.setConnectionMode(0)
     }
-*/  
+  
     function startPurchase() {
         premiumDialog.body = "The following premium features are only available on the full version of Backpack:"
                                 + "\n- Article search"
