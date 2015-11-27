@@ -81,6 +81,18 @@ Container {
                 textStyle.color: Color.White
                 textStyle.fontSize: FontSize.XSmall
                 leftMargin: 10
+                property string previous
+                onTextChanged: {
+                    if (text != previous) {
+                        previous = text
+                        var domain = text.substring(text.indexOf("://") + (text.indexOf("://") < 0 ? 1 : 3));
+                        if (domain.indexOf('/') < domain.indexOf('.')) {
+                            bookmarkURL.setText(domain)
+                        } else {
+                            bookmarkURL.setText(domain.substring(0, domain.indexOf('/')))
+                        }
+                    }
+                }
             }
         }
 
