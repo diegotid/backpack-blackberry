@@ -24,11 +24,11 @@ NavigationPane {
             }
         }
     ]
-    
+/*    
     onCreationCompleted: {
         payment.setConnectionMode(0)
     }
-  
+*/  
     function startPurchase() {
         premiumDialog.initiate()
         premiumDialog.open()        
