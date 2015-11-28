@@ -14,41 +14,24 @@ NavigationPane {
             onPurchaseFinished: {
                 if (reply.errorCode == 0) {
                     app.setPremium()
-                    premiumDialog.body = "Purchase completed!"
-                                            + "\n\nFeatures unlocked:"
-                                            + "\n- Article search"
-                                            + "\n- Reading specific articles"
-                                            + "\n- Article skipping on Lounge & Quickest"
-                    premiumDialog.cancelButton.label = "Check it!"
-                    premiumDialog.confirmButton.label = undefined
-                    premiumDialog.show()
+                    premiumDialog.confirmPurchase()
                 } else {
-                    premiumDialog.body = "Purchase didn't complete: " + reply.errorText
-                    premiumDialog.cancelButton.label = "Try later"
-                    premiumDialog.confirmButton.label = "Try again now"
-                    premiumDialog.show()
+                    premiumDialog.reportError(reply.errorText)
                 }
             }
             onPriceFinished: {
-                premiumDialog.body += ": " + reply.price
-                premiumDialog.show()
+                premiumDialog.price = reply.price
             }
         }
     ]
-/*    
+    
     onCreationCompleted: {
         payment.setConnectionMode(0)
     }
-*/  
+  
     function startPurchase() {
-        premiumDialog.body = "The following premium features are only available on the full version of Backpack:"
-                                + "\n- Article search"
-                                + "\n- Reading specific articles"
-                                + "\n- Article skipping on Lounge & Quickest"
-                                + "\n\nOne-time single payment"
-        premiumDialog.cancelButton.label = "Maybe later"
-        premiumDialog.confirmButton.label = "Get it now!"
-        premiumDialog.show()
+        premiumDialog.initiate()
+        premiumDialog.open()        
         payment.requestPrice("", "SKU59983351")
     }
     
@@ -393,14 +376,8 @@ NavigationPane {
                     }
                 }
             },
-            SystemDialog {
+            PremiumDialog {
                 id: premiumDialog
-                title: "Get Backpack full version"
-                onFinished: {
-                    if (result == SystemUiResult.ConfirmButtonSelection) {
-                        confirmPurchase()
-                    }
-                }
             }
         ]
         
