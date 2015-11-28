@@ -1,5 +1,5 @@
 
-import bb.cascades 1.4
+import bb.cascades 1.2
 
 Dialog {
     id: premiumDialog
@@ -46,22 +46,22 @@ Dialog {
         
             Container {
                 background: Color.White
-                maxWidth: ui.sdu(70)
-                topPadding: ui.sdu(3)
-                bottomPadding: ui.sdu(3)
-                leftPadding: ui.sdu(3)
-                rightPadding: ui.sdu(3)
+                maxWidth: 700
+                topPadding: 30
+                bottomPadding: 30
+                leftPadding: 30
+                rightPadding: 30
                 
                 Label {
                     id: dialogTitle
                     textStyle.color: Color.create("#323232")
-                    bottomMargin: ui.sdu(2.5)
+                    bottomMargin: 25
                 }
                 
                 Container {
                     id: confirmation
                     visible: false
-                    bottomMargin: ui.sdu(2)
+                    bottomMargin: 20
                 
                     Label {
                         text: "Features unlocked:"
@@ -70,7 +70,7 @@ Dialog {
                         + "\n- Article skipping on Lounge & Quickest"
                         multiline: true
                         textStyle.color: Color.DarkGray
-                        bottomMargin: ui.sdu(2)
+                        bottomMargin: 20
                     }
                     
                     ImageView {
@@ -83,19 +83,18 @@ Dialog {
                     id: errorMessage
                     visible: false
                     horizontalAlignment: HorizontalAlignment.Fill
-                    bottomPadding: ui.sdu(3)
+                    bottomPadding: 30
 
                     Label {
                         id: errorLabel
                         multiline: true
                         textStyle.color: Color.DarkGray
-                        bottomMargin: ui.sdu(4)
+                        bottomMargin: 40
                     }
                     
                     Button {
                         text: "Try again now"
                         horizontalAlignment: HorizontalAlignment.Fill
-                        color: Color.White
                         onClicked: premiumDialog.parent.parent.confirmPurchase()
                     }
                 }
@@ -103,20 +102,19 @@ Dialog {
                 Container {
                     id: approach
                     horizontalAlignment: HorizontalAlignment.Fill
-                    bottomPadding: ui.sdu(2)
+                    bottomPadding: 20
                     
                     Label {
                         text: "Some features are only available on the full version of Backpack:"
                         + " Article search, article skipping and article picking"
                         multiline: true
                         textStyle.color: Color.DarkGray
-                        bottomMargin: ui.sdu(3)
+                        bottomMargin: 30
                     }
                     
                     Button {
                         text: "Get it now!"
                         horizontalAlignment: HorizontalAlignment.Fill
-                        color: Color.DarkGreen
                         onClicked: premiumDialog.parent.parent.confirmPurchase()
                         bottomMargin: 0
                     }
@@ -125,7 +123,7 @@ Dialog {
                         id: priceLabel
                         text: "One-time single payment"
                         textStyle.color: Color.DarkGray
-                        topMargin: ui.sdu(1)
+                        topMargin: 10
                     }
                     
                     Label {
@@ -138,14 +136,13 @@ Dialog {
                     ImageView {
                         imageSource: "asset:///images/freemium.png"
                         horizontalAlignment: HorizontalAlignment.Center
-                        topMargin: ui.sdu(2)
+                        topMargin: 20
                     }
                 }
                 
                 Button {
                     id: closeButton
                     horizontalAlignment: HorizontalAlignment.Fill
-                    color: Color.White
                     onClicked: premiumDialog.close()
                 }            
             }
