@@ -62,6 +62,7 @@ Dialog {
                     id: confirmation
                     visible: false
                     bottomMargin: ui.sdu(2)
+                    minWidth: dialogHandler.layoutFrame.width
                 
                     Label {
                         text: "Features unlocked:"
@@ -83,6 +84,7 @@ Dialog {
                     id: errorMessage
                     visible: false
                     horizontalAlignment: HorizontalAlignment.Fill
+                    minWidth: dialogHandler.layoutFrame.width
                     bottomPadding: ui.sdu(3)
 
                     Label {
@@ -104,6 +106,10 @@ Dialog {
                     id: approach
                     horizontalAlignment: HorizontalAlignment.Fill
                     bottomPadding: ui.sdu(2)
+                    
+                    attachedObjects: LayoutUpdateHandler {
+                        id: dialogHandler
+                    }
                     
                     Label {
                         text: "Some features are only available on the full version of Backpack:"
