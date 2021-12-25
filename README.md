@@ -1,5 +1,5 @@
 # Backpack - Pocket client+
-Backpack is a Pocket client app with extra features for BlackBerry 10 on BlackBerry App World
+Backpack is a [Pocket](https://getpocket.com/es/) client app with extra features for BlackBerry 10 on BlackBerry App World
 
 [Check it out at BlackBerry World](https://appworld.blackberry.com/webstore/content/20399673)
 
